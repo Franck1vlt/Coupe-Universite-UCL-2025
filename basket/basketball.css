@@ -1,0 +1,233 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+header {
+    color: #000000;
+    text-align: center;
+    padding: 5px;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    margin-bottom: 60px;
+}
+
+main {
+    margin-top: 60px; /* Adjust this value if needed to avoid overlap with the header */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.scoreboard {
+    background-color: #222;
+    color: #fff;
+    padding: 10px;
+    border-radius: 10px;
+    text-align: center;
+    width: 250%;
+    height: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.timers {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.timer {
+    font-size: 3rem;
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.controls button, .shot-clock-controls button {
+    background-color: #007BFF;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+    margin: 5px;
+    font-size: 1rem;
+}
+
+.controls button:hover, .shot-clock-controls button:hover {
+    background-color: #0056b3;
+}
+
+.plus_moins_controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.plus_moins_controls section {
+    margin: 15px;
+}
+
+.scores, .fouls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+
+.scores span, .fouls span {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+
+.scores button, .fouls button {
+    background-color: #FF5733;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin: 3px;
+}
+
+.team-controls {
+    display: flex;
+    gap: 10px; /* Espacement entre les boutons */
+    justify-content: center; /* Centrer horizontalement */
+    align-items: center; /* Centrer verticalement */
+    margin: 5px;
+}
+
+
+.scores button:hover, .fouls button:hover {
+    background-color: #C70039;
+}
+
+.shot-clock-controls {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+button {
+    background-color: #005d93;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin: 3px;
+}
+
+
+
+@media (max-width: 768px) {
+    .timer {
+        font-size: 2rem;
+    }
+
+    .controls button, .shot-clock-controls button {
+        padding: 8px;
+        font-size: 0.9rem;
+    }
+
+    .scores span, .fouls span {
+        font-size: 1.2rem;
+    }
+
+    .scores button, .fouls button {
+        font-size: 0.8rem;
+        padding: 5px 10px;
+    }
+
+    .scores div, .fouls div {
+        width: 100%;
+    }
+}
+
+.bouton_pied_page {
+    margin-top: 50px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #e0e0e0;
+    font-family: Arial, sans-serif;
+}
+
+.score-board {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5vh;
+}
+
+.score-row {
+    font-size: 15vh;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.time {
+    font-size: 20vh;
+    font-weight: bold;
+}
+
+.stats-row {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 5vw;
+    font-size: 5vh;
+}
+
+.period {
+    display: flex;
+    justify-content: center;
+    gap: 2vw;
+}
+
+.mt {
+    margin-right: 4vw;
+}
+
+.remaining-time {
+    margin-left: 4vw;
+}
+
+header {
+    display: none;
+}

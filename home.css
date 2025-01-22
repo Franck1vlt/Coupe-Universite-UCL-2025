@@ -1,0 +1,60 @@
+body {
+    background-color: #f0f0f0;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    color: rgb(0, 0, 0);
+    padding: 20px;
+    text-align: center;
+    margin: 30px;
+    font-size: 2rem; /* Met le texte en gros */
+}
+
+h1 {
+    margin: 0;
+}
+
+main {
+    padding: 20px;
+}
+
+.selection-sport {
+    display: flex;
+    justify-content: center; /* Centre les boutons horizontalement */
+    align-items: center; /* Centre les boutons verticalement */
+    gap: 20px; /* Ajoute un espace entre les boutons */
+    margin: 20px 0;
+    height: 30vh; /* Prend toute la hauteur de la page */
+}
+
+
+button {
+    background-color: #014065;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin: 3px;
+    width: 150px; /* Largeur des boutons */
+    height: 50px; /* Hauteur des boutons */
+}
+
+button:hover {
+    background-color: #000000f6;
+    transform: scale(1.05); /* Ajoute un léger agrandissement au survol */
+}
+
+footer {
+    color: rgb(0, 0, 0);
+    padding: 10px;
+    text-align: center;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
+

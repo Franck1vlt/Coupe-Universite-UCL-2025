@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Table de Marquage</title>
+    <link rel="stylesheet" href="basketball.css">
+    <script src="basketball.js" defer></script>
+</head>
+<body>
+    <header>
+        <h1>Basketball - Table de marquage</h1>
+    </header>
+    <main>
+        <div class="scoreboard">
+            <div class="timers">
+                <div class="timer" id="gameTimer">09:00.0</div>
+                <div class="timer" id="shotClock">24.0</div>
+            </div>
+            <div class="controls">
+                <button onclick="startTimers()">Start</button>
+                <button onclick="stopTimers()">Stop</button>
+                <button onclick="resetGameTimer()">Timer</button>
+                <button onclick="setShotClock(24)">24s</button>
+                <button onclick="setShotClock(14)">14s</button>
+                <button onclick="resetGame()">Fin</button>
+            </div>
+            <div class="plus_moins_controls">
+                <section>
+                    <div class="scores">
+                        <div>
+                            <span>Team A Score: <span id="teamAScore">0</span></span>
+                            <div class="team-controls a">
+                                <button onclick="supScore('A', 1)">-1</button>
+                                <button onclick="addScore('A', 1)">+1</button>
+                                <button onclick="addScore('A', 2)">+2</button>
+                                <button onclick="addScore('A', 3)">+3</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="fouls">
+                        <div>
+                            <span>Team A Fautes: <span id="teamAFoulCount">0</span></span>
+                            <div class="team-controls a">
+                                <button onclick="supFoul('A')">-</button>
+                                <button onclick="addFoul('A')">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <section>
+                    <div class="scores">
+                        <div>
+                            <span>Team B Score: <span id="teamBScore">0</span></span>
+                            <div class="team-controls b">
+                                <button onclick="supScore('B', 1)">-1</button>
+                                <button onclick="addScore('B', 1)">+1</button>
+                                <button onclick="addScore('B', 2)">+2</button>
+                                <button onclick="addScore('B', 3)">+3</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="fouls">
+                        <div>
+                            <span>Team B Fautes: <span id="teamBFoulCount">0</span></span>
+                            <div class="team-controls b">
+                                <button onclick="supFoul('B')">-</button>
+                                <button onclick="addFoul('B')">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+        <div class="bouton_pied_page">
+            <button onclick="openScoreDisplay()">Ouvrir l'affichage des scores</button> 
+            <button onclick="location.href='basketball.html'">Retour </button>
+        </div>
+    </main>
+</body>
+</html>
