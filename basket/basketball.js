@@ -166,7 +166,7 @@ function supScore(team, points) {
 
 // Fonction pour ouvrir l'affichage des scores
 function openScoreDisplay() {
-    window.open('affichage_score_foot.html', 'scoreDisplay');
+    window.open('affichage_score.html', 'scoreDisplay');
 }
 
 // Fonction pour sélectionner le type de match
