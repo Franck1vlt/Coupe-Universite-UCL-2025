@@ -26,6 +26,10 @@ function updateGameTimerDisplay() {
     const gameTimer = document.getElementById('gameTimer');
     if (gameTimer) {
         gameTimer.textContent = `${minutes}:${seconds}.${tenths}`;
+        // Sync shot clock with game timer
+        if (parseFloat(gameTimer.textContent) < parseFloat(document.getElementById('shotClock').textContent)) {
+            document.getElementById('shotClock').textContent = gameTimer.textContent;
+        }
     }
 }
 
@@ -166,7 +170,7 @@ function supScore(team, points) {
 
 // Fonction pour ouvrir l'affichage des scores
 function openScoreDisplay() {
-    window.open('affichage_score.html', 'scoreDisplay');
+    window.open('affichage_score_basket.html', 'scoreDisplay');
 }
 
 // Fonction pour sélectionner le type de match
@@ -182,6 +186,26 @@ function updateTeams() {
     localStorage.setItem('teamBKey', tB);
 }
 
+function changePeriod() {
+    matchPeriod = matchPeriod === 1 ? 2 : 1;
+    document.getElementById('period').textContent = `MT${matchPeriod}`;
+    resetGameTimer();
+}
+
+function togglePeriod() {
+    const toggle = document.getElementById('periodToggle');
+    const periodValue = toggle.checked ? '2' : '1';
+    const periodText = `MT${periodValue}`;
+    
+    // Mettre à jour l'affichage local
+    document.getElementById('period').textContent = periodText;
+    
+    // Sauvegarder dans localStorage pour l'autre interface
+    localStorage.setItem('periodValue', periodText);
+    
+    // Mettre à jour la période du match
+    matchPeriod = parseInt(periodValue);
+}
 
 function updateDisplayScores() {
     if (window.opener && !window.opener.closed) {
@@ -194,6 +218,8 @@ function updateDisplayScores() {
         const gameTimerElement = window.opener.document.getElementById('gameTimer');
         // matchType
         const matchTypeElement = window.opener.document.getElementById('matchTypeKey');
+        // period
+        const periodElement = window.opener.document.getElementById('period');
 
         if (teamAScoreElement && teamBScoreElement && teamAFoulCountElement && teamBFoulCountElement) {
             document.getElementById('teamAScore').innerText = teamAScoreElement.innerText;
@@ -213,6 +239,10 @@ function updateDisplayScores() {
         if (matchTypeElement) {
             document.getElementById('matchType').innerText = matchTypeElement.innerText;
         }
+
+        if (periodElement) {
+            document.getElementById('period').innerText = periodElement.innerText;
+        }
     }
 }
 
@@ -228,6 +258,48 @@ const teamA = localStorage.getItem('teamAKey') || 'TEAM A';
 const teamB = localStorage.getItem('teamBKey') || 'TEAM B';
 document.getElementById('teamAName').textContent = teamA;
 document.getElementById('teamBName').textContent = teamB;
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const storedPeriod = localStorage.getItem('periodValue') || 'MT : 1';
+    document.getElementById('period').textContent = storedPeriod;
+});
+
+document.addEventListener('keydown', function(event) {
+    if (event.repeat) return; // Évite les répétitions si la touche est maintenue
+
+    switch (event.key.toLowerCase()) {
+        case '1': 
+        case 'a':
+            event.preventDefault(); // Empêche d'éventuels conflits avec les raccourcis du navigateur
+            startTimers();
+            break;
+        case '2': 
+        case 'z':
+            event.preventDefault();
+            stopTimers();
+            break;
+        case '3': 
+        case 'e':
+            event.preventDefault();
+            resetGameTimer();
+            break;
+        case '4': 
+        case 'r':
+            event.preventDefault();
+            setShotClock(24);
+            break;
+        case '5': 
+        case 't':
+            event.preventDefault();
+            setShotClock(14);
+            break;
+        case '6': 
+        case 'y':
+            event.preventDefault();
+            resetGame();
+            break;
+    }
 });
 
 // Mise à jour toutes les 100ms

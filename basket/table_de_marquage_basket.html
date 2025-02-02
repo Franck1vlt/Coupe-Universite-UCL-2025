@@ -71,12 +71,20 @@
                     <div class="timer" id="shotClock">24.0</div>
                 </div>
                 <div class="controls">
-                    <button onclick="startTimers()">Start</button>
-                    <button onclick="stopTimers()">Stop</button>
-                    <button onclick="resetGameTimer()">Timer</button>
-                    <button onclick="setShotClock(24)">24s</button>
-                    <button onclick="setShotClock(14)">14s</button>
-                    <button onclick="resetGame()">End</button>
+                    <button onclick="startTimers()" accesskey="s">Start (A)</button>
+                    <button onclick="stopTimers()" accesskey="t">Stop (Z)</button>
+                    <button onclick="resetGameTimer()" accesskey="r">Timer (E)</button>
+                    <button onclick="setShotClock(14)" accesskey="f">14s (8)</button>
+                    <button onclick="buzzer.play()" accesskey="b">Buzzer (0)</button>
+                    <button onclick="addSecond()" accesskey="a">+1s</button>
+                    <div class="period-switch">
+                        <span>MT1</span>
+                        <label class="switch">
+                            <input type="checkbox" id="periodToggle" onchange="togglePeriod()">
+                            <span class="slider round"></span>
+                        </label>
+                        <span>MT2</span>
+                    </div>
                 </div>
                 <div class="plus_moins_controls">
                     <section>
