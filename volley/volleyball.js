@@ -7,6 +7,7 @@ let teamARedCards = 0;
 let teamBRedCards = 0;
 let chrono;
 let chronoRunning = false;
+let server = 'A'; // 'A' pour l'équipe A, 'B' pour l'équipe B
 
 // Initialisation de la page
 function updateDisplay() {
@@ -15,7 +16,16 @@ function updateDisplay() {
     updateScores();
     updateCards();
     updateChronoDisplay();
+    updateServer();
 }
+
+// Fonction de reset du game
+function resetGame() {
+    localStorage.clear();
+    stopChrono();
+    updateDisplay();
+}
+
 
 // Mets à jour le nom des équipes et renvoie les id teamAName et teamBName
 function updateTeams() {
@@ -217,6 +227,33 @@ function updateChronoDisplay() {
     });
 }
 
+// Change la main de service
+function ChangeServer() {
+    server = server === 'A' ? 'B' : 'A';
+    localStorage.setItem('server', server);
+    updateServer();
+}
+
+// Mets à jour l'affichage du serveur
+function updateServer() {
+    const server = localStorage.getItem('server') || 'A';
+    const ballIconA = document.getElementById('ballIconA');
+    const ballIconB = document.getElementById('ballIconB');
+    
+    if (server === 'A') {
+        ballIconA.style.opacity = 1;
+        ballIconB.style.opacity = 0;
+    } else {
+        ballIconA.style.opacity = 0;
+        ballIconB.style.opacity = 1;
+    }
+}
+
+// Ouvre la fenêtre d'affichage des scores
+function openScoreDisplay() {
+    window.open('affichage_score_volleyball.html', 'scoreDisplay');
+}
+
 // Ajoute un écouteur d'événements pour le stockage
 window.addEventListener('storage', (e) => {
     updateDisplay();
@@ -235,6 +272,7 @@ window.addEventListener('beforeunload', () => {
     localStorage.removeItem('teamAName');
     localStorage.removeItem('teamBName');
     localStorage.removeItem('matchType');
+    localStorage.removeItem('server');
 });
 
 // Initialize on page load
@@ -247,4 +285,65 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     updateDisplay();
     updateChronoDisplay(); // Ajout de cette ligne pour s'assurer que le chrono est mis à jour au chargement de la page
+});
+
+// Raccourcis clavier
+document.addEventListener('keydown', function(event) {
+    if (event.repeat) return; // Évite les répétitions si la touche est maintenue
+
+    switch (event.key.toLowerCase()) {
+        case '1': 
+        case 'a':
+            addPoint('A');
+            break;
+        case '2': 
+        case 'z':
+            addPoint('B');
+            break;
+        case '3': 
+        case 'e':
+            subPoint('A');
+            break;
+        case '4': 
+        case 'r':
+            subPoint('B');
+            break;
+        case '5': 
+        case 't':
+            addYellowCard('A');
+            break;
+        case '6': 
+        case 'y':
+            addYellowCard('B');
+            break;
+
+        case '7':
+        case 'u':
+            subYellowCard('A');
+            break;
+        case '8':
+        case 'i':
+            subYellowCard('B');
+            break;
+        case '9':
+        case 'o':
+            addRedCard('A');
+            break;
+        case '0':
+        case 'p':
+            addRedCard('B');
+            break;
+        case 's':
+            startChrono();
+            break;
+        case 'd':
+            stopChrono();
+            break;
+        case 'f':
+            ChangeServer();
+            break;
+        case 'c':
+            openScoreDisplay();
+            break;
+    }
 });

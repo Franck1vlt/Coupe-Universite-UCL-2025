@@ -127,12 +127,12 @@ button:hover {
 .button-row1 {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: center;
     margin-bottom: 20px;
 }
 
 .button-row1 button {
-    width: 75px;
+    width: 200px;
 }
 
 .button-row2 {
@@ -145,8 +145,6 @@ button:hover {
 .button-row2 button {
     width: 200px;
 }
-
-
 
 .details-line {
     font-size: 1.5rem;
@@ -282,7 +280,7 @@ button:hover {
 
 .bottom-controls {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     gap: 10px;
     margin-top: 60px;
 }
@@ -299,11 +297,6 @@ button:hover {
 
 button:hover {
     opacity: 0.9;
-}
-
-
-element.style {
-    color: rgb(255, 255, 255);
 }
 
 /* Page Affichage */
@@ -359,6 +352,13 @@ element.style {
     height: 50px;
     margin-right: 80px;
     margin-left: 80px;
+}
+
+.ball-icon-table {
+    width: 20px;
+    height: 20px;
+    margin-right: 20px;
+    margin-left: 20px;
 }
 
 .cards {
