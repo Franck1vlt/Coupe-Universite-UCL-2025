@@ -69,7 +69,7 @@
             </div>
             <div class="bouton_pied_page">
                 <div class="button-row1">
-                    <button onclick="updateDisplayScores(); location.reload();">OK</button>
+                    <button onclick="updateDisplay(); location.reload();">OK</button>
                     <button onclick="location.href='volleyball.html'">Retour</button>
                 </div>
                 <div class="button-row2">
@@ -89,50 +89,50 @@
                 <div class="points-section">
                     <div class="points-control">
                         <span class="points-label">Points :</span>
-                        <button onclick="supScore('A', 1)" class="control-button">-</button>
-                        <button onclick="addScore('A', 1)" class="control-button">+</button>
+                        <button onclick="subPoint('A')" class="control-button">-</button>
+                        <button onclick="addPoint('A')" class="control-button">+</button>
                     </div>
         
-                    <div class="timer" id="gameTimer">09:00.0</div>
+                    <div class="timer" id="gameChrono">00:00</div>
 
                     <div class="points-control">
                         <span class="points-label">Points :</span>
-                        <button onclick="supScore('B', 1)" class="control-button">-</button>
-                        <button onclick="addScore('B', 1)" class="control-button">+</button>
+                        <button onclick="subPoint('B')" class="control-button">-</button>
+                        <button onclick="addPoint('B')" class="control-button">+</button>
                     </div>
                 </div>
         
                 <div class="cards-section">
                     <div class="yellow-card">
                         <div class="card-row">
-                            <span>Cartons Jaunes : 0</span>
-                            <button class="control-button">-</button>
-                            <button class="control-button">+</button>
+                            <span>Cartons Jaunes : <span id="teamAYellowCard">0</span></span>
+                            <button onclick="subYellowCard('A')" class="control-button">-</button>
+                            <button onclick="addYellowCard('A')"class="control-button">+</button>
                         </div>
                         <div class="card-row">
-                            <span>Cartons Jaunes : 0</span>
-                            <button class="control-button">-</button>
-                            <button class="control-button">+</button>
+                            <span>Cartons Jaunes : <span id="teamBYellowCard">0</span></span>
+                            <button onclick="subYellowCard('B')" class="control-button">-</button>
+                            <button onclick="addYellowCard('B')"class="control-button">+</button>
                         </div>
                     </div>
                     <div class="red-card">
                         <div class="card-row">
-                            <span>Cartons Rouges : 0</span>
-                            <button class="control-button">-</button>
-                            <button class="control-button">+</button>
+                            <span>Cartons Rouges : <span id="teamARedCard">0</span></span>
+                            <button onclick="subRedCard('A')" class="control-button">-</button>
+                            <button onclick="addRedCard('A')"class="control-button">+</button>
                         </div>
                         <div class="card-row">
-                            <span>Cartons Rouges : 0</span>
-                            <button class="control-button">-</button>
-                            <button class="control-button">+</button>
+                            <span>Cartons Rouges : <span id="teamBRedCard">0</span></span>
+                            <button onclick="subRedCard('B')" class="control-button">-</button>
+                            <button onclick="addRedCard('B')"class="control-button">+</button>
                         </div>
                     </div>
                 </div>
         
                 <div class="bottom-controls">
-                    <button onclick="startTimers()">Start</button>
-                    <button onclick="resetGameTimer()">Timer</button>
-                    <button class="action-button">Service</button>
+                    <button onclick="startChrono()">Start</button>
+                    <button onclick="stopChrono()">Stop</button>
+                    <button onclick="ChangeServer()">Service</button>
                     <button onclick="resetGame()">End</button>
                 </div>
                     

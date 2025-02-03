@@ -1,276 +1,250 @@
-let gameTimerInterval;
-let shotClockInterval;
-let gameMinutes = 9;
-let gameSeconds = 0;
-let gameMilliseconds = 0;
-let shotClockSeconds = 24;
-let shotClockMilliseconds = 0;
-let teamAFoulCount = 0;
-let teamBFoulCount = 0;
+// Variables globales
 let teamAScore = 0;
 let teamBScore = 0;
-let matchPeriod = 1;
-const buzzer = new Audio('../vraibuzzer.mp3');
+let teamAYellowCards = 0;
+let teamBYellowCards = 0;
+let teamARedCards = 0;
+let teamBRedCards = 0;
+let chrono;
+let chronoRunning = false;
 
-const gameTimerElement = document.getElementById('gameTimer');
-const shotClockElement = document.getElementById('shotClock');
-const teamAFoulCountElement = document.getElementById('teamAFoulCount');
-const teamBFoulCountElement = document.getElementById('teamBFoulCount');
-const teamAScoreElement = document.getElementById('teamAScore');
-const teamBScoreElement = document.getElementById('teamBScore');
-
-function updateGameTimerDisplay() {
-    const minutes = String(gameMinutes).padStart(2, '0');
-    const seconds = String(gameSeconds).padStart(2, '0');
-    const tenths = Math.floor(gameMilliseconds / 100);
-    const gameTimer = document.getElementById('gameTimer');
-    if (gameTimer) {
-        gameTimer.textContent = `${minutes}:${seconds}.${tenths}`;
-        // Sync shot clock with game timer
-        if (parseFloat(gameTimer.textContent) < parseFloat(document.getElementById('shotClock').textContent)) {
-            document.getElementById('shotClock').textContent = gameTimer.textContent;
-        }
-    }
+// Initialisation de la page
+function updateDisplay() {
+    updateTeams();
+    updateMatchType();
+    updateScores();
+    updateCards();
+    updateChronoDisplay();
 }
 
-function updateShotClockDisplay() {
-    const seconds = String(shotClockSeconds).padStart(2, '0');
-    const tenths = Math.floor(shotClockMilliseconds / 100);
-    const shotClock = document.getElementById('shotClock');
-    if (shotClock) {
-        shotClock.textContent = `${seconds}.${tenths}`;
-    }
-}
-
-function startTimers() {
-    if (gameTimerInterval || shotClockInterval) return;
-
-    gameTimerInterval = setInterval(() => {
-        if (gameMilliseconds === 0) {
-            if (gameSeconds === 0) {
-                if (gameMinutes === 0) {
-                    buzzer.play();
-                    stopTimers();
-                    return;
-                }
-                gameMinutes--;
-                gameSeconds = 59;
-                gameMilliseconds = 900;
-            } else {
-                gameSeconds--;
-                gameMilliseconds = 900;
-            }
-        } else {
-            gameMilliseconds -= 100;
-        }
-        updateGameTimerDisplay();
-    }, 100);
-
-    shotClockInterval = setInterval(() => {
-        if (shotClockMilliseconds === 0) {
-            if (shotClockSeconds === 0) {
-                buzzer.play();
-                stopTimers();
-                return;
-            }
-            shotClockSeconds--;
-            shotClockMilliseconds = 900;
-        } else {
-            shotClockMilliseconds -= 100;
-        }
-        updateShotClockDisplay();
-    }, 100);
-}
-
-function stopTimers() {
-    clearInterval(gameTimerInterval);
-    clearInterval(shotClockInterval);
-    gameTimerInterval = null;
-    shotClockInterval = null;
-}
-
-function setMatchPeriod(period) {
-    matchPeriod = period;
-    const periodElement = document.getElementById('period');
-    if (periodElement) {
-        periodElement.textContent = matchPeriod;
-    }
-    if (window.opener && !window.opener.closed) {
-        window.opener.updateDisplayScores();
-    }
-    console.log(`Période du match définie à: ${matchPeriod}`);
-}
-
-function resetGameTimer() {
-    stopTimers();
-    gameMinutes = 9;
-    gameSeconds = 0;
-    gameMilliseconds = 0;
-    setShotClock(24);
-    updateGameTimerDisplay();
-}
-
-function resetGame() {
-    resetGameTimer();
-    teamAScore = 0;
-    teamBScore = 0;
-    updateScoreDisplay();
-}
-
-
-function addScore(team, points) {
-    if (team === 'A') {
-        teamAScore += points;
-        teamAScoreElement.textContent = teamAScore;
-    } else if (team === 'B') {
-        teamBScore += points;
-        teamBScoreElement.textContent = teamBScore;
-    }
-}
-
-function supScore(team, points) {
-    if (team === 'A') {
-        teamAScore -= points;
-        teamAScoreElement.textContent = teamAScore;
-    } else if (team === 'B') {
-        teamBScore -= points;
-        teamBScoreElement.textContent = teamBScore;
-    }
-}
-
-
-
-// Fonction pour ouvrir l'affichage des scores
-function openScoreDisplay() {
-    window.open('affichage_score_volleyball.html', 'scoreDisplay');
-}
-
-// Fonction pour sélectionner le type de match
-function updateMatchType() {
-    const matchTypeValue = document.getElementById('matchTypeSelector').value;
-    localStorage.setItem('matchTypeKey', matchTypeValue);
-}
-
+// Mets à jour le nom des équipes et renvoie les id teamAName et teamBName
 function updateTeams() {
-    // Récupérer les valeurs des équipes
-    const teamA = document.getElementById('teamA').value;
-    const teamB = document.getElementById('teamB').value;
+    if (document.getElementById('teamA')) {
+        // On est sur la page de contrôle
+        const tA = document.getElementById('teamA').value;
+        const tB = document.getElementById('teamB').value;
+        localStorage.setItem('teamAName', tA);
+        localStorage.setItem('teamBName', tB);
+    }
     
-    // Mettre à jour l'affichage
-    document.getElementById('teamAName').textContent = teamA;
-    document.getElementById('teamBName').textContent = teamB;
+    // Met à jour l'affichage sur les deux pages
+    const teamAName = localStorage.getItem('teamAName') || 'TEAM A';
+    const teamBName = localStorage.getItem('teamBName') || 'TEAM B';
     
-    // Sauvegarder dans localStorage
-    localStorage.setItem('teamAName', teamA);
-    localStorage.setItem('teamBName', teamB);
+    const teamAElements = document.querySelectorAll('#teamAName');
+    const teamBElements = document.querySelectorAll('#teamBName');
+    
+    teamAElements.forEach(element => {
+        element.innerText = teamAName;
+    });
+    
+    teamBElements.forEach(element => {
+        element.innerText = teamBName;
+    });
 }
 
-function updateDisplayScores() {
-    if (window.opener && !window.opener.closed) {
-        // Mise à jour des scores et fautes
-        const teamAScoreElement = window.opener.document.getElementById('teamAScore');
-        const teamBScoreElement = window.opener.document.getElementById('teamBScore');
-        const teamAFoulCountElement = window.opener.document.getElementById('teamAFoulCount');
-        const teamBFoulCountElement = window.opener.document.getElementById('teamBFoulCount');
-        const shotClockElement = window.opener.document.getElementById('shotClock');
-        const gameTimerElement = window.opener.document.getElementById('gameTimer');
-        // matchType
-        const matchTypeElement = window.opener.document.getElementById('matchTypeKey');
-        // period
-        const periodElement = window.opener.document.getElementById('period');
+// Mets à jour le type de match et renvoie l'id matchType
+function updateMatchType() {
+    if (document.getElementById('matchTypeSelector')) {
+        // On est sur la page de contrôle
+        const matchType = document.getElementById('matchTypeSelector').value;
+        localStorage.setItem('matchType', matchType);
+    }
+    
+    const matchType = localStorage.getItem('matchType') || 'Match';
+    const matchTypeElements = document.querySelectorAll('#matchType');
+    
+    matchTypeElements.forEach(element => {
+        element.textContent = matchType;
+    });
+}
 
-        if (teamAScoreElement && teamBScoreElement && teamAFoulCountElement && teamBFoulCountElement) {
-            document.getElementById('teamAScore').innerText = teamAScoreElement.innerText;
-            document.getElementById('teamBScore').innerText = teamBScoreElement.innerText;
-            document.getElementById('teamAFoulCount').innerText = teamAFoulCountElement.innerText;
-            document.getElementById('teamBFoulCount').innerText = teamBFoulCountElement.innerText;
-        }
+// Mets à jour les scores des équipes
+function updateScores() {
+    teamAScore = parseInt(localStorage.getItem('teamAScore')) || 0;
+    teamBScore = parseInt(localStorage.getItem('teamBScore')) || 0;
+    
+    const teamAScoreElements = document.querySelectorAll('#teamAScore');
+    const teamBScoreElements = document.querySelectorAll('#teamBScore');
+    
+    teamAScoreElements.forEach(element => {
+        element.innerText = teamAScore;
+    });
+    
+    teamBScoreElements.forEach(element => {
+        element.innerText = teamBScore;
+    });
+}
 
-        if (shotClockElement) {
-            document.getElementById('shotClock').innerText = shotClockElement.innerText;
-        }
+// Mets à jour les cartons des équipes
+function updateCards() {
+    teamAYellowCards = parseInt(localStorage.getItem('teamAYellowCards')) || 0;
+    teamBYellowCards = parseInt(localStorage.getItem('teamBYellowCards')) || 0;
+    teamARedCards = parseInt(localStorage.getItem('teamARedCards')) || 0;
+    teamBRedCards = parseInt(localStorage.getItem('teamBRedCards')) || 0;
+    
+    const elements = {
+        teamAYellow: document.querySelectorAll('#teamAYellowCard'),
+        teamBYellow: document.querySelectorAll('#teamBYellowCard'),
+        teamARed: document.querySelectorAll('#teamARedCard'),
+        teamBRed: document.querySelectorAll('#teamBRedCard')
+    };
+    
+    elements.teamAYellow.forEach(element => {
+        element.innerText = teamAYellowCards;
+    });
+    elements.teamBYellow.forEach(element => {
+        element.innerText = teamBYellowCards;
+    });
+    elements.teamARed.forEach(element => {
+        element.innerText = teamARedCards;
+    });
+    elements.teamBRed.forEach(element => {
+        element.innerText = teamBRedCards;
+    });
+}
 
-        if (gameTimerElement) {
-            document.getElementById('mainTimer').innerText = gameTimerElement.innerText;
-        }
+// Les fonctions existantes restent les mêmes, mais avec mise à jour du localStorage
 
-        if (matchTypeElement) {
-            document.getElementById('matchType').innerText = matchTypeElement.innerText;
-        }
+function subPoint(team) {
+    if (team === 'A' && teamAScore > 0) {
+        teamAScore--;
+        localStorage.setItem('teamAScore', teamAScore);
+    } else if (team === 'B' && teamBScore > 0) {
+        teamBScore--;
+        localStorage.setItem('teamBScore', teamBScore);
+    }
+    updateDisplay();
+}
 
-        if (periodElement) {
-            document.getElementById('period').innerText = periodElement.innerText;
+function addPoint(team) {
+    if (team === 'A') {
+        teamAScore++;
+        localStorage.setItem('teamAScore', teamAScore);
+    } else if (team === 'B') {
+        teamBScore++;
+        localStorage.setItem('teamBScore', teamBScore);
+    }
+    updateDisplay();
+}
+
+function addYellowCard(team) {
+    if (team === 'A') {
+        teamAYellowCards++;
+        localStorage.setItem('teamAYellowCards', teamAYellowCards);
+    } else if (team === 'B') {
+        teamBYellowCards++;
+        localStorage.setItem('teamBYellowCards', teamBYellowCards);
+    }
+    updateDisplay();
+}
+
+function addRedCard(team) {
+    if (team === 'A') {
+        teamARedCards++;
+        localStorage.setItem('teamARedCards', teamARedCards);
+    } else if (team === 'B') {
+        teamBRedCards++;
+        localStorage.setItem('teamBRedCards', teamBRedCards);
+    }
+    updateDisplay();
+}
+
+function subRedCard(team) {
+    if (team === 'A' && teamARedCards > 0) {
+        teamARedCards--;
+        localStorage.setItem('teamARedCards', teamARedCards);
+    } else if (team === 'B' && teamBRedCards > 0) {
+        teamBRedCards--;
+        localStorage.setItem('teamBRedCards', teamBRedCards);
+    }
+    updateDisplay();
+}
+
+function subYellowCard(team) {
+    if (team === 'A' && teamAYellowCards > 0) {
+        teamAYellowCards--;
+        localStorage.setItem('teamAYellowCards', teamAYellowCards);
+    } else if (team === 'B' && teamBYellowCards > 0) {
+        teamBYellowCards--;
+        localStorage.setItem('teamBYellowCards', teamBYellowCards);
+    }
+    updateDisplay();
+}   
+
+// Lance le chrono et synchronise entre les pages
+function startChrono() {
+    let minutes = parseInt(localStorage.getItem('minutes')) || 0;
+    let seconds = parseInt(localStorage.getItem('seconds')) || 0;
+    chrono = setInterval(() => {
+        seconds++;
+        if (seconds === 60) {
+            minutes++;
+            seconds = 0;
         }
+        localStorage.setItem('minutes', minutes);
+        localStorage.setItem('seconds', seconds);
+        
+        const chronoElements = document.querySelectorAll('#gameChrono');
+        chronoElements.forEach(element => {
+            element.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            if (minutes >= 20) {
+                element.style.color = 'red';
+            }
+        });
+    }, 1000);
+    chronoRunning = true;
+}
+
+// Arrête le chrono
+function stopChrono() {
+    if (chronoRunning) {
+        clearInterval(chrono);
+        chronoRunning = false;
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const storedType = localStorage.getItem('matchTypeKey');
-    if (storedType) {
-      document.getElementById('matchType').textContent = storedType;
-    }
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Charger les noms d'équipes depuis localStorage
-    const teamA = localStorage.getItem('teamAName') || 'TEAM A';
-    const teamB = localStorage.getItem('teamBName') || 'TEAM B';
-    
-    // Mettre à jour l'affichage
-    document.getElementById('teamAName').textContent = teamA;
-    document.getElementById('teamBName').textContent = teamB;
-    
-    // Mettre à jour les scores
-    document.getElementById('teamAScore').textContent = localStorage.getItem('teamAScore') || '0';
-    document.getElementById('teamBScore').textContent = localStorage.getItem('teamBScore') || '0';
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    const storedPeriod = localStorage.getItem('periodValue') || 'MT : 1';
-    document.getElementById('period').textContent = storedPeriod;
-});
-
-document.addEventListener('keydown', function(event) {
-    if (event.repeat) return; // Évite les répétitions si la touche est maintenue
-
-    switch (event.key.toLowerCase()) {
-        case '1': 
-        case 'a':
-            event.preventDefault(); // Empêche d'éventuels conflits avec les raccourcis du navigateur
-            startTimers();
-            break;
-        case '2': 
-        case 'z':
-            event.preventDefault();
-            stopTimers();
-            break;
-        case '3': 
-        case 'e':
-            event.preventDefault();
-            resetGameTimer();
-            break;
-        case '4': 
-        case 'r':
-            event.preventDefault();
-            setShotClock(24);
-            break;
-        case '5': 
-        case 't':
-            event.preventDefault();
-            setShotClock(14);
-            break;
-        case '6': 
-        case 'y':
-            event.preventDefault();
-            resetGame();
-            break;
-    }
-});
-
-// Mise à jour toutes les 100ms
-setInterval(updateDisplayScores, 100);
-
-// Informer la page parent que l'affichage est ouvert
-if (window.opener && !window.opener.closed) {
-    window.opener.displayWindow = window;
+// Mets à jour l'affichage du chrono
+function updateChronoDisplay() {
+    let minutes = parseInt(localStorage.getItem('minutes')) || 0;
+    let seconds = parseInt(localStorage.getItem('seconds')) || 0;
+    const chronoElements = document.querySelectorAll('#gameChrono');
+    chronoElements.forEach(element => {
+        element.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        if (minutes >= 20) {
+            element.style.color = 'red';
+        }
+    });
 }
+
+// Ajoute un écouteur d'événements pour le stockage
+window.addEventListener('storage', (e) => {
+    updateDisplay();
+});
+
+// Efface les données de localStorage lors du rechargement de la page de contrôle
+window.addEventListener('beforeunload', () => {
+    localStorage.removeItem('teamAScore');
+    localStorage.removeItem('teamBScore');
+    localStorage.removeItem('teamAYellowCards');
+    localStorage.removeItem('teamBYellowCards');
+    localStorage.removeItem('teamARedCards');
+    localStorage.removeItem('teamBRedCards');
+    localStorage.removeItem('minutes');
+    localStorage.removeItem('seconds');
+    localStorage.removeItem('teamAName');
+    localStorage.removeItem('teamBName');
+    localStorage.removeItem('matchType');
+});
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('teamA')) {
+        // Page de contrôle
+        document.getElementById('teamA').addEventListener('change', updateTeams);
+        document.getElementById('teamB').addEventListener('change', updateTeams);
+        document.getElementById('matchTypeSelector').addEventListener('change', updateMatchType);
+    }
+    updateDisplay();
+    updateChronoDisplay(); // Ajout de cette ligne pour s'assurer que le chrono est mis à jour au chargement de la page
+});
