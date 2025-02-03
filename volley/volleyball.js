@@ -112,41 +112,11 @@ function resetGameTimer() {
 
 function resetGame() {
     resetGameTimer();
-    teamAFoulCount = 0;
-    teamBFoulCount = 0;
     teamAScore = 0;
     teamBScore = 0;
-    teamAFoulCountElement.textContent = teamAFoulCount;
-    teamBFoulCountElement.textContent = teamBFoulCount;
-    teamAScoreElement.textContent = teamAScore;
-    teamBScoreElement.textContent = teamBScore;
+    updateScoreDisplay();
 }
 
-function setShotClock(seconds) {
-    shotClockSeconds = seconds;
-    shotClockMilliseconds = 0;
-    updateShotClockDisplay();
-}
-
-function addFoul(team) {
-    if (team === 'A') {
-        teamAFoulCount++;
-        teamAFoulCountElement.textContent = teamAFoulCount;
-    } else if (team === 'B') {
-        teamBFoulCount++;
-        teamBFoulCountElement.textContent = teamBFoulCount;
-    }
-}
-
-function supFoul(team) { 
-    if (team === 'A') {
-        teamAFoulCount--;
-        teamAFoulCountElement.textContent = teamAFoulCount;
-    } else if (team === 'B') {
-        teamBFoulCount--;
-        teamBFoulCountElement.textContent = teamBFoulCount;
-    }
-}
 
 function addScore(team, points) {
     if (team === 'A') {
@@ -168,9 +138,11 @@ function supScore(team, points) {
     }
 }
 
+
+
 // Fonction pour ouvrir l'affichage des scores
 function openScoreDisplay() {
-    window.open('affichage_score_basket.html', 'scoreDisplay');
+    window.open('affichage_score_volleyball.html', 'scoreDisplay');
 }
 
 // Fonction pour sélectionner le type de match
@@ -180,46 +152,17 @@ function updateMatchType() {
 }
 
 function updateTeams() {
-    const tA = document.getElementById('teamA').value;
-    const tB = document.getElementById('teamB').value;
-    localStorage.setItem('teamAKey', tA);
-    localStorage.setItem('teamBKey', tB);
-}
-
-
-function addSecond() {
-    // Ajouter une seconde au chrono principal
-    let gameTimer = document.getElementById('gameTimer');
-    let [minutes, seconds] = gameTimer.textContent.split(':');
-    let totalSeconds = parseInt(minutes) * 60 + parseFloat(seconds) + 1;
+    // Récupérer les valeurs des équipes
+    const teamA = document.getElementById('teamA').value;
+    const teamB = document.getElementById('teamB').value;
     
-    // Formater et mettre à jour
-    let newMinutes = Math.floor(totalSeconds / 60);
-    let newSeconds = (totalSeconds % 60).toFixed(1);
-    gameTimer.textContent = `${String(newMinutes).padStart(2, '0')}:${String(newSeconds).padStart(2, '0')}`;
-
-    // Ajouter une seconde au chrono de possession
-    let shotClock = document.getElementById('shotClock');
-    let shotClockTime = parseFloat(shotClock.textContent) + 1;
-    shotClock.textContent = shotClockTime.toFixed(1);
-
     // Mettre à jour l'affichage
-    updateDisplayScores();
-}
-
-function togglePeriod() {
-    const toggle = document.getElementById('periodToggle');
-    const periodValue = toggle.checked ? '2' : '1';
-    const periodText = `MT${periodValue}`;
+    document.getElementById('teamAName').textContent = teamA;
+    document.getElementById('teamBName').textContent = teamB;
     
-    // Mettre à jour l'affichage local
-    document.getElementById('period').textContent = periodText;
-    
-    // Sauvegarder dans localStorage pour l'autre interface
-    localStorage.setItem('periodValue', periodText);
-    
-    // Mettre à jour la période du match
-    matchPeriod = parseInt(periodValue);
+    // Sauvegarder dans localStorage
+    localStorage.setItem('teamAName', teamA);
+    localStorage.setItem('teamBName', teamB);
 }
 
 function updateDisplayScores() {
@@ -269,10 +212,17 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-const teamA = localStorage.getItem('teamAKey') || 'TEAM A';
-const teamB = localStorage.getItem('teamBKey') || 'TEAM B';
-document.getElementById('teamAName').textContent = teamA;
-document.getElementById('teamBName').textContent = teamB;
+    // Charger les noms d'équipes depuis localStorage
+    const teamA = localStorage.getItem('teamAName') || 'TEAM A';
+    const teamB = localStorage.getItem('teamBName') || 'TEAM B';
+    
+    // Mettre à jour l'affichage
+    document.getElementById('teamAName').textContent = teamA;
+    document.getElementById('teamBName').textContent = teamB;
+    
+    // Mettre à jour les scores
+    document.getElementById('teamAScore').textContent = localStorage.getItem('teamAScore') || '0';
+    document.getElementById('teamBScore').textContent = localStorage.getItem('teamBScore') || '0';
 });
 
 document.addEventListener('DOMContentLoaded', () => {
