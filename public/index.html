@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Scores - Coupe de l'Université</title>
+</head>
+<body>
+    <h1>Gestion des Scores</h1>
+
+    <h2>Choisir un sport</h2>
+    <select id="sportSelect" onchange="loadEquipes()">
+        <option value="">-- Sélectionner un sport --</option>
+    </select>
+
+    <h2>Choisir un terrain</h2>
+    <select id="terrainSelect">
+        <option value="">-- Sélectionner un terrain --</option>
+    </select>
+
+    <h2>Choisir les équipes</h2>
+    <select id="equipe1Select">
+        <option value="">-- Équipe 1 --</option>
+    </select>
+    <select id="equipe2Select">
+        <option value="">-- Équipe 2 --</option>
+    </select>
+
+    <script>
+        async function loadSports() {
+            const response = await fetch('http://localhost:3000/sports');
+            const data = await response.json();
+            const select = document.getElementById('sportSelect');
+
+            data.sports.forEach(sport => {
+                const option = document.createElement('option');
+                option.value = sport.id;
+                option.textContent = sport.nom;
+                select.appendChild(option);
+            });
+        }
+
+        async function loadTerrains() {
+            const response = await fetch('http://localhost:3000/terrains');
+            const data = await response.json();
+            const select = document.getElementById('terrainSelect');
+
+            data.terrains.forEach(terrain => {
+                const option = document.createElement('option');
+                option.value = terrain.id;
+                option.textContent = terrain.nom;
+                select.appendChild(option);
+            });
+        }
+
+        async function loadEquipes() {
+            const sportId = document.getElementById('sportSelect').value;
+            const equipe1Select = document.getElementById('equipe1Select');
+            const equipe2Select = document.getElementById('equipe2Select');
+
+            // Réinitialiser les listes
+            equipe1Select.innerHTML = '<option value="">-- Équipe 1 --</option>';
+            equipe2Select.innerHTML = '<option value="">-- Équipe 2 --</option>';
+
+            if (!sportId) return;
+
+            const response = await fetch(`http://localhost:3000/equipes/${sportId}`);
+            const data = await response.json();
+
+            data.equipes.forEach(equipe => {
+                const option1 = document.createElement('option');
+                option1.value = equipe.nom;
+                option1.textContent = equipe.nom;
+
+                const option2 = option1.cloneNode(true);
+
+                equipe1Select.appendChild(option1);
+                equipe2Select.appendChild(option2);
+            });
+        }
+
+        window.onload = async () => {
+            await loadSports();
+            await loadTerrains();
+        }
+    </script>
+</body>
+</html>

@@ -30,6 +30,13 @@ main {
     height: 30vh; /* Prend toute la hauteur de la page */
 }
 
+.scores-classement{
+    display: flex;
+    justify-content: center; /* Centre les boutons horizontalement */
+    align-items: center; /* Centre les boutons verticalement */
+    gap: 20px; /* Ajoute un espace entre les boutons */
+}
+
 
 button {
     background-color: #014065;
