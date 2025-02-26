@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Affichage Score Football</title>
+    <link rel="stylesheet" href="football.css">
+    <script src="football.js" defer></script>
+</head>
+<body>
+    <div class="score-board">
+        <div class="teams">
+            <div class="team" id="teamAName">TEAM A</div>
+            <div class="team" id="teamBName">TEAM B</div>
+        </div>
+        
+        <div class="score-container">
+            <div class="score">
+                <span id="teamAScore">0</span>
+                <span class="score-divider">-</span>
+                <span id="teamBScore">0</span>
+            </div>
+        </div>
+        
+        <div class="match-info">
+            <span class="remaining-time" id="gameChrono">00:00</span>
+            <span class="match-type" id="matchType">Barrages</span>
+        </div>
+
+        <div class="cards">
+            <div class="team-cards a">
+                <img src="../img/carton-jaune.png" alt="Yellow Card" class="card-icon">
+                <span id="teamAYellowCard">0</span>
+                <img src="../img/carton-rouge.png" alt="Red Card" class="card-icon">
+                <span id="teamARedCard">0</span>
+            </div>
+            <div class="team-cards b">
+                <img src="../img/carton-jaune.png" alt="Yellow Card" class="card-icon">
+                <span id="teamBYellowCard">0</span>
+                <img src="../img/carton-rouge.png" alt="Red Card" class="card-icon">
+                <span id="teamBRedCard">0</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

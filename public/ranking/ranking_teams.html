@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classement des Écoles - Coupe de l'Université</title>
+    <link rel="stylesheet" href="styles/ranking.css">
+    <script defer src="scripts/ranking.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Classement des Écoles</h1>
+        <label for="sport-select">Filtrer par sport :</label>
+        <select id="sport-select" onchange="filterBySport()">
+            <option value="all">Tous les sports</option>
+            <option value="football">Football</option>
+            <option value="handball">Handball</option>
+            <option value="basketball">Basketball</option>
+            <option value="volleyh">Volley H</option>
+            <option value="volleyf">Volley F</option>
+            <option value="badminton">Badminton</option>
+            <option value="petanque">Pétanque</option>
+            <option value="flechettes">Fléchettes</option>
+        </select>
+    </header>
+    
+    <main>
+        <section id="general-ranking">
+            <table class="ranking-table">
+                <thead>
+                    <tr>
+                        <th>Rang</th>
+                        <th>Équipe</th>
+                        <th>Points</th>
+                    </tr>
+                </thead>
+                <tbody id="general-ranking-body">
+                    <!-- Les données seront insérées ici dynamiquement via JavaScript -->
+                </tbody>
+            </table>
+        </section>
+        <button onclick="location.href='../index.html'">Retour</button>
+    </main>
+    
+    <footer>
+        Copyright &copy; Fédé UCL 2025 - Franck VALMONT
+    </footer>
+    
+    <script>
+        function filterBySport() {
+            const sport = document.getElementById('sport-select').value;
+            // Filtrer les données par sport
+        }
+    </script>
+</body>
+</html>

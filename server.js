@@ -1,54 +1,30 @@
 const express = require('express');
-const cors = require('cors');
-const db = require('./database');
-
+const path = require('path');
+const bodyParser = require('body-parser');
 const app = express();
-app.use(express.json());
-app.use(cors());
+const port = 3000;
 
-app.get('/sports', (req, res) => {
-  db.all('SELECT * FROM sports', [], (err, rows) => {
-    if (err) return res.status(400).json({ error: err.message });
-    res.json({ sports: rows });
-  });
+const liveMatches = [
+    { sport: 'Football', teamA: 'Équipe A', teamB: 'Équipe B', scoreA: 1, scoreB: 2, chrono: '45:00' },
+    { sport: 'Basketball', teamA: 'Équipe C', teamB: 'Équipe D', scoreA: 50, scoreB: 48, chrono: '30:00' },
+    { sport: 'Volleyball', teamA: 'Équipe E', teamB: 'Équipe F', scoreA: 2, scoreB: 1, chrono: '20:00' }
+];
+
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(bodyParser.json());
+
+app.get('/live-matches', (req, res) => {
+    res.json({ matches: liveMatches });
 });
 
-app.post('/sports', (req, res) => {
-  const { nom } = req.body;
-  db.run('INSERT INTO sports (nom) VALUES (?)', [nom], function(err) {
-    if (err) return res.status(400).json({ error: err.message });
-    res.json({ id: this.lastID });
-  });
+app.post('/api/update-match', (req, res) => {
+    const { matchId, team1, team2, team1Score, team2Score, winner, loser, round } = req.body;
+    // Mettre à jour la base de données avec les informations du match
+    // Exemple : db.updateMatch(matchId, { team1, team2, team1Score, team2Score, winner, loser, round });
+    console.log(`Match ${matchId} mis à jour : ${team1} ${team1Score} - ${team2Score} ${team2}`);
+    res.status(200).send('Match mis à jour');
 });
 
-app.get('/terrains', (req, res) => {
-  db.all('SELECT * FROM terrains', [], (err, rows) => {
-    if (err) return res.status(400).json({ error: err.message });
-    res.json({ terrains: rows });
-  });
+app.listen(port, () => {
+    console.log(`Serveur en cours d'exécution sur http://localhost:${port}`);
 });
-
-app.post('/terrains', (req, res) => {
-  const { nom } = req.body;
-  db.run('INSERT INTO terrains (nom) VALUES (?)', [nom], function(err) {
-    if (err) return res.status(400).json({ error: err.message });
-    res.json({ id: this.lastID });
-  });
-});
-
-app.get('/equipes/:sport_id', (req, res) => {
-  db.all('SELECT * FROM equipes WHERE sport_id = ?', [req.params.sport_id], (err, rows) => {
-    if (err) return res.status(400).json({ error: err.message });
-    res.json({ equipes: rows });
-  });
-});
-
-app.post('/equipes', (req, res) => {
-  const { sport_id, nom } = req.body;
-  db.run('INSERT INTO equipes (sport_id, nom) VALUES (?, ?)', [sport_id, nom], function(err) {
-    if (err) return res.status(400).json({ error: err.message });
-    res.json({ id: this.lastID });
-  });
-});
-
-app.listen(3000, () => console.log('Serveur démarré sur le port 3000'));
