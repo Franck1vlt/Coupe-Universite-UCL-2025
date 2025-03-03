@@ -1,0 +1,92 @@
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+}
+
+.controls {
+    margin: 20px 0;
+    padding: 20px;
+    background-color: #a9a9a9;
+    border-radius: 8px;
+}
+
+.team-input {
+    display: flex;
+    gap: 10px;
+}
+
+.ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.ranking-header {
+    display: grid;
+    grid-template-columns: 100px 1fr 100px;
+    background-color: #333;
+    color: white;
+    padding: 10px;
+    font-weight: bold;
+}
+
+.ranking-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 100px;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.highlight-1 { background-color: #ffd700; }
+.highlight-2 { background-color: #c0c0c0; }
+.highlight-3 { background-color: #cd7f32; }
+
+.points-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.add-points {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.remove-points {
+    background-color: #f44336;
+    color: white;
+}
+
+.add-points, .remove-points {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.add-points:hover, .remove-points:hover {
+    opacity: 0.9;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.back-button, .reset-button {
+    background-color: #ad0000;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    text-align: center;
+    margin: 0 10px;
+}

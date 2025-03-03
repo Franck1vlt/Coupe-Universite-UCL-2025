@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classement Ambiance - Coupe UCL 2025</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Classement Ambiance</h1>
+        </header>
+
+        <div class="controls">
+            <div class="team-input">
+                <select id="teamSelect">
+                    <option value="">Sélectionner une équipe</option>
+                    <option value="ESPAS-ESTICE">ESPAS-ESTICE</option>
+                    <option value="ESPOL">ESPOL</option>
+                    <option value="ESSLIL">ESSLIL</option>
+                    <option value="FGES">FGES</option>
+                    <option value="FLD">FLD</option>
+                    <option value="FLSH">FLSH</option>
+                    <option value="FMMS">FMMS</option>
+                    <option value="ICAM">ICAM</option>
+                    <option value="IESEG">IESEG</option>
+                    <option value="IKPO">IKPO</option>
+                    <option value="ISTC">ISTC</option>
+                    <option value="JUNIA">JUNIA</option>
+                    <option value="LiDD">LiDD</option>
+                    <option value="PINKTURA">PINKTURA</option>
+                    <option value="USCHOOL">USCHOOL</option>
+                </select>
+                <input type="number" id="pointsInput" placeholder="Points" min="0" max="100">
+                <div class="points-buttons">
+                    <button onclick="addPoints()" class="add-points">+ Ajouter</button>
+                    <button onclick="removePoints()" class="remove-points">- Retirer</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="ranking-container">
+            <div class="ranking-table">
+                <div class="ranking-header">
+                    <div class="rank">Position</div>
+                    <div class="team">Équipe</div>
+                    <div class="points">Points</div>
+                </div>
+                <div id="rankingList"></div>
+            </div>
+        </div>
+
+        <div class="button-container">
+            <button class="reset-button" onclick="resetRanking()">Réinitialiser</button>
+            <button class="back-button" onclick="window.location.href='../index.html'">Retour</button>
+        </div>
+    </div>
+    <script src="ambiance.js"></script>
+</body>
+</html>

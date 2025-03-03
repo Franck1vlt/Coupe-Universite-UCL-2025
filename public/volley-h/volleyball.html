@@ -7,12 +7,380 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header>
-        <h1>Volley Ball H</h1>
-    </header>
-    <main>
-        <button onclick="location.href='marquage.html'">Table de Marquage</button>
-        <button onclick="location.href='affichage_score.html'">Affichage des Scores</button>
-    </main>
+    <div class="background-lines"></div>
+    
+    <div class="container">
+        <header>
+            <h1>Volley Ball H</h1>
+            <div class="subtitle">Phase à élimination directe</div>
+        </header>
+        
+        <div class="tournament-container">
+            <div class="bracket" id="bracket">
+                <!-- Quarts de finale gauche -->
+                <div class="round">
+                    <div class="round-title">Quarts de finale</div>
+                    
+                    <div class="match-wrapper">
+                        <div class="match" data-match-id="1" data-round="quarterfinal" data-position="1">
+                            <div class="team" data-team-id="1">
+                                <div class="team-name"><div class="team-logo"></div>École A</div>
+                                <div class="score">-</div>
+                            </div>
+                            <div class="team" data-team-id="2">
+                                <div class="team-name"><div class="team-logo"></div>École B</div>
+                                <div class="score">-</div>
+                            </div>
+                        </div>
+                        <div class="connector top"></div>
+                    </div>
+                    
+                    <div class="match-wrapper">
+                        <div class="match" data-match-id="2" data-round="quarterfinal" data-position="2">
+                            <div class="team" data-team-id="3">
+                                <div class="team-name"><div class="team-logo"></div>Faculté C</div>
+                                <div class="score">-</div>
+                            </div>
+                            <div class="team" data-team-id="4">
+                                <div class="team-name"><div class="team-logo"></div>Faculté D</div>
+                                <div class="score">-</div>
+                            </div>
+                        </div>
+                        <div class="connector bottom"></div>
+                    </div>
+                    
+                    <div class="match-wrapper">
+                        <div class="match" data-match-id="3" data-round="quarterfinal" data-position="3">
+                            <div class="team" data-team-id="5">
+                                <div class="team-name"><div class="team-logo"></div>École E</div>
+                                <div class="score">-</div>
+                            </div>
+                            <div class="team" data-team-id="6">
+                                <div class="team-name"><div class="team-logo"></div>École F</div>
+                                <div class="score">-</div>
+                            </div>
+                        </div>
+                        <div class="connector top"></div>
+                    </div>
+                    
+                    <div class="match-wrapper">
+                        <div class="match" data-match-id="4" data-round="quarterfinal" data-position="4">
+                            <div class="team" data-team-id="7">
+                                <div class="team-name"><div class="team-logo"></div>Faculté G</div>
+                                <div class="score">-</div>
+                            </div>
+                            <div class="team" data-team-id="8">
+                                <div class="team-name"><div class="team-logo"></div>Faculté H</div>
+                                <div class="score">-</div>
+                            </div>
+                        </div>
+                        <div class="connector bottom"></div>
+                    </div>
+                </div>
+                
+                <!-- Demi-finales gauche -->
+                <div class="round2">
+                    <div class="round-title">Demi-finales</div>
+                    
+                    <div class="match-wrapper">
+                        <div class="match" data-match-id="5" data-round="semifinal" data-position="1">
+                            <div class="team">
+                                <div class="team-name">À déterminer</div>
+                                <div class="score">-</div>
+                            </div>
+                            <div class="team">
+                                <div class="team-name">À déterminer</div>
+                                <div class="score">-</div>
+                            </div>
+                        </div>
+                        <div class="connector top"></div>
+                    </div>
+                    
+                    <div class="match-wrapper">
+                        <div class="match" data-match-id="6" data-round="semifinal" data-position="2">
+                            <div class="team">
+                                <div class="team-name">À déterminer</div>
+                                <div class="score">-</div>
+                            </div>
+                            <div class="team">
+                                <div class="team-name">À déterminer</div>
+                                <div class="score">-</div>
+                            </div>
+                        </div>
+                        <div class="connector bottom"></div>
+                    </div>
+                </div>
+                
+                <!-- Finale -->
+                <div class="round3">
+                    <div class="round-title">Finale</div>
+                    
+                    <div class="match-wrapper">
+                        <div class="match" data-match-id="7" data-round="final" data-position="1">
+                            <div class="team">
+                                <div class="team-name">À déterminer</div>
+                                <div class="score">-</div>
+                            </div>
+                            <div class="team">
+                                <div class="team-name">À déterminer</div>
+                                <div class="score">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Petite Finale -->
+                    <div class="small-final">
+                        <div class="small-final-title">Match pour la 3ème place</div>
+                        <div class="match" data-match-id="8" data-round="smallfinal" data-position="1">
+                            <div class="team">
+                                <div class="team-name">À déterminer</div>
+                                <div class="score">-</div>
+                            </div>
+                            <div class="team">
+                                <div class="team-name">À déterminer</div>
+                                <div class="score">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Champion -->
+                <div class="round4">
+                    <div class="round-title">Champion</div>
+                    
+                    <div class="trophy">
+                        <div class="trophy-icon">🏆</div>
+                        <div class="champion" id="champion">À déterminer</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="reset-button" id="resetTournament">Réinitialiser le tournoi</button>
+            <button class="back-button" onclick="window.history.back()">Retour</button>
+        </div>
+    </div>
+    
+    <script>
+        // Données des équipes et des matchs
+        const teams = {
+            1: { id: 1, name: "École A", logo: "" },
+            2: { id: 2, name: "École B", logo: "" },
+            3: { id: 3, name: "Faculté C", logo: "" },
+            4: { id: 4, name: "Faculté D", logo: "" },
+            5: { id: 5, name: "École E", logo: "" },
+            6: { id: 6, name: "École F", logo: "" },
+            7: { id: 7, name: "Faculté G", logo: "" },
+            8: { id: 8, name: "Faculté H", logo: "" }
+        };
+        
+        // Structure du tournoi
+        const tournamentStructure = {
+            quarterfinal: {
+                1: { nextMatch: 5, nextPosition: 1, teams: [null, null] },
+                2: { nextMatch: 5, nextPosition: 2, teams: [null, null] },
+                3: { nextMatch: 6, nextPosition: 1, teams: [null, null] },
+                4: { nextMatch: 6, nextPosition: 2, teams: [null, null] }
+            },
+            semifinal: {
+                1: { nextMatch: 7, nextPosition: 1, loserNextMatch: 8, loserNextPosition: 1, teams: [null, null] },
+                2: { nextMatch: 7, nextPosition: 2, loserNextMatch: 8, loserNextPosition: 2, teams: [null, null] }
+            },
+            final: {
+                1: { championPosition: true, teams: [null, null] }
+            },
+            smallfinal: {
+                1: { thirdPlacePosition: true, teams: [null, null] }
+            }
+        };
+        
+        // État du tournoi
+        let tournamentState = JSON.parse(localStorage.getItem('tournamentState')) || {
+            matches: {},
+            currentRound: "quarterfinal"
+        };
+        
+        // Fonction pour sauvegarder l'état du tournoi
+        function saveState() {
+            localStorage.setItem('tournamentState', JSON.stringify(tournamentState));
+        }
+        
+        // Initialiser les matchs des quarts de finale
+        function initQuarterFinals() {
+            // Pour chaque match de quart de finale
+            for (let i = 1; i <= 4; i++) {
+                const matchElement = document.querySelector(`[data-match-id="${i}"]`);
+                const teamElements = matchElement.querySelectorAll('.team');
+                
+                // Affiche les équipes initiales dans les quarts de finale
+                for (let j = 0; j < 2; j++) {
+                    const teamIndex = (i - 1) * 2 + j + 1;
+                    teamElements[j].setAttribute('data-team-id', teamIndex);
+                    teamElements[j].querySelector('.team-name').innerHTML = 
+                        `<div class="team-logo"></div>${teams[teamIndex].name}`;
+                }
+                
+                // Initialiser la structure du match si ce n'est pas déjà fait
+                if (!tournamentState.matches[i]) {
+                    tournamentState.matches[i] = {
+                        round: "quarterfinal",
+                        position: i,
+                        team1: { id: (i - 1) * 2 + 1, score: null },
+                        team2: { id: (i - 1) * 2 + 2, score: null },
+                        winner: null,
+                        loser: null,
+                        completed: false
+                    };
+                }
+            }
+            
+            // Sauvegarder l'état initial
+            saveState();
+        }
+        
+        // Mettre à jour l'affichage des matchs
+        function updateMatchDisplay() {
+            // Pour chaque match enregistré
+            Object.keys(tournamentState.matches).forEach(matchId => {
+                const match = tournamentState.matches[matchId];
+                const matchElement = document.querySelector(`[data-match-id="${matchId}"]`);
+                
+                if (!matchElement) return;
+                
+                const teamElements = matchElement.querySelectorAll('.team');
+                
+                // Mettre à jour les équipes et les scores
+                if (match.team1.id) {
+                    const team1 = teams[match.team1.id] || { name: `Équipe ${match.team1.id}` };
+                    teamElements[0].querySelector('.team-name').innerHTML = 
+                        `<div class="team-logo"></div>${team1.name}`;
+                    teamElements[0].setAttribute('data-team-id', match.team1.id);
+                    
+                    if (match.team1.score !== null) {
+                        teamElements[0].querySelector('.score').textContent = match.team1.score;
+                    }
+                }
+                
+                if (match.team2.id) {
+                    const team2 = teams[match.team2.id] || { name: `Équipe ${match.team2.id}` };
+                    teamElements[1].querySelector('.team-name').innerHTML = 
+                        `<div class="team-logo"></div>${team2.name}`;
+                    teamElements[1].setAttribute('data-team-id', match.team2.id);
+                    
+                    if (match.team2.score !== null) {
+                        teamElements[1].querySelector('.score').textContent = match.team2.score;
+                    }
+                }
+                
+                // Mettre en évidence le vainqueur et le perdant
+                if (match.completed) {
+                    if (match.winner === match.team1.id) {
+                        teamElements[0].classList.add('winner');
+                        teamElements[1].classList.add('loser');
+                    } else {
+                        teamElements[0].classList.add('loser');
+                        teamElements[1].classList.add('winner');
+                    }
+                }
+            });
+            
+            // Mettre à jour le champion
+            const finalMatch = tournamentState.matches[7];
+            if (finalMatch && finalMatch.completed) {
+                const champion = teams[finalMatch.winner] || { name: `Équipe ${finalMatch.winner}` };
+                document.getElementById('champion').textContent = champion.name;
+            }
+        }
+        
+        // Progresser vers le prochain tour
+        function advanceToNextMatch(matchId, winnerId, loserId) {
+            const match = tournamentState.matches[matchId];
+            const roundInfo = tournamentStructure[match.round][match.position];
+            
+            // Vérifier s'il y a un match suivant
+            if (roundInfo.nextMatch) {
+                // Initialiser le match suivant s'il n'existe pas encore
+                if (!tournamentState.matches[roundInfo.nextMatch]) {
+                    tournamentState.matches[roundInfo.nextMatch] = {
+                        round: getNextRound(match.round),
+                        position: Math.ceil(match.position / 2),
+                        team1: { id: null, score: null },
+                        team2: { id: null, score: null },
+                        winner: null,
+                        loser: null,
+                        completed: false
+                    };
+                }
+                
+                // Placer le vainqueur dans le match suivant
+                const nextMatch = tournamentState.matches[roundInfo.nextMatch];
+                if (roundInfo.nextPosition === 1) {
+                    nextMatch.team1.id = winnerId;
+                } else {
+                    nextMatch.team2.id = winnerId;
+                }
+            }
+            
+            // Gérer les perdants pour la petite finale
+            if (roundInfo.loserNextMatch && loserId) {
+                if (!tournamentState.matches[roundInfo.loserNextMatch]) {
+                    tournamentState.matches[roundInfo.loserNextMatch] = {
+                        round: "smallfinal",
+                        position: 1,
+                        team1: { id: null, score: null },
+                        team2: { id: null, score: null },
+                        winner: null,
+                        loser: null,
+                        completed: false
+                    };
+                }
+                
+                const smallFinalMatch = tournamentState.matches[roundInfo.loserNextMatch];
+                if (roundInfo.loserNextPosition === 1) {
+                    smallFinalMatch.team1.id = loserId;
+                } else {
+                    smallFinalMatch.team2.id = loserId;
+                }
+            }
+            
+            saveState();
+            updateMatchDisplay();
+        }
+        
+        // Obtenir le prochain tour
+        function getNextRound(round) {
+            const rounds = {
+                "quarterfinal": "semifinal",
+                "semifinal": "final"
+            };
+            return rounds[round] || null;
+        }
+        
+        // Rediriger vers la page de marquage
+        function redirectToMatchPage(matchId) {
+            const match = tournamentState.matches[matchId];
+            const team1 = teams[match.team1.id];
+            const team2 = teams[match.team2.id];
+            const round = match.round;
+            window.location.href = `marquage.html?matchId=${matchId}&team1=${team1.name}&team2=${team2.name}&round=${round}`;
+        }
+        
+        // Initialiser les matchs des quarts de finale
+        initQuarterFinals();
+
+        // Mettre à jour l'affichage des matchs
+        updateMatchDisplay();
+
+        // Gestionnaires d'événements
+        document.querySelectorAll('.match-wrapper').forEach(matchWrapper => {
+            matchWrapper.addEventListener('click', function() {
+                const matchId = this.querySelector('.match').getAttribute('data-match-id');
+                redirectToMatchPage(matchId);
+            });
+        });
+
+        document.getElementById('resetTournament').addEventListener('click', resetTournament);
+    </script>
 </body>
 </html>

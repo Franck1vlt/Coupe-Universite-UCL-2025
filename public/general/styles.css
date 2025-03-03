@@ -1,0 +1,147 @@
+/* ...Réutiliser les styles de base d'ambiance.css... */
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+}
+
+.filters {
+    margin: 20px 0;
+    padding: 20px;
+    background-color: #a9a9a9;
+    border-radius: 8px;
+}
+
+#categoryFilter {
+    width: 100%;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    font-size: 1rem;
+}
+
+.view-select {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: white;
+    cursor: pointer;
+}
+
+.view-select optgroup {
+    font-weight: bold;
+    font-style: normal;
+    padding: 8px 0;
+}
+
+.view-select option {
+    padding: 8px;
+}
+
+.ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: white;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.ranking-header {
+    display: grid;
+    grid-template-columns: 80px 1fr 120px 120px 120px;
+    background-color: #333;
+    color: white;
+    padding: 15px;
+    font-weight: bold;
+}
+
+.ranking-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 120px 120px 120px;
+    padding: 12px 15px;
+    border-bottom: 1px solid #ddd;
+    align-items: center;
+}
+
+.points-detail {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.points {
+    text-align: center;
+}
+
+.total-points {
+    font-weight: bold;
+    color: #2196F3;
+}
+
+.highlight-1 { 
+    background: linear-gradient(45deg, #FFD700, #FFF7DE);
+    font-weight: bold;
+}
+
+.highlight-2 { 
+    background: linear-gradient(45deg, #C0C0C0, #F5F5F5);
+    font-weight: bold;
+}
+
+.highlight-3 { 
+    background: linear-gradient(45deg, #CD7F32, #FFC9A3);
+    font-weight: bold;
+}
+
+.ranking-view {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.ranking-view.hidden {
+    opacity: 0;
+    display: none;
+}
+
+.back-button {
+    display: block;
+    width: 200px;
+    margin: 30px auto 0;
+    padding: 12px 24px;
+    background-color: #ad0000;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+    background-color: #800000;
+}
+
+@media (max-width: 768px) {
+    .ranking-header, .ranking-row {
+        font-size: 0.9rem;
+        grid-template-columns: 60px 1fr 90px 90px 90px;
+    }
+}
+
+@media (max-width: 480px) {
+    .ranking-header, .ranking-row {
+        font-size: 0.8rem;
+        padding: 8px;
+    }
+}
+

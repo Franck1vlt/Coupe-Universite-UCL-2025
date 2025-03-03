@@ -59,41 +59,15 @@ h1 {
     justify-content: center;
     position: relative;
     margin-top: 40px;
-    padding-top: 20px;
 }
 
 .bracket {
     display: flex;
-    justify-content: center;
+    justify-content: space-around;
     width: 100%;
-    gap: 50px;
 }
 
 .round {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    min-width: 200px;
-    margin: 0 10px;
-}
-
-.round2 {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-width: 200px;
-    margin: 0 10px;
-}
-
-.round3 {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    min-width: 200px;
-    margin: 0 10px;
-}
-
-.round4 {
     display: flex;
     flex-direction: column;
     justify-content: space-around;
@@ -127,60 +101,12 @@ h1 {
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    position: relative;
 }
 
 .match:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     border-color: var(--highlight-color);
-}
-
-.match::before {
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 12px;
-    padding: 2px 8px;
-    border-radius: 10px;
-    white-space: nowrap;
-}
-
-.match.à-venir::before {
-    content: "À venir";
-    background-color: #f0f0f0;
-    color: #666;
-}
-
-.match.en-cours::before {
-    content: "En cours";
-    background-color: #fff3cd;
-    color: #856404;
-}
-
-.match.terminé::before {
-    content: "Terminé";
-    background-color: #d4edda;
-    color: #155724;
-}
-
-.match.a-venir::before {
-    content: "À venir";
-    background-color: #f0f0f0;
-    color: #666;
-}
-
-.match.en-cours::before {
-    content: "En cours";
-    background-color: #fff3cd;
-    color: #856404;
-}
-
-.match.termine::before {
-    content: "Terminé";
-    background-color: #d4edda;
-    color: #155724;
 }
 
 .team {
@@ -196,33 +122,20 @@ h1 {
 }
 
 .team.winner {
-    background-color: green; /* Couleur verte pour le gagnant */
+    background-color: var(--winner-color);
     color: var(--secondary-color);
     font-weight: bold;
 }
 
 .team.loser {
-    background-color: red; /* Couleur rouge pour le perdant */
-    color: var(--secondary-color);
-}
-
-.team.winner .score {
-    color: green;
-    font-weight: bold;
-}
-
-.team.loser .score {
-    color: red;
-    font-weight: bold;
+    color: rgba(255, 255, 255, 0.7);
 }
 
 .team-logo {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     margin-right: 8px;
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
+    background-color: rgba(255, 255, 255, 0.2);
     border-radius: 50%;
 }
 
@@ -427,7 +340,7 @@ h1 {
     background-color: var(--highlight-color);
 }
 
-.reset-button, .back-button {
+.reset-button {
     background-color: #e74c3c;
     color: white;
     border: none;
@@ -436,159 +349,4 @@ h1 {
     cursor: pointer;
     border-radius: 4px;
     font-weight: bold;
-}
-
-.loser-bracket {
-  margin-top: 40px;
-  padding-top: 20px;
-  border-top: 2px dashed var(--border-color);
-}
-
-.qualification-round {
-  margin-right: 30px;
-}
-
-.qualification-round .match-wrapper {
-  margin-bottom: 30px;
-}
-
-/* Mise à jour des connecteurs pour inclure les nouveaux matches */
-.loser-bracket .connector {
-  position: absolute;
-  right: -25px;
-  width: 25px;
-  border-top: 2px solid var(--border-color);
-  opacity: 0.5;
-}
-
-.phase-selector {
-  position: absolute;
-  left: 20px;
-  top: 20px;
-}
-
-.phase-select {
-  padding: 8px 15px;
-  font-size: 1rem;
-  border: 2px solid var(--border-color);
-  border-radius: 5px;
-  background-color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.phase-select:hover {
-  border-color: var(--highlight-color);
-}
-
-.phase-select:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
-}
-
-.phase-content {
-  display: none;
-  width: 100%;
-}
-
-.phase-content {
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.ranking-container {
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.ranking-table {
-  width: 100%;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-}
-
-.ranking-row {
-  display: grid;
-  grid-template-columns: 80px 1fr 100px;
-  padding: 15px 20px;
-  align-items: center;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.ranking-row.header {
-  background-color: var(--highlight-color);
-  color: white;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.highlight-1 {
-  background: linear-gradient(45deg, #FFD700, #FFF7DE);
-  font-weight: bold;
-}
-
-.highlight-2 {
-  background: linear-gradient(45deg, #C0C0C0, #F5F5F5);
-  font-weight: bold;
-}
-
-.highlight-3 {
-  background: linear-gradient(45deg, #CD7F32, #FFC9A3);
-  font-weight: bold;
-}
-
-.classification-container {
-  display: flex;
-  flex-direction: column;
-  gap: 40px;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.classification-container .round {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.phase-content {
-  display: none;
-}
-
-.team.winner {
-    background-color: green; /* Couleur verte pour le gagnant */
-    color: var(--secondary-color);
-    font-weight: bold;
-}
-
-.team.loser {
-    background-color: red; /* Couleur rouge pour le perdant */
-    color: var(--secondary-color);
-}
-
-#final-phase {
-    display: flex;
-    width: 100%;
-}
-
-#final-phase .bracket {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    width: 100%;
-    gap: 20px;
-}
-
-#final-phase .round {
-    display: flex;
-    flex-direction: column;
 }

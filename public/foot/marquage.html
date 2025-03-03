@@ -139,18 +139,21 @@
       </div>
     </div>
   </main>
-  <div style="text-align: center; margin-top: 20px;">
-    <button onclick="location.href='../index.html'">Retour</button>
-  </div>
   <script>
+    function updateMatchType() {
+      const matchTypeSelector = document.getElementById('matchTypeSelector');
+      const matchType = matchTypeSelector.options[matchTypeSelector.selectedIndex].text;
+      document.getElementById('matchType').textContent = matchType;
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const team1Name = urlParams.get('team1');
     const team2Name = urlParams.get('team2');
-    const round = urlParams.get('round');
+    const matchType = urlParams.get('matchType');
 
     document.getElementById('teamA').value = team1Name;
     document.getElementById('teamB').value = team2Name;
-    document.getElementById('matchTypeSelector').value = round;
+    document.getElementById('matchTypeSelector').value = matchType;
     document.getElementById('matchGroundSelector').value = '1';
 
     updateTeams();
