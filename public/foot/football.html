@@ -3,19 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Coupe Universitaire</title>
+  <title>Coupe Universitaire - Football</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="tournament.js"></script>
+  <!-- Dans styles.css, pensez à définir par exemple : 
+       .phase-content { display: flex; } 
+       .hidden { display: none !important; }
+  -->
 </head>
 <body>
   <div class="background-lines"></div>
-  
   <div class="container">
     <header>
       <div class="phase-selector">
         <select id="phaseSelect" class="phase-select">
           <option value="qualification">Qualifications</option>
-          <option value="final">Phase Finale</option> <!-- Changé de "final-phase" à "final" -->
+          <option value="final" selected>Phase Finale</option>
           <option value="classification">Matchs de Classement</option>
           <option value="ranking">Classement Final</option>
         </select>
@@ -25,11 +27,10 @@
     </header>
     
     <div class="tournament-container">
-      <!-- Section Qualifications -->
+      <!-- SECTION QUALIFICATIONS -->
       <div class="bracket phase-content" id="qualification-phase">
         <div class="round qualification-round">
           <div class="round-title">Qualifications</div>
-          
           <!-- Match 1 -->
           <div class="match-wrapper">
             <div class="match" data-match-id="1" data-match-type="qualification">
@@ -44,7 +45,6 @@
             </div>
             <div class="connector right"></div>
           </div>
-
           <!-- Match 2 -->
           <div class="match-wrapper">
             <div class="match" data-match-id="2" data-match-type="qualification">
@@ -59,7 +59,6 @@
             </div>
             <div class="connector right"></div>
           </div>
-
           <!-- Match 3 -->
           <div class="match-wrapper">
             <div class="match" data-match-id="3" data-match-type="qualification">
@@ -74,7 +73,6 @@
             </div>
             <div class="connector right"></div>
           </div>
-
           <!-- Match 4 -->
           <div class="match-wrapper">
             <div class="match" data-match-id="4" data-match-type="qualification">
@@ -92,12 +90,11 @@
         </div>
       </div>
 
-      <!-- Section Phase Finale -->
+      <!-- SECTION PHASE FINALE -->
       <div class="bracket phase-content" id="final-phase">
         <!-- Quarts de finale -->
         <div class="round">
           <div class="round-title">Quarts de finale</div>
-          
           <div class="match-wrapper">
             <div class="match" data-match-id="5" data-match-type="quarterfinal" data-position="1">
               <div class="team" data-team-id="1">
@@ -111,7 +108,6 @@
             </div>
             <div class="connector top"></div>
           </div>
-          
           <div class="match-wrapper">
             <div class="match" data-match-id="6" data-match-type="quarterfinal" data-position="2">
               <div class="team" data-team-id="3">
@@ -125,7 +121,6 @@
             </div>
             <div class="connector bottom"></div>
           </div>
-          
           <div class="match-wrapper">
             <div class="match" data-match-id="7" data-match-type="quarterfinal" data-position="3">
               <div class="team" data-team-id="5">
@@ -133,13 +128,12 @@
                 <div class="score">-</div>
               </div>
               <div class="team" data-team-id="6">
-                <div class="team-name"><div class="team-logo"></div>ISEG</div>
+                <div class="team-name"><div class="team-logo"></div>IESEG</div>
                 <div class="score">-</div>
               </div>
             </div>
             <div class="connector top"></div>
           </div>
-          
           <div class="match-wrapper">
             <div class="match" data-match-id="8" data-match-type="quarterfinal" data-position="4">
               <div class="team" data-team-id="7">
@@ -154,77 +148,68 @@
             <div class="connector bottom"></div>
           </div>
         </div>
-
         <!-- Demi-finales -->
         <div class="round2">
           <div class="round-title">Demi-finales</div>
-          
           <div class="match-wrapper">
-            <div class="match" data-match-id="9" data-match-type="semifinal" data-position="1">
+            <div class="match" data-match-id="12" data-match-type="semifinal" data-position="1">
               <div class="team">
                 <div class="team-name">À déterminer</div>
-                <div class="score">-</div>
+                <div class="score">0</div>
               </div>
               <div class="team">
                 <div class="team-name">À déterminer</div>
-                <div class="score">-</div>
+                <div class="score">0</div>
               </div>
             </div>
             <div class="connector top"></div>
           </div>
-          
           <div class="match-wrapper">
-            <div class="match" data-match-id="10" data-match-type="semifinal" data-position="2">
+            <div class="match" data-match-id="13" data-match-type="semifinal" data-position="2">
               <div class="team">
                 <div class="team-name">À déterminer</div>
-                <div class="score">-</div>
+                <div class="score">0</div>
               </div>
               <div class="team">
                 <div class="team-name">À déterminer</div>
-                <div class="score">-</div>
+                <div class="score">0</div>
               </div>
             </div>
             <div class="connector bottom"></div>
           </div>
         </div>
-        
-        <!-- Finale -->
+        <!-- Finale & Petite Finale -->
         <div class="round3">
           <div class="round-title">Finale</div>
-          
           <div class="match-wrapper">
-            <div class="match" data-match-id="11" data-match-type="final" data-position="1">
+            <div class="match" data-match-id="15" data-match-type="final" data-position="1">
               <div class="team">
                 <div class="team-name">À déterminer</div>
-                <div class="score">-</div>
+                <div class="score">0</div>
               </div>
               <div class="team">
                 <div class="team-name">À déterminer</div>
-                <div class="score">-</div>
+                <div class="score">0</div>
               </div>
             </div>
           </div>
-          
-          <!-- Petite Finale -->
           <div class="small-final">
             <div class="small-final-title">Match pour la 3ème place</div>
-            <div class="match" data-match-id="12" data-match-type="smallfinal" data-position="1">
+            <div class="match" data-match-id="14" data-match-type="smallfinal" data-position="1">
               <div class="team">
                 <div class="team-name">À déterminer</div>
-                <div class="score">-</div>
+                <div class="score">0</div>
               </div>
               <div class="team">
                 <div class="team-name">À déterminer</div>
-                <div class="score">-</div>
+                <div class="score">0</div>
               </div>
             </div>
           </div>
         </div>
-        
         <!-- Champion -->
         <div class="round4">
           <div class="round-title">Champion</div>
-          
           <div class="trophy">
             <div class="trophy-icon">🏆</div>
             <div class="champion" id="champion">À déterminer</div>
@@ -232,22 +217,39 @@
         </div>
       </div>
 
-      <!-- Section Matches de Classement -->
+      <!-- SECTION MATCHS DE CLASSEMENT -->
       <div class="bracket phase-content" id="classification-phase">
         <div class="classification-container">
+          <!-- Demi-finales de classement (entre perdants des quarts) -->
           <div class="round">
-            <div class="round-title">5-6ème places</div>
+            <div class="round-title">Demi-finales de classement</div>
             <div class="match-wrapper">
-              <div class="match" data-match-id="15" data-match-type="classification_final">
-                <div class="team"><div class="team-name">5ème place</div><div class="score">-</div></div>
-                <div class="team"><div class="team-name">6ème place</div><div class="score">-</div></div>
+              <div class="match" data-match-id="9" data-match-type="classification_semifinal">
+                <div class="team"><div class="team-name">Perdant QF1</div><div class="score">-</div></div>
+                <div class="team"><div class="team-name">Perdant QF2</div><div class="score">-</div></div>
+              </div>
+            </div>
+            <div class="match-wrapper">
+              <div class="match" data-match-id="10" data-match-type="classification_semifinal">
+                <div class="team"><div class="team-name">Perdant QF3</div><div class="score">-</div></div>
+                <div class="team"><div class="team-name">Perdant QF4</div><div class="score">-</div></div>
+              </div>
+            </div>
+          </div>
+          <!-- Match pour la 5ème place -->
+          <div class="round">
+            <div class="round-title">5ème - 6ème places</div>
+            <div class="match-wrapper">
+              <div class="match" data-match-id="11" data-match-type="classification_final">
+                <div class="team"><div class="team-name">Vainqueur SF1</div><div class="score">-</div></div>
+                <div class="team"><div class="team-name">Vainqueur SF2</div><div class="score">-</div></div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Section Classement -->
+      <!-- SECTION CLASSEMENT FINAL -->
       <div class="bracket phase-content" id="ranking-phase">
         <div class="ranking-container">
           <div class="round-title">Classement Final</div>
@@ -266,150 +268,36 @@
     </div>
     
     <div style="text-align: center;">
-      <button class="reset-button" id="resetTournament">Réinitialiser le tournoi</button>
+      <button class="reset-button" id="resetTournament" onclick="resetTournament()">Réinitialiser le tournoi</button>
+      <button onclick="simulateTournament()">Simuler la compétition</button>
       <button class="back-button" onclick="window.location.href='../index.html'">Retour</button>
     </div>
   </div>
+  
+  <script src="tournament.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const phaseSelect = document.getElementById('phaseSelect');
       const phaseContents = document.querySelectorAll('.phase-content');
-
+      
       phaseSelect.addEventListener('change', function() {
         const selectedPhase = phaseSelect.value;
-        console.log('Selected Phase:', selectedPhase);
-
         phaseContents.forEach(function(content) {
+          // Utilisation de la classe CSS 'hidden' pour masquer/afficher
           if (content.id === selectedPhase + '-phase') {
-            content.style.display = 'block';
-            // Vérifier si l'élément .bracket existe avant d'accéder à son style
-            const bracket = content.querySelector('.bracket');
-            if (bracket && selectedPhase === 'final') {
-              bracket.style.display = 'flex';
-            }
+            content.classList.remove('hidden');
           } else {
-            content.style.display = 'none';
+            content.classList.add('hidden');
           }
         });
-
         if (selectedPhase === 'ranking') {
-          updateRanking();
+          updateRankingDisplay();
         }
       });
-
-      // Définir et déclencher l'affichage initial
-      phaseSelect.value = 'final';
+      
+      // Affichage initial (la phase sélectionnée dans le menu est affichée)
       phaseSelect.dispatchEvent(new Event('change'));
     });
-
-    function updateRanking() {
-      const rankings = calculateRankings();
-      const rankingList = document.getElementById('rankingList');
-      rankingList.innerHTML = '';
-
-      rankings.forEach((team, index) => {
-        const position = index + 1;
-        rankingList.innerHTML += `
-          <div class="ranking-row ${position <= 3 ? 'highlight-' + position : ''}">
-            <div class="rank">${position}</div>
-            <div class="team-name">${team.name}</div>
-            <div class="points">${team.points}</div>
-          </div>
-        `;
-      });
-
-      console.log('Updated Rankings:', rankings);
-    }
-
-    function calculateRankings() {
-      let rankings = [];
-      const matches = tournamentState.matches;
-
-      // Points fixes selon la position finale
-      const positionPoints = {
-        1: 50,  // Champion
-        2: 40,  // Finaliste
-        3: 35,  // 3ème place
-        4: 30,  // 4ème place
-        5: 25,  // 5ème place
-        6: 20,  // 6ème place
-        7: 10,  // 7èmes places (ex-aequo)
-        9: 5    // 9èmes places (perdants qualifications)
-      };
-
-      // Ajouter toutes les équipes
-      Object.values(teams).forEach(team => {
-        rankings.push({
-          id: team.id,
-          name: team.name,
-          points: 0,
-          position: null
-        });
-      });
-
-      // Traiter les matches pour déterminer les positions
-      Object.values(matches).forEach(match => {
-        if (match.completed) {
-          const winner = rankings.find(team => team.id === match.winner);
-          const loser = rankings.find(team => team.id === match.loser);
-
-          switch(match.matchType) {
-            case 'final':
-              if (winner) {
-                winner.points = positionPoints[1];
-                winner.position = 1;
-              }
-              if (loser) {
-                loser.points = positionPoints[2];
-                loser.position = 2;
-              }
-              break;
-
-            case 'smallfinal':
-              if (winner) {
-                winner.points = positionPoints[3];
-                winner.position = 3;
-              }
-              if (loser) {
-                loser.points = positionPoints[4];
-                loser.position = 4;
-              }
-              break;
-
-            case 'classification_final':
-              if (winner) {
-                winner.points = positionPoints[5];
-                winner.position = 5;
-              }
-              if (loser) {
-                loser.points = positionPoints[6];
-                loser.position = 6;
-              }
-              break;
-
-            case 'quarterfinal':
-              if (loser) {
-                loser.points = positionPoints[7];
-                loser.position = 7;
-              }
-              break;
-
-            case 'qualification':
-              if (loser) {
-                loser.points = positionPoints[9];
-                loser.position = 9;
-              }
-              break;
-          }
-        }
-      });
-
-      // Trier le classement
-      rankings.sort((a, b) => a.position - b.position);
-
-      console.log('Calculated Rankings:', rankings);
-      return rankings;
-    }
   </script>
 </body>
 </html>

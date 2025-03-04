@@ -335,6 +335,14 @@ button:hover {
     gap: 16px;
 }
 
+.winner .score {
+    color: green;
+}
+
+.loser .score {
+    color: red;
+}
+
 .score-divider {
     margin: 0 8px;
 }

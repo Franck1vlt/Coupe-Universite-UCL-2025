@@ -1,4 +1,3 @@
-
 function updateScore(matchId) {
     const match = document.getElementById(matchId);
     const teams = match.getElementsByClassName('team');

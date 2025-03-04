@@ -1,6 +1,6 @@
 const TEAMS = [
     'ESPAS-ESTICE', 'ESPOL', 'ESSLIL', 'FGES', 'FLD', 'FLSH', 'FMMS', 
-    'ICAM', 'IESEG', 'IKPO', 'ISTC', 'JUNIA', 'LiDD', 'PINKTURA', 'USCHOOL'
+    'ICAM', 'IESEG', 'IKPO', 'ISTC', 'JUNIA', 'LiDD', 'PIKTURA', 'USCHOOL'
 ];
 
 let rankings = [];
@@ -29,7 +29,8 @@ async function fetchAllPoints() {
                 name: teamName,
                 sportsPoints: sportsPoints,
                 bonusPoints: ambiancePoints + route150Points,
-                totalPoints: sportsPoints + ambiancePoints + route150Points
+                totalPoints: sportsPoints + ambiancePoints + route150Points,
+                logo: `/img/${teamName}.png` // Assurez-vous que chaque objet équipe contient une propriété “logo”
             };
         });
     } catch (error) {
@@ -58,7 +59,8 @@ function displayRanking(filterType = 'all') {
             name: teamName,
             sportsPoints: 0,
             bonusPoints: 0,
-            totalPoints: 0
+            totalPoints: 0,
+            logo: `/images/logos/${teamName}.png` // Assurez-vous que chaque objet équipe contient une propriété “logo”
         }));
     }
 
@@ -81,7 +83,10 @@ function displayRanking(filterType = 'all') {
         generalRankingList.innerHTML += `
             <div class="ranking-row ${position <= 3 ? 'highlight-' + position : ''}">
                 <div class="rank">${position}</div>
-                <div class="team">${team.name}</div>
+                <div class="team">
+                    <img src="${team.logo}" alt="Logo" style="width:20px; height:auto; margin-right:5px; background:#fff;">
+                    ${team.name}
+                </div>
                 <div class="points">${team.sportsPoints}</div>
                 <div class="points">${team.bonusPoints}</div>
                 <div class="points total-points">${team.totalPoints}</div>

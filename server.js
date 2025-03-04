@@ -5,17 +5,29 @@ const db = require('./database');
 const app = express();
 const port = 3000;
 
-const liveMatches = [
-    { sport: 'Football', teamA: 'Équipe A', teamB: 'Équipe B', scoreA: 1, scoreB: 2, chrono: '45:00' },
-    { sport: 'Basketball', teamA: 'Équipe C', teamB: 'Équipe D', scoreA: 50, scoreB: 48, chrono: '30:00' },
-    { sport: 'Volleyball', teamA: 'Équipe E', teamB: 'Équipe F', scoreA: 2, scoreB: 1, chrono: '20:00' }
-];
-
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 
 app.get('/live-matches', (req, res) => {
-    res.json({ matches: liveMatches });
+    try {
+        // Récupérer tous les matchs avec le statut "en cours"
+        db.all(`
+            SELECT m.*, ms.status, ms.score1, ms.score2
+            FROM rankings_matches m
+            JOIN match_status ms ON m.match_id = ms.match_id
+            WHERE ms.status = 'en cours'
+        `, [], (err, rows) => {
+            if (err) {
+                console.error('Erreur DB:', err);
+                res.status(500).json({ error: 'Erreur serveur' });
+                return;
+            }
+            res.json({ matches: rows || [] });
+        });
+    } catch (error) {
+        console.error('Erreur:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
 });
 
 app.post('/api/update-match', (req, res) => {
@@ -46,6 +58,13 @@ app.get('/api/match-status/:matchId', (req, res) => {
 app.post('/api/match-status/:matchId', (req, res) => {
   const { matchId } = req.params;
   const { status, score1, score2 } = req.body;
+
+  // Vérifier si le statut est valide
+  const validStatuses = ['à venir', 'en cours', 'terminé'];
+  if (!validStatuses.includes(status)) {
+    res.status(400).json({ error: `Statut invalide: ${status}` });
+    return;
+  }
   
   db.run(
     `INSERT OR REPLACE INTO match_status (match_id, status, score1, score2) 
@@ -53,6 +72,7 @@ app.post('/api/match-status/:matchId', (req, res) => {
     [matchId, status, score1, score2],
     (err) => {
       if (err) {
+        console.error('Erreur lors de la mise à jour du statut du match:', err);
         res.status(500).json({ error: err.message });
         return;
       }
@@ -290,6 +310,120 @@ app.get('/api/rankings/general', (req, res) => {
             res.json({ rankings: rows || [] });
         }
     );
+});
+
+// Ajouter un endpoint pour les points de football
+app.post('/api/rankings/football/update', (req, res) => {
+    const { team_name, points } = req.body;
+    
+    db.run(`
+        INSERT INTO rankings (team_name, points, category) 
+        VALUES (?, ?, 'FOOT')
+        ON CONFLICT(team_name, category) 
+        DO UPDATE SET points = ?`,
+        [team_name, points, points],
+        (err) => {
+            if (err) {
+                res.status(500).json({ error: err.message });
+                return;
+            }
+            res.json({ success: true });
+        }
+    );
+});
+
+app.get('/api/rankings/football', (req, res) => {
+    db.all(`
+        SELECT team_name, points 
+        FROM rankings 
+        WHERE category = 'FOOT'
+        ORDER BY points DESC`,
+        [],
+        (err, rows) => {
+            if (err) {
+                res.status(500).json({ error: err.message });
+                return;
+            }
+            res.json({ rankings: rows || [] });
+        }
+    );
+});
+
+// Correction de la route pour recevoir les points du football
+app.post('/api/points/football', (req, res) => {
+  const { points } = req.body;
+  
+  try {
+    // Utilisation d'une transaction pour s'assurer que toutes les mises à jour sont effectuées
+    db.serialize(() => {
+      const stmt = db.prepare(`
+        INSERT INTO rankings (team_name, points, category) 
+        VALUES (?, ?, 'FOOT')
+        ON CONFLICT(team_name, category) 
+        DO UPDATE SET points = ?
+      `);
+
+      for (const [teamName, teamPoints] of Object.entries(points)) {
+        stmt.run(teamName, teamPoints, teamPoints, (err) => {
+          if (err) {
+            console.error('Erreur pour équipe', teamName, ':', err);
+          }
+        });
+      }
+
+      stmt.finalize();
+
+      res.json({ 
+        success: true, 
+        message: 'Points mis à jour avec succès'
+      });
+    });
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour des points:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la mise à jour des points'
+    });
+  }
+});
+
+// Route pour mettre à jour le résultat d'un match
+app.post('/api/match-result', async (req, res) => {
+    const { matchId, team1, team2, score1, score2, status, matchType, winner, loser } = req.body;
+
+    try {
+        // Mise à jour dans la base de données
+        await new Promise((resolve, reject) => {
+            db.run(`
+                INSERT OR REPLACE INTO rankings_matches 
+                (match_id, team1, team2, score1, score2, status, winner, loser, match_type)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [matchId, team1, team2, score1, score2, status, winner, loser, matchType],
+                (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                }
+            );
+        });
+
+        // Mise à jour du statut du match
+        await new Promise((resolve, reject) => {
+            db.run(`
+                INSERT OR REPLACE INTO match_status (match_id, status, score1, score2)
+                VALUES (?, ?, ?, ?)`,
+                [matchId, status, score1, score2],
+                (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                }
+            );
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Erreur:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
 app.listen(port, () => {

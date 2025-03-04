@@ -29,7 +29,6 @@
           <option value="ISTC">ISTC</option>
           <option value="JUNIA">JUNIA</option>
           <option value="LIDD">LiDD</option>
-          <option value="PINKTURA">PINKTURA</option>
           <option value="USCHOOL">USCHOOL</option>
         </select>
         <label for="teamB">Équipe B :</label>
@@ -47,7 +46,6 @@
           <option value="ISTC">ISTC</option>
           <option value="JUNIA">JUNIA</option>
           <option value="LIDD">LiDD</option>
-          <option value="PINKTURA">PINKTURA</option>
           <option value="USCHOOL">USCHOOL</option>
         </select>
         <label for="matchType">Type de match :</label>
@@ -140,24 +138,88 @@
     </div>
   </main>
   <script>
+    // Attendre que le DOM soit chargé avant d'initialiser
+    document.addEventListener('DOMContentLoaded', function() {
+        // Récupérer les paramètres de l'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const team1Name = urlParams.get('team1');
+        const team2Name = urlParams.get('team2');
+        const matchType = urlParams.get('matchType');
+
+        // Initialiser les sélecteurs
+        if (team1Name) {
+            document.getElementById('teamA').value = team1Name;
+        }
+        if (team2Name) {
+            document.getElementById('teamB').value = team2Name;
+        }
+        
+        // Mettre à jour les noms affichés
+        document.getElementById('teamAName').textContent = team1Name || 'Team A';
+        document.getElementById('teamBName').textContent = team2Name || 'Team B';
+
+        // Mettre à jour le type de match
+        if (matchType) {
+            document.getElementById('matchTypeSelector').value = matchType;
+            document.getElementById('matchType').textContent = matchType;
+        }
+
+        // Initialiser le terrain par défaut
+        document.getElementById('matchGroundSelector').value = '1';
+    });
+
     function updateMatchType() {
-      const matchTypeSelector = document.getElementById('matchTypeSelector');
-      const matchType = matchTypeSelector.options[matchTypeSelector.selectedIndex].text;
-      document.getElementById('matchType').textContent = matchType;
+        const matchTypeSelector = document.getElementById('matchTypeSelector');
+        const matchType = matchTypeSelector.options[matchTypeSelector.selectedIndex].text;
+        document.getElementById('matchType').textContent = matchType;
     }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const team1Name = urlParams.get('team1');
-    const team2Name = urlParams.get('team2');
-    const matchType = urlParams.get('matchType');
+    function openScoreDisplay() {
+        // Stocker les données actuelles dans le localStorage
+        localStorage.setItem('liveMatchData', JSON.stringify({
+            team1: document.getElementById('teamA').value,
+            team2: document.getElementById('teamB').value,
+            matchType: document.getElementById('matchType').textContent,
+            matchId: new URLSearchParams(window.location.search).get('matchId'),
+            score1: 0,
+            score2: 0,
+            yellowCards1: 0,
+            yellowCards2: 0,
+            redCards1: 0,
+            redCards2: 0,
+            chrono: '00:00'
+        }));
 
-    document.getElementById('teamA').value = team1Name;
-    document.getElementById('teamB').value = team2Name;
-    document.getElementById('matchTypeSelector').value = matchType;
-    document.getElementById('matchGroundSelector').value = '1';
+        // Ouvrir la fenêtre d'affichage
+        const displayWindow = window.open('affichage_score.html', '_blank');
+    }
 
-    updateTeams();
-    updateMatchType();
+    // Fonction pour mettre à jour les données en direct
+    function updateLiveData() {
+        const liveData = {
+            score1: document.getElementById('teamAScore').textContent,
+            score2: document.getElementById('teamBScore').textContent,
+            yellowCards1: document.getElementById('teamAYellowCard').textContent,
+            yellowCards2: document.getElementById('teamBYellowCard').textContent,
+            redCards1: document.getElementById('teamARedCard').textContent,
+            redCards2: document.getElementById('teamBRedCard').textContent,
+            chrono: document.getElementById('gameChrono').textContent
+        };
+        localStorage.setItem('liveMatchData', JSON.stringify({
+            ...JSON.parse(localStorage.getItem('liveMatchData') || '{}'),
+            ...liveData
+        }));
+    }
+
+    // Ajouter l'observateur pour mettre à jour les données en direct
+    const observer = new MutationObserver(updateLiveData);
+    const scoreboard = document.querySelector('.scoreboard');
+    observer.observe(scoreboard, { 
+        subtree: true, 
+        childList: true,
+        characterData: true,
+        characterDataOldValue: true
+    });
   </script>
 </body>
 </html>

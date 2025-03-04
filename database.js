@@ -17,6 +17,27 @@ db.serialize(() => {
     FOREIGN KEY(match_id) REFERENCES matchs(id)
   )`);
 
+  // Initialiser les statuts des matchs s'ils n'existent pas déjà
+  for (let i = 1; i <= 15; i++) {
+    db.run(`INSERT OR IGNORE INTO match_status (match_id, status, score1, score2) 
+            VALUES (?, 'à venir', 0, 0)`, [i]);
+  }
+
+  // Marquer les matchs de qualification comme terminés
+  const qualificationMatches = [
+    { id: 1, score1: 5, score2: 0 },
+    { id: 2, score1: 1, score2: 0 },
+    { id: 3, score1: 1, score2: 5 },
+    { id: 4, score1: 14, score2: 0 }
+  ];
+
+  qualificationMatches.forEach(match => {
+    db.run(`UPDATE match_status 
+            SET status = 'terminé', score1 = ?, score2 = ? 
+            WHERE match_id = ?`,
+            [match.score1, match.score2, match.id]);
+  });
+
   // Ajouter la table rankings
   db.run(`CREATE TABLE IF NOT EXISTS rankings (
     id INTEGER PRIMARY KEY,
@@ -26,10 +47,24 @@ db.serialize(() => {
     UNIQUE(team_name, category)
   )`);
 
+  // Ajouter la table rankings_matches
+  db.run(`CREATE TABLE IF NOT EXISTS rankings_matches (
+    match_id TEXT PRIMARY KEY,
+    team1 TEXT,
+    team2 TEXT,
+    score1 INTEGER,
+    score2 INTEGER,
+    status TEXT DEFAULT 'à_venir',
+    winner TEXT,
+    loser TEXT,
+    match_type TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
   // Initialiser les équipes avec 0 points pour l'ambiance
   const teams = [
     'ESPAS-ESTICE', 'ESPOL', 'ESSLIL', 'FGES', 'FLD', 'FLSH', 'FMMS', 
-    'ICAM', 'IESEG', 'IKPO', 'ISTC', 'JUNIA', 'LiDD', 'PINKTURA', 'USCHOOL'
+    'ICAM', 'IESEG', 'IKPO', 'ISTC', 'JUNIA', 'LiDD', 'USCHOOL'
   ];
 
   const stmt = db.prepare(`INSERT OR IGNORE INTO rankings (team_name, points, category) VALUES (?, 0, ?)`);

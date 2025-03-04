@@ -196,49 +196,75 @@ h1 {
 }
 
 .team.winner {
-    background-color: green; /* Couleur verte pour le gagnant */
-    color: var(--secondary-color);
-    font-weight: bold;
+    background-color: transparent; /* Supprime le fond vert */
+    color: inherit; /* Rétablit la couleur de texte par défaut */
+    font-weight: normal;
 }
 
 .team.loser {
-    background-color: red; /* Couleur rouge pour le perdant */
-    color: var(--secondary-color);
+    background-color: transparent; /* Supprime le fond rouge */
+    color: inherit; /* Rétablit la couleur de texte par défaut */
+    font-weight: normal;
 }
 
 .team.winner .score {
-    color: green;
+    background-color: #4CAF50; /* Fond vert pour le score gagnant */
+    color: white;
     font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
+    min-width: 24px;
+    display: inline-block;
+    text-align: center;
 }
 
 .team.loser .score {
-    color: red;
+    background-color: #f44336; /* Fond rouge pour le score perdant */
+    color: white;
     font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
+    min-width: 24px;
+    display: inline-block;
+    text-align: center;
 }
 
 .team-logo {
-    width: 24px;
-    height: 24px;
-    margin-right: 8px;
+    width: 20px; /* Réduit de 24px à 20px */
+    height: 20px; /* Réduit de 24px à 20px */
+    margin-right: 6px; /* Réduit de 8px à 6px */
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
     border-radius: 50%;
 }
 
+.team-logo-mini {
+    width: 16px; /* Version encore plus petite pour le tableau de classement */
+    height: 16px;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
 .team-name {
+    color: #000000; /* Noir pour tous les noms d'équipes */
     flex: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     display: flex;
     align-items: center;
+    gap: 20px;
 }
 
 .score {
     font-weight: bold;
-    min-width: 20px;
+    min-width: 24px;
     text-align: center;
+    margin-left: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
 }
 
 .connector {
@@ -286,11 +312,35 @@ h1 {
     background: linear-gradient(to right, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C);
     color: #333;
     font-weight: bold;
-    padding: 10px;
+    padding: 15px;
     border-radius: 5px;
     margin: 10px auto;
     width: 80%;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    transition: all 0.5s ease;
+    opacity: 0.8;
+}
+
+.champion-crowned {
+    transform: scale(1.1);
+    opacity: 1;
+    box-shadow: 0 4px 20px rgba(191, 149, 63, 0.5);
+    animation: crownChampion 1s ease-out;
+}
+
+@keyframes crownChampion {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
 }
 
 .small-final {
@@ -427,7 +477,7 @@ h1 {
     background-color: var(--highlight-color);
 }
 
-.reset-button, .back-button {
+button {
     background-color: #e74c3c;
     color: white;
     border: none;
@@ -528,6 +578,7 @@ h1 {
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 1px;
+  gap: 20px;
 }
 
 .highlight-1 {
@@ -560,19 +611,14 @@ h1 {
   gap: 20px;
 }
 
+/* CSS */
 .phase-content {
-  display: none;
+    /* Pour final-phase, par exemple, on attend un display:flex */
+    display: flex;
+    /* autres propriétés de layout */
 }
-
-.team.winner {
-    background-color: green; /* Couleur verte pour le gagnant */
-    color: var(--secondary-color);
-    font-weight: bold;
-}
-
-.team.loser {
-    background-color: red; /* Couleur rouge pour le perdant */
-    color: var(--secondary-color);
+.hidden {
+    display: none !important;
 }
 
 #final-phase {
@@ -582,13 +628,61 @@ h1 {
 
 #final-phase .bracket {
     display: flex;
-    flex-direction: row;
+    flex-direction: row !important;
+    align-items: center;
     justify-content: space-between;
     width: 100%;
-    gap: 20px;
+    padding: 20px;
+    gap: 40px;
 }
 
 #final-phase .round {
     display: flex;
     flex-direction: column;
+    justify-content: space-around;
+    min-height: 400px;
+    gap: 20px;
+}
+
+.classification-container {
+    width: 100%;
+    padding: 20px;
+}
+
+.classification-matches {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.classification-round {
+    display: flex;
+    justify-content: space-around;
+    gap: 20px;
+}
+
+.classification-title {
+    text-align: center;
+    font-size: 1.2em;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Ajuster les connecteurs pour l'affichage horizontal */
+.connector.horizontal-right {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    width: 40px;
+    height: 2px;
+    background-color: var(--border-color);
+}
+
+.connector.horizontal-left {
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    width: 40px;
+    height: 2px;
+    background-color: var(--border-color);
 }
