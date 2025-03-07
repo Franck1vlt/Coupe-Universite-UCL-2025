@@ -588,6 +588,49 @@ app.get('/api/rankings/basket', (req, res) => {
     );
 });
 
+// Routes pour le volleyball masculin
+app.post('/api/rankings/volley_h/update', (req, res) => {
+    const points = req.body;
+    
+    try {
+        db.serialize(() => {
+            const stmt = db.prepare(`
+                INSERT INTO rankings (team_name, points, category) 
+                VALUES (?, ?, 'VOLLEY_H')
+                ON CONFLICT(team_name, category) 
+                DO UPDATE SET points = ?
+            `);
+
+            for (const [teamName, teamPoints] of Object.entries(points)) {
+                stmt.run(teamName, teamPoints, teamPoints);
+            }
+
+            stmt.finalize();
+            res.json({ success: true });
+        });
+    } catch (error) {
+        console.error('Erreur:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.get('/api/rankings/volley_h', (req, res) => {
+    db.all(`
+        SELECT team_name, points 
+        FROM rankings 
+        WHERE category = 'VOLLEY_H'
+        ORDER BY points DESC`,
+        [],
+        (err, rows) => {
+            if (err) {
+                res.status(500).json({ error: err.message });
+                return;
+            }
+            res.json({ rankings: rows || [] });
+        }
+    );
+});
+
 app.listen(port, () => {
     console.log(`Serveur en cours d'exécution sur http://localhost:${port}`);
 });

@@ -115,11 +115,39 @@
             <!-- Quarts de finale -->
             <div class="round">
             <div class="round-title">Quarts de finale</div>
-            <!-- Match 1: JUNIA vs IESEG -->
+            <!-- Match 1: FMMS vs FGES -->
             <div class="match-wrapper">
                 <div class="match" data-match-id="4" data-match-type="quarterfinal" data-position="1">
                 <div class="team">
+                    <div class="team-name">FMMS</div>
+                    <div class="score">-</div>
+                </div>
+                <div class="team">
+                    <div class="team-name">FGES</div>
+                    <div class="score">-</div>
+                </div>
+                </div>
+                <div class="connector top"></div>
+            </div>
+            <!-- Match 2: FLD vs JUNIA -->
+            <div class="match-wrapper">
+                <div class="match" data-match-id="5" data-match-type="quarterfinal" data-position="2">
+                <div class="team">
+                    <div class="team-name">FLD</div>
+                    <div class="score">-</div>
+                </div>
+                <div class="team">
                     <div class="team-name">JUNIA</div>
+                    <div class="score">-</div>
+                </div>
+                </div>
+                <div class="connector bottom"></div>
+            </div>
+            <!-- Match 3: FLSH vs IESEG -->
+            <div class="match-wrapper">
+                <div class="match" data-match-id="6" data-match-type="quarterfinal" data-position="3">
+                <div class="team">
+                    <div class="team-name">FLSH</div>
                     <div class="score">-</div>
                 </div>
                 <div class="team">
@@ -129,43 +157,15 @@
                 </div>
                 <div class="connector top"></div>
             </div>
-            <!-- Match 2: ESPOL vs FGES -->
+            <!-- Match 4: ICAM vs ESPOL -->
             <div class="match-wrapper">
-                <div class="match" data-match-id="5" data-match-type="quarterfinal" data-position="2">
-                <div class="team">
-                    <div class="team-name">ESPOL</div>
-                    <div class="score">-</div>
-                </div>
-                <div class="team">
-                    <div class="team-name">FGES</div>
-                    <div class="score">-</div>
-                </div>
-                </div>
-                <div class="connector bottom"></div>
-            </div>
-            <!-- Match 3: ESPAS-ESTICE vs ICAM -->
-            <div class="match-wrapper">
-                <div class="match" data-match-id="6" data-match-type="quarterfinal" data-position="3">
-                <div class="team">
-                    <div class="team-name">ESPAS-ESTICE</div>
-                    <div class="score">-</div>
-                </div>
+                <div class="match" data-match-id="7" data-match-type="quarterfinal" data-position="4">
                 <div class="team">
                     <div class="team-name">ICAM</div>
                     <div class="score">-</div>
                 </div>
-                </div>
-                <div class="connector top"></div>
-            </div>
-            <!-- Match 4: FLD vs FMMS -->
-            <div class="match-wrapper">
-                <div class="match" data-match-id="7" data-match-type="quarterfinal" data-position="4">
                 <div class="team">
-                    <div class="team-name">FLD</div>
-                    <div class="score">-</div>
-                </div>
-                <div class="team">
-                    <div class="team-name">FMMS</div>
+                    <div class="team-name">ESPOL</div>
                     <div class="score">-</div>
                 </div>
                 </div>
@@ -257,12 +257,11 @@
             </div>
             </div>
         </div>
-
-        <div style="text-align: center;">
-            <button class="reset-button" id="resetTournament" onclick="resetTournament()">Réinitialiser le tournoi</button>
-            <button onclick="simulateTournament()">Simuler la compétition</button>
-            <button class="back-button" onclick="window.location.href='../index.html'">Retour</button>
-          </div>
+    </div>
+    <div style="text-align: center;">
+        <button class="reset-button" id="resetTournament" onclick="resetTournament()">Réinitialiser le tournoi</button>
+        <button onclick="simulateTournament()">Simuler la compétition</button>
+        <button class="back-button" onclick="window.location.href='../index.html'">Retour</button>
     </div>
     
     <script src="tournament.js"></script>
