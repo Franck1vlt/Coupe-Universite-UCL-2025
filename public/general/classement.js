@@ -1,169 +1,169 @@
-const TEAMS = [
-    'ESPAS-ESTICE', 'ESPOL', 'ESSLIL', 'FGES', 'FLD', 'FLSH', 'FMMS', 
-    'ICAM', 'IESEG', 'IKPO', 'ISTC', 'JUNIA', 'LiDD', 'PIKTURA', 'USCHOOL'
+const allTeams = [
+    "ESPAS-ESTICE",
+    "ESPOL",
+    "ICAM",
+    "FMMS",
+    "USCHOOL",
+    "FLSH",
+    "FLD",
+    "FGES",
+    "JUNIA",
+    "IESEG",
+    "IKPO",
+    "ESSLIL",
+    "ISTC",
+    "LiDD",
+    "PIKTURA"
 ];
 
-let rankings = [];
+async function updateBasketRanking() {
+    try {s
+        // Récupérer les points de basket H et F
+        const [basketH, basketF] = await Promise.all([
+            fetch('/api/rankings/basket_h').then(r => r.json()),
+            fetch('/api/rankings/basket_f').then(r => r.json())
+        ]);
 
-async function fetchAllPoints() {
-    try {
-        // Récupérer les points de tous les sports
-        const sportsResponse = await fetch('/api/rankings/sports');
-        const sportsData = await sportsResponse.json();
-        
-        // Récupérer les points d'ambiance
-        const ambianceResponse = await fetch('/api/rankings/ambiance');
-        const ambianceData = await ambianceResponse.json();
-        
-        // Récupérer les points de route150
-        const route150Response = await fetch('/api/rankings/route150');
-        const route150Data = await route150Response.json();
-        
-        // Combiner tous les points
-        return TEAMS.map(teamName => {
-            const sportsPoints = calculateTeamSportsPoints(teamName, sportsData.rankings);
-            const ambiancePoints = findTeamPoints(teamName, ambianceData.rankings);
-            const route150Points = findTeamPoints(teamName, route150Data.rankings);
-            
+        const allTeams = new Set([
+            ...basketH.rankings.map(r => r.team_name),
+            ...basketF.rankings.map(r => r.team_name)
+        ]);
+
+        const combinedRankings = Array.from(allTeams).map(team => {
+            const hPoints = basketH.rankings.find(r => r.team_name === team)?.points || 0;
+            const fPoints = basketF.rankings.find(r => r.team_name === team)?.points || 0;
             return {
-                name: teamName,
-                sportsPoints: sportsPoints,
-                bonusPoints: ambiancePoints + route150Points,
-                totalPoints: sportsPoints + ambiancePoints + route150Points,
-                logo: `/img/${teamName}.png` // Assurez-vous que chaque objet équipe contient une propriété “logo”
+                name: team,
+                pointsH: hPoints,
+                pointsF: fPoints,
+                totalPoints: hPoints + fPoints
             };
         });
-    } catch (error) {
-        console.error('Erreur lors de la récupération des points:', error);
-        return [];
-    }
-}
 
-function findTeamPoints(teamName, rankings) {
-    const team = rankings?.find(r => r.team_name === teamName);
-    return team ? team.points : 0;
-}
+        // Trier par points totaux décroissants
+        combinedRankings.sort((a, b) => b.totalPoints - a.totalPoints);
 
-function calculateTeamSportsPoints(teamName, sportsRankings) {
-    const teamScores = sportsRankings?.filter(r => r.team_name === teamName) || [];
-    return teamScores.reduce((sum, score) => sum + score.points, 0);
-}
+        const basketRankingList = document.getElementById('basketRankingList');
+        basketRankingList.innerHTML = '';
 
-function displayRanking(filterType = 'all') {
-    const generalRankingList = document.getElementById('generalRankingList');
-    if (!generalRankingList) return;
+        combinedRankings.forEach((team, idx) => {
+            const position = idx + 1;
+            const highlightClass = position <= 3 ? `highlight-${position}` : '';
 
-    // Si pas de données, initialiser avec les équipes à 0 points
-    if (!rankings || rankings.length === 0) {
-        rankings = TEAMS.map(teamName => ({
-            name: teamName,
-            sportsPoints: 0,
-            bonusPoints: 0,
-            totalPoints: 0,
-            logo: `/images/logos/${teamName}.png` // Assurez-vous que chaque objet équipe contient une propriété “logo”
-        }));
-    }
-
-    generalRankingList.innerHTML = '';
-
-    // Trier selon le filtre sélectionné
-    const sortedRankings = [...rankings].sort((a, b) => {
-        if (filterType === 'sports') {
-            return b.sportsPoints - a.sportsPoints || a.name.localeCompare(b.name);
-        }
-        if (filterType === 'extra') {
-            return b.bonusPoints - a.bonusPoints || a.name.localeCompare(b.name);
-        }
-        // Par défaut: tri par points totaux puis par ordre alphabétique
-        return b.totalPoints - a.totalPoints || a.name.localeCompare(b.name);
-    });
-
-    sortedRankings.forEach((team, index) => {
-        const position = index + 1;
-        generalRankingList.innerHTML += `
-            <div class="ranking-row ${position <= 3 ? 'highlight-' + position : ''}">
-                <div class="rank">${position}</div>
-                <div class="team">
-                    <img src="${team.logo}" alt="Logo" style="width:20px; height:auto; margin-right:5px; background:#fff;">
-                    ${team.name}
+            basketRankingList.innerHTML += `
+                <div class="ranking-row ${highlightClass}">
+                    <div class="rank">${position}</div>
+                    <div class="team-name">
+                        <img src="/img/${team.name}.png" alt="${team.name}" class="team-logo-mini" />
+                        ${team.name}
+                    </div>
+                    <div class="points-h">${team.pointsH || '-'}</div>
+                    <div class="points-f">${team.pointsF || '-'}</div>
+                    <div class="points-total">${team.totalPoints}</div>
                 </div>
-                <div class="points">${team.sportsPoints}</div>
-                <div class="points">${team.bonusPoints}</div>
-                <div class="points total-points">${team.totalPoints}</div>
-            </div>
-        `;
-    });
+            `;
+        });
+    } catch (error) {
+        console.error('Erreur lors de la mise à jour du classement basket:', error);
+    }
 }
 
-// Initialisation
-document.addEventListener('DOMContentLoaded', async () => {
+async function updateGeneralRanking() {
     try {
-        rankings = await fetchAllPoints();
+        const response = await fetch('/api/rankings/general');
+        const data = await response.json();
+        
+        const rankingList = document.getElementById('generalRankingList');
+        rankingList.innerHTML = '';
+
+        // Filtrer les entrées nulles et invalides
+        const validRankings = data.rankings.filter(team => 
+            team && team.team_name && allTeams.includes(team.team_name)
+        );
+
+        validRankings.forEach((team, idx) => {
+            const position = idx + 1;
+            const highlightClass = position <= 3 ? `highlight-${position}` : '';
+            
+            rankingList.innerHTML += `
+                <div class="ranking-row ${highlightClass}">
+                    <div class="rank">${position}</div>
+                    <div class="team">
+                        <img src="/img/${team.team_name}.png" alt="${team.team_name}" class="team-logo-mini" />
+                        ${team.team_name}
+                    </div>
+                    <div class="points">${team.basket_points + team.foot_points}</div>
+                    <div class="points">${team.bonus_points}</div>
+                    <div class="points">${team.total_points}</div>
+                </div>
+            `;
+        });
     } catch (error) {
-        console.error('Erreur lors de la récupération des points:', error);
-        rankings = []; // En cas d'erreur, on continuera avec un tableau vide
+        console.error('Erreur lors de la mise à jour du classement général:', error);
     }
-    
-    // Toujours afficher quelque chose, même en cas d'erreur
-    displayRanking('general');
+}
 
-    document.getElementById('viewSelect')?.addEventListener('change', async (e) => {
-        const selectedView = e.target.value;
-        const generalView = document.getElementById('generalView');
-        const specificView = document.getElementById('specificView');
+// Mettre à jour la fonction d'initialisation
+document.addEventListener('DOMContentLoaded', async () => {
+    const viewSelect = document.getElementById('viewSelect');
+    const generalView = document.getElementById('generalView');
+    const specificView = document.getElementById('specificView');
 
+    viewSelect.addEventListener('change', async function() {
+        const selectedView = viewSelect.value;
         if (selectedView === 'general') {
             generalView.style.display = 'block';
             specificView.style.display = 'none';
-            displayRanking('all');
+            await updateGeneralRanking();
         } else {
             generalView.style.display = 'none';
             specificView.style.display = 'block';
-            await displaySpecificRanking(selectedView);
+            await updateSpecificRanking(selectedView);
         }
     });
+
+    // Déclencher l'événement change initial
+    viewSelect.dispatchEvent(new Event('change'));
 });
 
-async function displaySpecificRanking(category) {
-    const specificList = document.getElementById('specificRankingList');
-    if (!specificList) return;
-
-    specificList.innerHTML = '';
-    
-    // Afficher d'abord toutes les équipes avec 0 points
-    let rankingData = TEAMS.map(team => ({
-        team_name: team,
-        points: 0
-    }));
-
+async function updateSpecificRanking(category) {
     try {
         const response = await fetch(`/api/rankings/${category.toLowerCase()}`);
         const data = await response.json();
-        
-        if (data.rankings && data.rankings.length > 0) {
-            // Mettre à jour les points des équipes existantes
-            data.rankings.forEach(dbTeam => {
-                const teamIndex = rankingData.findIndex(t => t.team_name === dbTeam.team_name);
-                if (teamIndex !== -1) {
-                    rankingData[teamIndex].points = dbTeam.points;
-                }
-            });
-        }
-    } catch (error) {
-        console.error('Erreur lors de la récupération du classement:', error);
-    }
 
-    // Trier et afficher
-    rankingData
-        .sort((a, b) => b.points - a.points || a.team_name.localeCompare(b.team_name))
-        .forEach((team, index) => {
-            const position = index + 1;
-            specificList.innerHTML += `
-                <div class="ranking-row ${position <= 3 ? 'highlight-' + position : ''}">
+        // Filtrer pour n'inclure que les équipes valides
+        const validRankings = allTeams
+            .map(team => {
+                const teamData = data.rankings.find(r => r.team_name === team);
+                return {
+                    name: team,
+                    points: teamData ? teamData.points : 0
+                };
+            })
+            .filter(team => team && team.name); // Filtre supplémentaire pour la sécurité
+
+        // Trier par points décroissants
+        validRankings.sort((a, b) => b.points - a.points);
+
+        const rankingList = document.getElementById('specificRankingList');
+        rankingList.innerHTML = '';
+
+        validRankings.forEach((team, idx) => {
+            const position = idx + 1;
+            const highlightClass = position <= 3 ? `highlight-${position}` : '';
+
+            rankingList.innerHTML += `
+                <div class="ranking-row ${highlightClass}">
                     <div class="rank">${position}</div>
-                    <div class="team">${team.team_name}</div>
+                    <div class="team">
+                        <img src="/img/${team.name}.png" alt="${team.name}" class="team-logo-mini" />
+                        ${team.name}
+                    </div>
                     <div class="points">${team.points}</div>
                 </div>
             `;
         });
+    } catch (error) {
+        console.error(`Erreur lors de la mise à jour du classement ${category}:`, error);
+    }
 }

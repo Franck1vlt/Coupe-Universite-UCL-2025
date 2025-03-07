@@ -12,7 +12,7 @@ const TEAMS = [
     'ISTC',
     'JUNIA',
     'LiDD',
-    'PINKTURA',
+    'PIKTURA',
     'USCHOOL'
 ];
 

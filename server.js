@@ -292,14 +292,13 @@ app.get('/api/rankings/general', (req, res) => {
     db.all(`
         SELECT 
             r.team_name,
-            r.category,
-            r.points,
-            CASE 
-                WHEN r.category IN ('ambiance', 'route150') THEN 'bonus'
-                ELSE 'sport'
-            END as point_type
+            SUM(CASE WHEN r.category = 'BASKET' THEN r.points ELSE 0 END) AS basket_points,
+            SUM(CASE WHEN r.category = 'FOOT' THEN r.points ELSE 0 END) AS foot_points,
+            SUM(CASE WHEN r.category IN ('ambiance', 'route150') THEN r.points ELSE 0 END) AS bonus_points,
+            SUM(r.points) AS total_points
         FROM rankings r
-        ORDER BY r.team_name, r.category`,
+        GROUP BY r.team_name
+        ORDER BY total_points DESC, r.team_name`,
         [],
         (err, rows) => {
             if (err) {
@@ -387,6 +386,51 @@ app.post('/api/points/football', (req, res) => {
   }
 });
 
+// Route spécifique pour le football
+app.post('/api/rankings/football', (req, res) => {
+    try {
+        const points = req.body;
+        
+        db.serialize(() => {
+            const stmt = db.prepare(`
+                INSERT INTO rankings (team_name, points, category) 
+                VALUES (?, ?, 'FOOT')
+                ON CONFLICT(team_name, category) 
+                DO UPDATE SET points = ?
+            `);
+
+            for (const [teamName, teamPoints] of Object.entries(points)) {
+                stmt.run(teamName, teamPoints, teamPoints, (err) => {
+                    if (err) {
+                        console.error('Erreur pour équipe', teamName, ':', err);
+                    }
+                });
+            }
+
+            stmt.finalize();
+            res.json({ success: true });
+        });
+    } catch (error) {
+        console.error('Erreur:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+app.get('/api/rankings/football', (req, res) => {
+    db.all(`
+        SELECT team_name, points 
+        FROM rankings 
+        WHERE category = 'FOOT'
+        ORDER BY points DESC
+    `, [], (err, rows) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json({ rankings: rows || [] });
+    });
+});
+
 // Route pour mettre à jour le résultat d'un match
 app.post('/api/match-result', async (req, res) => {
     const { matchId, team1, team2, score1, score2, status, matchType, winner, loser } = req.body;
@@ -424,6 +468,124 @@ app.post('/api/match-result', async (req, res) => {
         console.error('Erreur:', error);
         res.status(500).json({ success: false, error: error.message });
     }
+});
+
+// Routes pour le basketball masculin
+app.post('/api/rankings/basket_h/update', (req, res) => {
+    const { team_name, points } = req.body;
+    
+    db.run(`
+        INSERT INTO rankings (team_name, points, category) 
+        VALUES (?, ?, 'BASKET_H')
+        ON CONFLICT(team_name, category) 
+        DO UPDATE SET points = ?`,
+        [team_name, points, points],
+        (err) => {
+            if (err) {
+                res.status(500).json({ error: err.message });
+                return;
+            }
+            res.json({ success: true });
+        }
+    );
+});
+
+app.get('/api/rankings/basket_h', (req, res) => {
+    db.all(`
+        SELECT team_name, points 
+        FROM rankings 
+        WHERE category = 'BASKET_H'
+        ORDER BY points DESC`,
+        [],
+        (err, rows) => {
+            if (err) {
+                res.status(500).json({ error: err.message });
+                return;
+            }
+            res.json({ rankings: rows || [] });
+        }
+    );
+});
+
+// Routes pour le basketball féminin
+app.post('/api/rankings/basket_f/update', (req, res) => {
+    const { team_name, points } = req.body;
+    
+    db.run(`
+        INSERT INTO rankings (team_name, points, category) 
+        VALUES (?, ?, 'BASKET_F')
+        ON CONFLICT(team_name, category) 
+        DO UPDATE SET points = ?`,
+        [team_name, points, points],
+        (err) => {
+            if (err) {
+                res.status(500).json({ error: err.message });
+                return;
+            }
+            res.json({ success: true });
+        }
+    );
+});
+
+app.get('/api/rankings/basket_f', (req, res) => {
+    db.all(`
+        SELECT team_name, points 
+        FROM rankings 
+        WHERE category = 'BASKET_F'
+        ORDER BY points DESC`,
+        [],
+        (err, rows) => {
+            if (err) {
+                res.status(500).json({ error: err.message });
+                return;
+            }
+            res.json({ rankings: rows || [] });
+        }
+    );
+});
+
+// Nouvelle route pour les points totaux de basket
+app.post('/api/rankings/basket/update', (req, res) => {
+    const points = req.body;
+    
+    try {
+        db.serialize(() => {
+            const stmt = db.prepare(`
+                INSERT INTO rankings (team_name, points, category) 
+                VALUES (?, ?, 'BASKET')
+                ON CONFLICT(team_name, category) 
+                DO UPDATE SET points = ?
+            `);
+
+            for (const [teamName, teamPoints] of Object.entries(points)) {
+                stmt.run(teamName, teamPoints, teamPoints);
+            }
+
+            stmt.finalize();
+            res.json({ success: true });
+        });
+    } catch (error) {
+        console.error('Erreur:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Route pour récupérer les points totaux de basket
+app.get('/api/rankings/basket', (req, res) => {
+    db.all(`
+        SELECT team_name, points 
+        FROM rankings 
+        WHERE category = 'BASKET'
+        ORDER BY points DESC`,
+        [],
+        (err, rows) => {
+            if (err) {
+                res.status(500).json({ error: err.message });
+                return;
+            }
+            res.json({ rankings: rows || [] });
+        }
+    );
 });
 
 app.listen(port, () => {

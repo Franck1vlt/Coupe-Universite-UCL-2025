@@ -145,3 +145,71 @@ h1 {
     }
 }
 
+/* Ajuster la taille des logos pour la vue spécifique */
+#specificView .team-logo-mini {
+    width: 12px;  /* Réduction de la taille */
+    height: 12px;
+    margin-right: 4px;
+    vertical-align: middle;
+    border-radius: 0; /* Suppression du border-radius */
+    object-fit: contain; /* Changed from cover to contain */
+}
+
+#specificView .team {
+    font-size: 0.9em; /* Réduire légèrement la taille du texte */
+}
+
+#specificView .ranking-row {
+    padding: 8px 15px; /* Réduire légèrement le padding */
+}
+
+/* Garder la taille normale pour la vue générale */
+#generalView .team-logo-mini {
+    width: 16px;
+    height: 16px;
+    margin-right: 5px;
+    vertical-align: middle;
+    border-radius: 0; /* Suppression du border-radius */
+    object-fit: contain; /* Changed from cover to contain */
+}
+
+/* Styles spécifiques pour les logos dans les différents tableaux */
+/* Classement général - logos plus grands */
+#generalRankingList .team-logo-mini {
+    width: 24px;
+    height: 24px;
+    margin-right: 8px;
+    vertical-align: middle;
+    border-radius: 0; /* Suppression du border-radius */
+    object-fit: contain; /* Changed from cover to contain */
+}
+
+/* Classement spécifique - logos de taille moyenne */
+#specificRankingList .team-logo-mini {
+    width: 20px;
+    height: 20px;
+    margin-right: 6px;
+    vertical-align: middle;
+    border-radius: 0; /* Suppression du border-radius */
+    object-fit: contain; /* Changed from cover to contain */
+}
+
+/* Classements des sports - logos plus petits */
+.sport-ranking .team-logo-mini {
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
+    vertical-align: middle;
+    border-radius: 0; /* Suppression du border-radius */
+    object-fit: contain; /* Changed from cover to contain */
+}
+
+/* Animation au survol des logos */
+.team-logo-mini {
+    transition: transform 0.2s ease;
+}
+
+.team-logo-mini:hover {
+    transform: scale(1.2);
+}
+

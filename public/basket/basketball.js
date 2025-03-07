@@ -91,67 +91,53 @@ async function resetGame() {
     const loser = score1 > score2 ? team2 : team1;
 
     try {
-        const tournamentState = JSON.parse(localStorage.getItem('footballTournamentState'));
+        // Récupérer l'état actuel du tournoi
+        const tournamentState = JSON.parse(localStorage.getItem('basketTournamentState')) || { matches: {} };
         
-        if (tournamentState && tournamentState.matches) {
-            const currentMatch = tournamentState.matches[matchId];
-            
-            // Mise à jour du match actuel
-            currentMatch.team1 = team1;
-            currentMatch.team2 = team2;
-            currentMatch.score1 = score1;
-            currentMatch.score2 = score2;
-            currentMatch.status = 'terminé';
-            currentMatch.winner = winner;
-            currentMatch.loser = loser;
+        // Mettre à jour le match actuel
+        if (tournamentState.matches) {
+            tournamentState.matches[matchId] = {
+                ...tournamentState.matches[matchId],
+                team1: team1,
+                team2: team2,
+                score1: score1,
+                score2: score2,
+                status: 'terminé',
+                winner: winner,
+                loser: loser,
+                matchType: matchType
+            };
 
-            // Gestion du match suivant pour le vainqueur
-            if (currentMatch.nextMatchWin) {
-                const nextMatch = tournamentState.matches[currentMatch.nextMatchWin];
-                if (nextMatch) {
-                    const matchIdNum = parseInt(matchId);
-                    // Pour les quarts de finale (matchs 5-6 et 7-8)
-                    if (matchIdNum >= 5 && matchIdNum <= 8) {
-                        if (matchIdNum === 5 || matchIdNum === 7) {
-                            nextMatch.team1 = winner;
-                            // Effacer team2 s'il était le même que team1
-                            if (nextMatch.team2 === winner) {
-                                nextMatch.team2 = null;
-                            }
-                        } else { // matchIdNum === 6 ou 8
-                            nextMatch.team2 = winner;
-                            // Effacer team1 s'il était le même que team2
-                            if (nextMatch.team1 === winner) {
-                                nextMatch.team1 = null;
-                            }
-                        }
-                    }
-                }
+            // Gérer spécifiquement les demi-finales
+            if (matchId === '8' || matchId === '9') {
+                // Mettre à jour la finale (match 11)
+                tournamentState.matches[11] = {
+                    ...tournamentState.matches[11],
+                    [matchId === '8' ? 'team1' : 'team2']: winner,
+                    status: 'à_venir',
+                    score1: null,
+                    score2: null,
+                    winner: null,
+                    loser: null
+                };
+
+                // Mettre à jour la petite finale (match 10)
+                tournamentState.matches[10] = {
+                    ...tournamentState.matches[10],
+                    [matchId === '8' ? 'team1' : 'team2']: loser,
+                    status: 'à_venir',
+                    score1: null,
+                    score2: null,
+                    winner: null,
+                    loser: null
+                };
             }
 
-            // Gestion du match suivant pour le perdant
-            if (currentMatch.nextMatchLose) {
-                const nextLoseMatch = tournamentState.matches[currentMatch.nextMatchLose];
-                if (nextLoseMatch) {
-                    const matchIdNum = parseInt(matchId);
-                    if (matchIdNum === 5 || matchIdNum === 7) {
-                        nextLoseMatch.team1 = loser;
-                        if (nextLoseMatch.team2 === loser) {
-                            nextLoseMatch.team2 = null;
-                        }
-                    } else {
-                        nextLoseMatch.team2 = loser;
-                        if (nextLoseMatch.team1 === loser) {
-                            nextLoseMatch.team1 = null;
-                        }
-                    }
-                }
-            }
-
-            localStorage.setItem('footballTournamentState', JSON.stringify(tournamentState));
+            // Sauvegarder l'état mis à jour
+            localStorage.setItem('basketTournamentState', JSON.stringify(tournamentState));
         }
 
-        // Mise à jour du match dans la base de données
+        // Envoyer les résultats au serveur
         await fetch('/api/match-result', {
             method: 'POST',
             headers: {
@@ -166,14 +152,15 @@ async function resetGame() {
                 matchType,
                 status: 'terminé',
                 winner,
-                loser,
-                nextMatchWin: tournamentState.matches[matchId].nextMatchWin,
-                nextMatchLose: tournamentState.matches[matchId].nextMatchLose
+                loser
             })
         });
 
+        // Attendre un peu avant la redirection pour assurer la sauvegarde
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         // Redirection vers la page principale
-        window.location.href = 'football.html';
+        window.location.href = 'basketball.html#final-phase';
 
     } catch (error) {
         console.error('Erreur:', error);

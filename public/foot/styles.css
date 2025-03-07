@@ -88,7 +88,7 @@ h1 {
 .round3 {
     display: flex;
     flex-direction: column;
-    justify-content: space-around;
+    justify-content: center;
     min-width: 200px;
     margin: 0 10px;
 }
@@ -96,7 +96,7 @@ h1 {
 .round4 {
     display: flex;
     flex-direction: column;
-    justify-content: space-around;
+    justify-content: center;
     min-width: 200px;
     margin: 0 10px;
 }
@@ -205,6 +205,16 @@ h1 {
     background-color: transparent; /* Supprime le fond rouge */
     color: inherit; /* Rétablit la couleur de texte par défaut */
     font-weight: normal;
+}
+
+.team-logo {
+    width: 20px; /* Réduit de 24px à 20px */
+    height: 20px; /* Réduit de 24px à 20px */
+    margin-right: 6px; /* Réduit de 8px à 6px */
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 50%;
 }
 
 .team.winner .score {

@@ -9,8 +9,43 @@
        .phase-content { display: flex; } 
        .hidden { display: none !important; }
   -->
+  <style>
+    .correction-button {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: #f44336;
+      color: white;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+
+    .correction-button:hover {
+      transform: scale(1.1);
+      background-color: #d32f2f;
+    }
+
+    .match.terminé {
+      cursor: pointer;
+    }
+
+    .match.terminé:hover {
+      border: 2px solid #f44336;
+    }
+  </style>
 </head>
 <body>
+  <button id="correctionMode" class="correction-button" onclick="toggleCorrectionMode()">✏️</button>
   <div class="background-lines"></div>
   <div class="container">
     <header>

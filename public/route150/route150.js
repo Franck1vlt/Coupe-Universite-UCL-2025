@@ -1,7 +1,7 @@
 // Copier le code de ambiance.js et modifier les endpoints API
 const TEAMS = [
     'ESPAS-ESTICE', 'ESPOL', 'ESSLIL', 'FGES', 'FLD', 'FLSH', 'FMMS', 
-    'ICAM', 'IESEG', 'IKPO', 'ISTC', 'JUNIA', 'LiDD', 'PINKTURA', 'USCHOOL'
+    'ICAM', 'IESEG', 'IKPO', 'ISTC', 'JUNIA', 'LiDD', 'PIKTURA', 'USCHOOL'
 ];
 
 let rankings = [];
