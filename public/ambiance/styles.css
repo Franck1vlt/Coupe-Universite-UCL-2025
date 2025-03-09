@@ -90,3 +90,12 @@ h1 {
     text-align: center;
     margin: 0 10px;
 }
+
+
+.team-logo {
+    width: 20px; /* Réduit de 24px à 20px */
+    margin-right: 6px; /* Réduit de 8px à 6px */
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}

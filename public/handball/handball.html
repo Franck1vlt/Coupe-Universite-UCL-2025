@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HANDBALL</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Dans styles.css, pensez à définir par exemple : 
+       .phase-content { display: flex; } 
+       .hidden { display: none !important; }
+  -->
+  <style>
+    .correction-button {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: #f44336;
+      color: white;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+
+    .correction-button:hover {
+      transform: scale(1.1);
+      background-color: #d32f2f;
+    }
+
+    .match.terminé {
+      cursor: pointer;
+    }
+
+    .match.terminé:hover {
+      border: 2px solid #f44336;
+    }
+  </style>
+</head>
+<body>
+  <button id="correctionMode" class="correction-button" onclick="toggleCorrectionMode()">✏️</button>
+  <div class="background-lines"></div>
+  <div class="container">
+    <header>
+      <div class="phase-selector">
+        <select id="phaseSelect" class="phase-select">
+          <option value="poule-phase">Matchs de Poule</option>
+          <option value="final-phase">Phase Finale</option>
+          <option value="ranking-phase">Classement Final</option>
+        </select>
+      </div>
+      <h1>HANDBALL</h1>
+      <div class="subtitle">Phase à élimination directe</div>
+    </header>
+    
+    <div class="tournament-container">
+      <!-- SECTION Matchs de Poules -->
+      <div class="bracket phase-content" id="poule-phase">
+        <div class="poule-container">
+          <!-- Tableau de poule -->
+          <div class="ranking-container">
+              <div class="round-title">Classement de la poule</div>
+              <div class="ranking-table">
+                <div class="ranking-row header">
+                    <div class="rank">Position</div>
+                    <div class="team-name">École</div>
+                    <div class="stats">J</div>
+                    <div class="stats">G</div>
+                    <div class="stats">N</div>
+                    <div class="stats">P</div>
+                    <div class="stats">PTS</div>
+                    <div class="stats">PP</div>
+                    <div class="stats">PC</div>
+                    <div class="stats">+/-</div>
+                </div>
+                <div id="groupList">
+                    <!-- Rempli dynamiquement par JavaScript -->
+                </div>
+              </div>
+          </div>
+
+          <!-- Liste des matchs -->
+          <div class="matches-container">
+              <div class="round-title">Matchs de poule</div>
+              <div class="matches-list">
+                <!-- Les 12 matches de poule ici -->
+                <!-- Match 1 -->
+                <div class="match-wrapper">
+                  <div class="match" data-match-id="1" data-match-type="poule" data-status="à_venir">
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/FGES.png')"></div>FGES</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/JUNIA.png')"></div>JUNIA</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="match-info-container">
+                      <div class="match-time">12:45</div>
+                      <div class="match-status">à venir</div>
+                    </div>
+                  </div>
+                  <div class="connector right"></div>
+                </div>
+                <!-- Match 2 -->
+                <div class="match-wrapper">
+                  <div class="match" data-match-id="2" data-match-type="poule">
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/FMMS.png')"></div>FMMS</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/IKPO.png')"></div>IKPO</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="match-info-container">
+                      <div class="match-time">13:15</div>
+                      <div class="match-status">à venir</div>
+                    </div>
+                  </div>
+                  <div class="connector right"></div>
+                </div>
+                <!-- Match 3 -->
+                <div class="match-wrapper">
+                  <div class="match" data-match-id="3" data-match-type="poule">
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/ICAM.png')"></div>ICAM</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/FLD.png')"></div>FLD</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="match-info-container">
+                      <div class="match-time">13:45</div>
+                      <div class="match-status">à venir</div>
+                    </div>
+                  </div>
+                  <div class="connector right"></div>
+                </div>
+                <!-- Match 4 -->
+                <div class="match-wrapper">
+                  <div class="match" data-match-id="4" data-match-type="poule">
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/IKPO.png')"></div>IKPO</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/FGES.png')"></div>FGES</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="match-info-container">
+                      <div class="match-time">14:15</div>
+                      <div class="match-status">à venir</div>
+                    </div>
+                  </div>
+                  <div class="connector right"></div>
+                </div>
+                <!-- Match 5 -->
+                <div class="match-wrapper">
+                  <div class="match" data-match-id="5" data-match-type="poule">
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/JUNIA.png')"></div>JUNIA</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/FLD.png')"></div>FLD</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="match-info-container">
+                      <div class="match-time">14:45</div>
+                      <div class="match-status">à venir</div>
+                    </div>
+                  </div>
+                  <div class="connector right"></div>
+                </div>
+                <!-- Match 6 -->
+                <div class="match-wrapper">
+                  <div class="match" data-match-id="6" data-match-type="poule">
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/FMMS.png')"></div>FMMS</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/ICAM.png')"></div>ICAM</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="match-info-container">
+                      <div class="match-time">15:15</div>
+                      <div class="match-status">à venir</div>
+                    </div>
+                  </div>
+                  <div class="connector right"></div>
+                </div>
+                <!-- Match 7 -->
+                <div class="match-wrapper">
+                  <div class="match" data-match-id="7" data-match-type="poule">
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/FGES.png')"></div>FGES</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/FLD.png')"></div>FLD</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="match-info-container">
+                      <div class="match-time">15:45</div>
+                      <div class="match-status">à venir</div>
+                    </div>
+                  </div>
+                  <div class="connector right"></div>
+                </div>
+                <!-- Match 8 -->
+                <div class="match-wrapper">
+                  <div class="match" data-match-id="8" data-match-type="poule">
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/IKPO.png')"></div>IKPO</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/ICAM.png')"></div>ICAM</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="match-info-container">
+                      <div class="match-time">16:15</div>
+                      <div class="match-status">à venir</div>
+                    </div>
+                  </div>
+                  <div class="connector right"></div>
+                </div>
+                <!-- Match 9 -->
+                <div class="match-wrapper">
+                  <div class="match" data-match-id="9" data-match-type="poule">
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/JUNIA.png')"></div>JUNIA</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/FMMS.png')"></div>FMMS</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="match-info-container">
+                      <div class="match-time">16:45</div>
+                      <div class="match-status">à venir</div>
+                    </div>
+                  </div>
+                  <div class="connector right"></div>
+                </div>
+                <!-- Match 10 -->
+                <div class="match-wrapper">
+                  <div class="match" data-match-id="10" data-match-type="poule">
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/ICAM.png')"></div>ICAM</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/FGES.png')"></div>FGES</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="match-info-container">
+                      <div class="match-time">17:15</div>
+                      <div class="match-status">à venir</div>
+                    </div>
+                  </div>
+                  <div class="connector right"></div>
+                </div>
+                <!-- Match 11 -->
+                <div class="match-wrapper">
+                  <div class="match" data-match-id="11" data-match-type="poule">
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/FLD.png')"></div>FLD</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/FMMS.png')"></div>FMMS</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="match-info-container">
+                      <div class="match-time">17:45</div>
+                      <div class="match-status">à venir</div>
+                    </div>
+                  </div>
+                  <div class="connector right"></div>
+                </div>
+                <!-- Match 12 -->
+                <div class="match-wrapper">
+                  <div class="match" data-match-id="12" data-match-type="poule">
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/IKPO.png')"></div>IKPO</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="team">
+                      <div class="team-name"><div class="team-logo" style="background-image:url('/img/JUNIA.png')"></div>JUNIA</div>
+                      <div class="score">-</div>
+                    </div>
+                    <div class="match-info-container">
+                      <div class="match-time">18:15</div>
+                      <div class="match-status">à venir</div>
+                    </div>
+                  </div>
+                  <div class="connector right"></div>
+                </div>
+              </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION PHASE FINALE -->
+      <div class="bracket phase-content" id="final-phase">
+        <!-- Finale -->
+        <div class="round3">
+          <div class="round-title">Finale</div>
+          <div class="match-wrapper">
+            <div class="match" data-match-id="13" data-match-type="final" data-position="1">
+              <div class="team">
+                <div class="team-name">1er Poule</div>
+                <div class="score">0</div>
+              </div>
+              <div class="team">
+                <div class="team-name">2e Poule</div>
+                <div class="score">0</div>
+              </div>
+              <div class="match-info-container">
+                <div class="match-time">18:45</div>
+                <div class="match-status">à venir</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Champion -->
+        <div class="round4">
+          <div class="round-title">Champion</div>
+          <div class="trophy">
+            <div class="trophy-icon">🏆</div>
+            <div class="champion" id="champion">À déterminer</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION CLASSEMENT FINAL -->
+      <div class="bracket phase-content" id="ranking-phase">
+        <div class="ranking-container">
+          <div class="round-title">Classement Final</div>
+          <div class="ranking-table">
+            <div class="ranking-row header">
+              <div class="rank">Position</div>
+              <div class="name">Équipe</div>
+              <div class="points">Points</div>
+            </div>
+            <div id="rankingList">
+              <!-- Rempli dynamiquement par JavaScript -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div style="text-align: center;">
+      <button class="reset-button" id="resetTournament" onclick="resetTournament()">Réinitialiser le tournoi</button>
+      <button onclick="simulateTournament()">Simuler la compétition</button>
+      <button class="back-button" onclick="window.location.href='../index.html'">Retour</button>
+    </div>
+  </div>
+  
+  <script src="tournament.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const phaseSelect = document.getElementById('phaseSelect');
+      const phaseContents = document.querySelectorAll('.phase-content');
+      
+      phaseSelect.addEventListener('change', function() {
+        const selectedPhase = phaseSelect.value;
+        phaseContents.forEach(function(content) {
+          // Utilisation de la classe CSS 'hidden' pour masquer/afficher
+          if (content.id === selectedPhase) {
+            content.classList.remove('hidden');
+          } else {
+            content.classList.add('hidden');
+          }
+        });
+        if (selectedPhase === 'ranking-phase') {
+          updateRankingDisplay();
+        }
+      });
+      
+      // Affichage initial (la phase sélectionnée dans le menu est affichée)
+      phaseSelect.dispatchEvent(new Event('change'));
+    });
+  </script>
+</body>
+</html>

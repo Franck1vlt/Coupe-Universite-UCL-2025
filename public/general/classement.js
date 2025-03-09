@@ -103,27 +103,13 @@ async function updateGeneralRanking() {
     }
 }
 
-// Mettre à jour la fonction d'initialisation
+// Simplifier la fonction d'initialisation
 document.addEventListener('DOMContentLoaded', async () => {
     const viewSelect = document.getElementById('viewSelect');
-    const generalView = document.getElementById('generalView');
-    const specificView = document.getElementById('specificView');
-
-    viewSelect.addEventListener('change', async function() {
-        const selectedView = viewSelect.value;
-        if (selectedView === 'general') {
-            generalView.style.display = 'block';
-            specificView.style.display = 'none';
-            await updateGeneralRanking();
-        } else {
-            generalView.style.display = 'none';
-            specificView.style.display = 'block';
-            await updateSpecificRanking(selectedView);
-        }
-    });
-
-    // Déclencher l'événement change initial
-    viewSelect.dispatchEvent(new Event('change'));
+    viewSelect.addEventListener('change', updateRanking);
+    
+    // Première mise à jour
+    await updateRanking();
 });
 
 async function updateSpecificRanking(category) {
@@ -167,3 +153,90 @@ async function updateSpecificRanking(category) {
         console.error(`Erreur lors de la mise à jour du classement ${category}:`, error);
     }
 }
+
+// Mettre à jour directement la fonction updateRanking
+async function updateRanking() {
+    const viewSelect = document.getElementById('viewSelect');
+    const selectedView = viewSelect.value;
+    const rankingTable = document.getElementById('rankingList');
+    
+    if (!rankingTable) return;
+    
+    try {
+        if (selectedView === 'general') {
+            // Vue du classement général
+            const response = await fetch('/api/rankings/general');
+            const data = await response.json();
+            
+            rankingTable.innerHTML = '';
+            data.rankings.forEach((team, index) => {
+                const row = `
+                    <tr class="${index < 3 ? `highlight-${index + 1}` : ''}">
+                        <td>${index + 1}</td>
+                        <td>
+                            <img src="/img/${team.nom_equipe}.png" alt="${team.nom_equipe}" class="team-logo-mini" />
+                            ${team.nom_equipe}
+                        </td>
+                        <td class="total-points">${team.points || 0}</td>
+                    </tr>`;
+                rankingTable.innerHTML += row;
+            });
+        } 
+        else if (selectedView === 'AMBIANCE' || selectedView === 'ROUTE150') {
+            // Vue des points bonus
+            const response = await fetch(`/api/rankings/${selectedView.toLowerCase()}`);
+            const data = await response.json();
+            
+            rankingTable.innerHTML = '';
+            data.rankings.forEach((team, index) => {
+                const row = `
+                    <tr class="${index < 3 ? `highlight-${index + 1}` : ''}">
+                        <td>${index + 1}</td>
+                        <td>
+                            <img src="/img/${team.nom_equipe}.png" alt="${team.nom_equipe}" class="team-logo-mini" />
+                            ${team.nom_equipe}
+                        </td>
+                        <td>${team.points || 0}</td>
+                    </tr>`;
+                rankingTable.innerHTML += row;
+            });
+        }
+        else {
+            // Vue par sport spécifique
+            const response = await fetch(`/api/rankings/${selectedView.toLowerCase()}`);
+            const data = await response.json();
+            
+            rankingTable.innerHTML = '';
+            data.rankings.forEach((team, index) => {
+                const row = `
+                    <tr class="${index < 3 ? `highlight-${index + 1}` : ''}">
+                        <td>${index + 1}</td>
+                        <td>
+                            <img src="/img/${team.nom_equipe}.png" alt="${team.nom_equipe}" class="team-logo-mini" />
+                            ${team.nom_equipe}
+                        </td>
+                        <td>${team.points || 0}</td>
+                    </tr>`;
+                rankingTable.innerHTML += row;
+            });
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+    }
+}
+
+function changeView() {
+    const viewSelect = document.getElementById('viewSelect');
+    const selectedView = viewSelect.value;
+    
+    if (selectedView === 'general') {
+        updateRanking();
+    } else {
+        updateSpecificRanking(selectedView);
+    }
+}
+
+// Mise à jour initiale
+document.addEventListener('DOMContentLoaded', updateRanking);
+// Mise à jour toutes les 30 secondes
+setInterval(updateRanking, 30000);

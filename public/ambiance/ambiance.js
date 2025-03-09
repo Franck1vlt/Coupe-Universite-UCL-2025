@@ -138,10 +138,14 @@ function displayRanking() {
         return b.points - a.points; // Sinon tri par points
     }).forEach((team, index) => {
         const position = index + 1;
+        const logoSrc = `../img/${team.name}.png`; // Assumes logos are named in a specific format
         rankingList.innerHTML += `
             <div class="ranking-row ${position <= 3 ? 'highlight-' + position : ''}">
                 <div class="rank">${position}</div>
-                <div class="team">${team.name}</div>
+                <div class="team">
+                    <img src="${logoSrc}" alt="${team.name} logo" class="team-logo">
+                    ${team.name}
+                </div>
                 <div class="points">${team.points}</div>
             </div>
         `;

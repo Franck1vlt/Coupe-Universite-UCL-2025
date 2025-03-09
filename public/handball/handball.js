@@ -77,7 +77,7 @@ function subRedCard(team) {
     }
 }
 
-// Fonction de fin de match
+// Fonction de fin de match modifiée
 async function resetGame() {
     if (!confirm('Voulez-vous vraiment terminer le match ?')) return;
 
@@ -91,88 +91,29 @@ async function resetGame() {
     const loser = score1 > score2 ? team2 : team1;
 
     try {
-        const tournamentState = JSON.parse(localStorage.getItem('footballTournamentState'));
+        // Récupérer l'état actuel du tournoi
+        const tournamentState = JSON.parse(localStorage.getItem('handballTournamentState'));
         
         if (tournamentState && tournamentState.matches) {
-            const currentMatch = tournamentState.matches[matchId];
-            
-            // Mise à jour du match actuel
-            currentMatch.team1 = team1;
-            currentMatch.team2 = team2;
-            currentMatch.score1 = score1;
-            currentMatch.score2 = score2;
-            currentMatch.status = 'terminé';
-            currentMatch.winner = winner;
-            currentMatch.loser = loser;
+            // Mettre à jour le match avec le statut 'terminé'
+            tournamentState.matches[matchId] = {
+                ...tournamentState.matches[matchId],
+                team1: team1,
+                team2: team2,
+                score1: score1,
+                score2: score2,
+                status: 'terminé',
+                winner: winner,
+                loser: loser,
+                matchType: matchType
+            };
 
-            // Gestion du match suivant pour le vainqueur
-            if (currentMatch.nextMatchWin) {
-                const nextMatch = tournamentState.matches[currentMatch.nextMatchWin];
-                if (nextMatch) {
-                    const matchIdNum = parseInt(matchId);
-                    // Pour les quarts de finale (matchs 5-6 et 7-8)
-                    if (matchIdNum >= 5 && matchIdNum <= 8) {
-                        if (matchIdNum === 5 || matchIdNum === 7) {
-                            nextMatch.team1 = winner;
-                            // Effacer team2 s'il était le même que team1
-                            if (nextMatch.team2 === winner) {
-                                nextMatch.team2 = null;
-                            }
-                        } else { // matchIdNum === 6 ou 8
-                            nextMatch.team2 = winner;
-                            // Effacer team1 s'il était le même que team2
-                            if (nextMatch.team1 === winner) {
-                                nextMatch.team1 = null;
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Gestion du match suivant pour le perdant
-            if (currentMatch.nextMatchLose) {
-                const nextLoseMatch = tournamentState.matches[currentMatch.nextMatchLose];
-                if (nextLoseMatch) {
-                    const matchIdNum = parseInt(matchId);
-                    if (matchIdNum === 5 || matchIdNum === 7) {
-                        nextLoseMatch.team1 = loser;
-                        if (nextLoseMatch.team2 === loser) {
-                            nextLoseMatch.team2 = null;
-                        }
-                    } else {
-                        nextLoseMatch.team2 = loser;
-                        if (nextLoseMatch.team1 === loser) {
-                            nextLoseMatch.team1 = null;
-                        }
-                    }
-                }
-            }
-
-            localStorage.setItem('footballTournamentState', JSON.stringify(tournamentState));
+            // Sauvegarder l'état mis à jour
+            localStorage.setItem('handballTournamentState', JSON.stringify(tournamentState));
         }
 
-        // Mise à jour du match dans la base de données
-        await fetch('/api/match-result', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                matchId,
-                team1,
-                team2,
-                score1,
-                score2,
-                matchType,
-                status: 'terminé',
-                winner,
-                loser,
-                id_tournois: 1
-            })
-        });
-
         // Redirection vers la page principale
-        window.location.href = 'football.html';
+        window.location.href = 'handball.html' + (matchType === 'final' ? '#final-phase' : '#poule-phase');
 
     } catch (error) {
         console.error('Erreur:', error);
@@ -208,10 +149,26 @@ function updateDisplay() {
     localStorage.setItem('liveMatchData', JSON.stringify(liveData));
 }
 
-// Initialisation
+// Ajout de la vérification du statut au chargement de la page
 document.addEventListener('DOMContentLoaded', () => {
-    // Mettre le match en status "en cours" au chargement
     const matchId = new URLSearchParams(window.location.search).get('matchId');
+    
+    // Charger l'état du tournoi
+    const tournamentState = JSON.parse(localStorage.getItem('handballTournamentState'));
+    if (tournamentState && tournamentState.matches[matchId]) {
+        const match = tournamentState.matches[matchId];
+        
+        // Si le match est déjà terminé en mode correction, charger les scores existants
+        if (match.status === 'terminé' && new URLSearchParams(window.location.search).get('correction') === 'true') {
+            matchData.teamA.score = match.score1;
+            matchData.teamB.score = match.score2;
+        }
+    }
+
+    updateTeams();
+    updateDisplay();
+    
+    // Mettre le match en status "en cours" au chargement
     fetch(`/api/match-status/${matchId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

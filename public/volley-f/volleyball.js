@@ -1,349 +1,215 @@
 // Variables globales
-let teamAScore = 0;
-let teamBScore = 0;
-let teamAYellowCards = 0;
-let teamBYellowCards = 0;
-let teamARedCards = 0;
-let teamBRedCards = 0;
-let chrono;
-let chronoRunning = false;
-let server = 'A'; // 'A' pour l'équipe A, 'B' pour l'équipe B
+let matchData = {
+    teamA: { score: 0, yellowCards: 0, redCards: 0 },
+    teamB: { score: 0, yellowCards: 0, redCards: 0 },
+    chrono: { running: false, time: 0, interval: null },
+    matchId: new URLSearchParams(window.location.search).get('matchId')
+};
 
-// Initialisation de la page
-function updateDisplay() {
-    updateTeams();
-    updateMatchType();
-    updateScores();
-    updateCards();
-    updateChronoDisplay();
-    updateServer();
+// Déplacer la fonction updateTeams dans le scope global
+function updateTeams() {
+    const teamA = document.getElementById('teamA');
+    const teamB = document.getElementById('teamB');
+    const teamAName = document.getElementById('teamAName');
+    const teamBName = document.getElementById('teamBName');
+    
+    if (teamA && teamB && teamAName && teamBName) {
+        teamAName.textContent = teamA.value || 'Team A';
+        teamBName.textContent = teamB.value || 'Team B';
+    }
 }
 
-// Fonction de reset du game
-function resetGame() {
-    localStorage.clear();
-    stopChrono();
+// Fonctions pour le chronomètre
+function startChrono() {
+    if (!matchData.chrono.running) {
+        matchData.chrono.running = true;
+        matchData.chrono.interval = setInterval(updateChrono, 1000);
+    }
+}
+
+function stopChrono() {
+    matchData.chrono.running = false;
+    clearInterval(matchData.chrono.interval);
+}
+
+function updateChrono() {
+    matchData.chrono.time++;
+    const minutes = Math.floor(matchData.chrono.time / 60);
+    const seconds = matchData.chrono.time % 60;
+    document.getElementById('gameChrono').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Fonctions pour les points et cartons
+function addPoint(team) {
+    matchData[`team${team}`].score++;
     updateDisplay();
 }
-
-
-// Mets à jour le nom des équipes et renvoie les id teamAName et teamBName
-function updateTeams() {
-    if (document.getElementById('teamA')) {
-        // On est sur la page de contrôle
-        const tA = document.getElementById('teamA').value;
-        const tB = document.getElementById('teamB').value;
-        localStorage.setItem('teamAName', tA);
-        localStorage.setItem('teamBName', tB);
-    }
-    
-    // Met à jour l'affichage sur les deux pages
-    const teamAName = localStorage.getItem('teamAName') || 'TEAM A';
-    const teamBName = localStorage.getItem('teamBName') || 'TEAM B';
-    
-    const teamAElements = document.querySelectorAll('#teamAName');
-    const teamBElements = document.querySelectorAll('#teamBName');
-    
-    teamAElements.forEach(element => {
-        element.innerText = teamAName;
-    });
-    
-    teamBElements.forEach(element => {
-        element.innerText = teamBName;
-    });
-}
-
-// Mets à jour le type de match et renvoie l'id matchType
-function updateMatchType() {
-    if (document.getElementById('matchTypeSelector')) {
-        // On est sur la page de contrôle
-        const matchType = document.getElementById('matchTypeSelector').value;
-        localStorage.setItem('matchType', matchType);
-    }
-    
-    const matchType = localStorage.getItem('matchType') || 'Match';
-    const matchTypeElements = document.querySelectorAll('#matchType');
-    
-    matchTypeElements.forEach(element => {
-        element.textContent = matchType;
-    });
-}
-
-// Mets à jour les scores des équipes
-function updateScores() {
-    teamAScore = parseInt(localStorage.getItem('teamAScore')) || 0;
-    teamBScore = parseInt(localStorage.getItem('teamBScore')) || 0;
-    
-    const teamAScoreElements = document.querySelectorAll('#teamAScore');
-    const teamBScoreElements = document.querySelectorAll('#teamBScore');
-    
-    teamAScoreElements.forEach(element => {
-        element.innerText = teamAScore;
-    });
-    
-    teamBScoreElements.forEach(element => {
-        element.innerText = teamBScore;
-    });
-}
-
-// Mets à jour les cartons des équipes
-function updateCards() {
-    teamAYellowCards = parseInt(localStorage.getItem('teamAYellowCards')) || 0;
-    teamBYellowCards = parseInt(localStorage.getItem('teamBYellowCards')) || 0;
-    teamARedCards = parseInt(localStorage.getItem('teamARedCards')) || 0;
-    teamBRedCards = parseInt(localStorage.getItem('teamBRedCards')) || 0;
-    
-    const elements = {
-        teamAYellow: document.querySelectorAll('#teamAYellowCard'),
-        teamBYellow: document.querySelectorAll('#teamBYellowCard'),
-        teamARed: document.querySelectorAll('#teamARedCard'),
-        teamBRed: document.querySelectorAll('#teamBRedCard')
-    };
-    
-    elements.teamAYellow.forEach(element => {
-        element.innerText = teamAYellowCards;
-    });
-    elements.teamBYellow.forEach(element => {
-        element.innerText = teamBYellowCards;
-    });
-    elements.teamARed.forEach(element => {
-        element.innerText = teamARedCards;
-    });
-    elements.teamBRed.forEach(element => {
-        element.innerText = teamBRedCards;
-    });
-}
-
-// Les fonctions existantes restent les mêmes, mais avec mise à jour du localStorage
 
 function subPoint(team) {
-    if (team === 'A' && teamAScore > 0) {
-        teamAScore--;
-        localStorage.setItem('teamAScore', teamAScore);
-    } else if (team === 'B' && teamBScore > 0) {
-        teamBScore--;
-        localStorage.setItem('teamBScore', teamBScore);
+    if (matchData[`team${team}`].score > 0) {
+        matchData[`team${team}`].score--;
+        updateDisplay();
     }
-    updateDisplay();
-}
-
-function addPoint(team) {
-    if (team === 'A') {
-        teamAScore++;
-        localStorage.setItem('teamAScore', teamAScore);
-    } else if (team === 'B') {
-        teamBScore++;
-        localStorage.setItem('teamBScore', teamBScore);
-    }
-    updateDisplay();
 }
 
 function addYellowCard(team) {
-    if (team === 'A') {
-        teamAYellowCards++;
-        localStorage.setItem('teamAYellowCards', teamAYellowCards);
-    } else if (team === 'B') {
-        teamBYellowCards++;
-        localStorage.setItem('teamBYellowCards', teamBYellowCards);
-    }
-    updateDisplay();
-}
-
-function addRedCard(team) {
-    if (team === 'A') {
-        teamARedCards++;
-        localStorage.setItem('teamARedCards', teamARedCards);
-    } else if (team === 'B') {
-        teamBRedCards++;
-        localStorage.setItem('teamBRedCards', teamBRedCards);
-    }
-    updateDisplay();
-}
-
-function subRedCard(team) {
-    if (team === 'A' && teamARedCards > 0) {
-        teamARedCards--;
-        localStorage.setItem('teamARedCards', teamARedCards);
-    } else if (team === 'B' && teamBRedCards > 0) {
-        teamBRedCards--;
-        localStorage.setItem('teamBRedCards', teamBRedCards);
-    }
+    matchData[`team${team}`].yellowCards++;
     updateDisplay();
 }
 
 function subYellowCard(team) {
-    if (team === 'A' && teamAYellowCards > 0) {
-        teamAYellowCards--;
-        localStorage.setItem('teamAYellowCards', teamAYellowCards);
-    } else if (team === 'B' && teamBYellowCards > 0) {
-        teamBYellowCards--;
-        localStorage.setItem('teamBYellowCards', teamBYellowCards);
+    if (matchData[`team${team}`].yellowCards > 0) {
+        matchData[`team${team}`].yellowCards--;
+        updateDisplay();
     }
-    updateDisplay();
-}   
+}
 
-// Lance le chrono et synchronise entre les pages
-function startChrono() {
-    let minutes = parseInt(localStorage.getItem('minutes')) || 0;
-    let seconds = parseInt(localStorage.getItem('seconds')) || 0;
-    chrono = setInterval(() => {
-        seconds++;
-        if (seconds === 60) {
-            minutes++;
-            seconds = 0;
-        }
-        localStorage.setItem('minutes', minutes);
-        localStorage.setItem('seconds', seconds);
+function addRedCard(team) {
+    matchData[`team${team}`].redCards++;
+    updateDisplay();
+}
+
+function subRedCard(team) {
+    if (matchData[`team${team}`].redCards > 0) {
+        matchData[`team${team}`].redCards--;
+        updateDisplay();
+    }
+}
+
+// Fonction de fin de match
+async function resetGame() {
+    if (!confirm('Voulez-vous vraiment terminer le match ?')) return;
+
+    const matchId = new URLSearchParams(window.location.search).get('matchId');
+    const team1 = document.getElementById('teamA').value;
+    const team2 = document.getElementById('teamB').value;
+    const score1 = matchData.teamA.score;
+    const score2 = matchData.teamB.score;
+    const matchType = new URLSearchParams(window.location.search).get('matchType');
+    const winner = score1 > score2 ? team1 : team2;
+    const loser = score1 > score2 ? team2 : team1;
+
+    try {
+        // Récupérer l'état actuel du tournoi
+        const tournamentState = JSON.parse(localStorage.getItem('volleyFTournamentState')) || { matches: {} };
         
-        const chronoElements = document.querySelectorAll('#gameChrono');
-        chronoElements.forEach(element => {
-            element.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            if (minutes >= 20) {
-                element.style.color = 'red';
+        // Mettre à jour le match actuel
+        if (tournamentState.matches) {
+            tournamentState.matches[matchId] = {
+                ...tournamentState.matches[matchId],
+                team1: team1,
+                team2: team2,
+                score1: score1,
+                score2: score2,
+                status: 'terminé',
+                winner: winner,
+                loser: loser,
+                matchType: matchType
+            };
+
+            // Gérer spécifiquement les demi-finales
+            if (matchId === '8' || matchId === '9') {
+                // Mettre à jour la finale (match 11)
+                tournamentState.matches[11] = {
+                    ...tournamentState.matches[11],
+                    [matchId === '8' ? 'team1' : 'team2']: winner,
+                    status: 'à_venir',
+                    score1: null,
+                    score2: null,
+                    winner: null,
+                    loser: null
+                };
+
+                // Mettre à jour la petite finale (match 10)
+                tournamentState.matches[10] = {
+                    ...tournamentState.matches[10],
+                    [matchId === '8' ? 'team1' : 'team2']: loser,
+                    status: 'à_venir',
+                    score1: null,
+                    score2: null,
+                    winner: null,
+                    loser: null
+                };
             }
-        });
-    }, 1000);
-    chronoRunning = true;
-}
 
-// Arrête le chrono
-function stopChrono() {
-    if (chronoRunning) {
-        clearInterval(chrono);
-        chronoRunning = false;
-    }
-}
-
-// Mets à jour l'affichage du chrono
-function updateChronoDisplay() {
-    let minutes = parseInt(localStorage.getItem('minutes')) || 0;
-    let seconds = parseInt(localStorage.getItem('seconds')) || 0;
-    const chronoElements = document.querySelectorAll('#gameChrono');
-    chronoElements.forEach(element => {
-        element.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        if (minutes >= 20) {
-            element.style.color = 'red';
+            // Sauvegarder l'état mis à jour
+            localStorage.setItem('volleyFTournamentState', JSON.stringify(tournamentState));
         }
-    });
-}
 
-// Change la main de service
-function ChangeServer() {
-    server = server === 'A' ? 'B' : 'A';
-    localStorage.setItem('server', server);
-    updateServer();
-}
+        // Envoyer les résultats au serveur
+        await fetch('/api/match-result', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                matchId,
+                team1,
+                team2,
+                score1,
+                score2,
+                matchType,
+                status: 'terminé',
+                winner,
+                loser
+            })
+        });
 
-// Mets à jour l'affichage du serveur
-function updateServer() {
-    const server = localStorage.getItem('server') || 'A';
-    const ballIconA = document.getElementById('ballIconA');
-    const ballIconB = document.getElementById('ballIconB');
-    
-    if (server === 'A') {
-        ballIconA.style.opacity = 1;
-        ballIconB.style.opacity = 0;
-    } else {
-        ballIconA.style.opacity = 0;
-        ballIconB.style.opacity = 1;
+        // Attendre un peu avant la redirection pour assurer la sauvegarde
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Redirection vers la page principale
+        window.location.href = 'volleyball.html#final-phase';
+
+    } catch (error) {
+        console.error('Erreur:', error);
+        alert('Erreur lors de la sauvegarde du match');
     }
 }
 
-// Ouvre la fenêtre d'affichage des scores
-function openScoreDisplay() {
-    window.open('affichage_score.html', 'scoreDisplay');
+// Fonction de mise à jour de l'affichage
+function updateDisplay() {
+    document.getElementById('teamAScore').textContent = matchData.teamA.score;
+    document.getElementById('teamBScore').textContent = matchData.teamB.score;
+    document.getElementById('teamAYellowCard').textContent = matchData.teamA.yellowCards;
+    document.getElementById('teamBYellowCard').textContent = matchData.teamB.yellowCards;
+    document.getElementById('teamARedCard').textContent = matchData.teamA.redCards;
+    document.getElementById('teamBRedCard').textContent = matchData.teamB.redCards;
+
+    // Mettre à jour les données en direct
+    const liveData = {
+        matchId: new URLSearchParams(window.location.search).get('matchId'),
+        team1: document.getElementById('teamAName').textContent,
+        team2: document.getElementById('teamBName').textContent,
+        matchType: document.getElementById('matchType').textContent,
+        score1: matchData.teamA.score,
+        score2: matchData.teamB.score,
+        yellowCards1: matchData.teamA.yellowCards,
+        yellowCards2: matchData.teamB.yellowCards,
+        redCards1: matchData.teamA.redCards,
+        redCards2: matchData.teamB.redCards,
+        chrono: document.getElementById('gameChrono').textContent,
+        status: 'en cours'
+    };
+
+    localStorage.setItem('liveMatchData', JSON.stringify(liveData));
 }
 
-// Ajoute un écouteur d'événements pour le stockage
-window.addEventListener('storage', (e) => {
-    updateDisplay();
-});
-
-// Efface les données de localStorage lors du rechargement de la page de contrôle
-window.addEventListener('beforeunload', () => {
-    localStorage.removeItem('teamAScore');
-    localStorage.removeItem('teamBScore');
-    localStorage.removeItem('teamAYellowCards');
-    localStorage.removeItem('teamBYellowCards');
-    localStorage.removeItem('teamARedCards');
-    localStorage.removeItem('teamBRedCards');
-    localStorage.removeItem('minutes');
-    localStorage.removeItem('seconds');
-    localStorage.removeItem('teamAName');
-    localStorage.removeItem('teamBName');
-    localStorage.removeItem('matchType');
-    localStorage.removeItem('server');
-});
-
-// Initialize on page load
+// Initialisation
 document.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('teamA')) {
-        // Page de contrôle
-        document.getElementById('teamA').addEventListener('change', updateTeams);
-        document.getElementById('teamB').addEventListener('change', updateTeams);
-        document.getElementById('matchTypeSelector').addEventListener('change', updateMatchType);
-    }
+    // Mettre le match en status "en cours" au chargement
+    const matchId = new URLSearchParams(window.location.search).get('matchId');
+    fetch(`/api/match-status/${matchId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            status: 'en cours',
+            score1: 0,
+            score2: 0
+        })
+    });
+
+    updateTeams();
     updateDisplay();
-    updateChronoDisplay(); // Ajout de cette ligne pour s'assurer que le chrono est mis à jour au chargement de la page
-});
-
-// Raccourcis clavier
-document.addEventListener('keydown', function(event) {
-    if (event.repeat) return; // Évite les répétitions si la touche est maintenue
-
-    switch (event.key.toLowerCase()) {
-        case '1': 
-        case 'a':
-            addPoint('A');
-            break;
-        case '2': 
-        case 'z':
-            addPoint('B');
-            break;
-        case '3': 
-        case 'e':
-            subPoint('A');
-            break;
-        case '4': 
-        case 'r':
-            subPoint('B');
-            break;
-        case '5': 
-        case 't':
-            addYellowCard('A');
-            break;
-        case '6': 
-        case 'y':
-            addYellowCard('B');
-            break;
-
-        case '7':
-        case 'u':
-            subYellowCard('A');
-            break;
-        case '8':
-        case 'i':
-            subYellowCard('B');
-            break;
-        case '9':
-        case 'o':
-            addRedCard('A');
-            break;
-        case '0':
-        case 'p':
-            addRedCard('B');
-            break;
-        case 's':
-            startChrono();
-            break;
-        case 'd':
-            stopChrono();
-            break;
-        case 'f':
-            ChangeServer();
-            break;
-        case 'c':
-            openScoreDisplay();
-            break;
-    }
 });

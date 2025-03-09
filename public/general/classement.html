@@ -16,7 +16,7 @@
         </header>
 
         <div class="filters">
-            <select id="viewSelect" class="view-select">
+            <select id="viewSelect" class="view-select" onchange="updateRanking()">
                 <option value="general">Classement Général</option>
                 <optgroup label="Sports">
                     <option value="FOOT">Football</option>
@@ -35,31 +35,18 @@
             </select>
         </div>
 
-        <!-- Vue classement général -->
-        <div id="generalView" class="ranking-view">
-            <div class="ranking-table">
-                <div class="ranking-header">
-                    <div class="rank">Position</div>
-                    <div class="team">École/Faculté</div>
-                    <div class="points">Points Sports</div>
-                    <div class="points">Points Bonus</div>
-                    <div class="points">Total</div>
-                </div>
-                <div id="generalRankingList"></div>
-            </div>
-        </div>
-
-        <!-- Vue sport spécifique -->
-        <div id="specificView" class="ranking-view" style="display: none;">
-            <div class="ranking-table">
-                <div class="ranking-header">
-                    <div class="rank">Position</div>
-                    <div class="team">École/Faculté</div>
-                    <div class="points">Points</div>
-                </div>
-                <div id="specificRankingList"></div>
-            </div>
-        </div>
+        <table class="ranking-table">
+            <thead>
+                <tr>
+                    <th>Position</th>
+                    <th>Équipe</th>
+                    <th id="pointsHeader">Points</th>
+                </tr>
+            </thead>
+            <tbody id="rankingList">
+                <!-- Rempli dynamiquement par JavaScript -->
+            </tbody>
+        </table>
 
         <button class="back-button" onclick="window.location.href='../index.html'">Retour</button>
     </div>

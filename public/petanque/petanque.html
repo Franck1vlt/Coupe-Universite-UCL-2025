@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Volley Ball F</title>
+    <title>Petanque</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Dans styles.css, pensez à définir par exemple : 
+         .phase-content { display: flex; } 
+         .hidden { display: none !important; }
+    -->
     <style>
       .correction-button {
         position: fixed;
@@ -47,104 +51,144 @@
       <header>
         <div class="phase-selector">
           <select id="phaseSelect" class="phase-select">
-            <option value="qualification-phase">Qualifications</option>
             <option value="final-phase">Phase finale</option>
             <option value="ranking-phase">Classement final</option>
           </select>
         </div>
-        <h1>Volleyball Femmes</h1>
+        <h1>Pétanque</h1>
         <div class="subtitle">Phase à élimination directe</div>
       </header>
         
       <div class="tournament-container">
-        <!-- SECTION QUALIFICATIONS -->
-        <div class="bracket phase-content" id="qualification-phase">
-            <div class="round qualification-round">
-            <div class="round-title">Qualifications</div>
+        <!-- SECTION PHASE FINALE -->
+        <div class="bracket phase-content" id="final-phase">
+            <!-- Barrages -->
+            <div class="round">
+                <div class="round-title">Barrages</div>
                 <!-- Match 1 -->
                 <div class="match-wrapper">
-                    <div class="match terminé" data-match-id="1" data-match-type="qualification">
-                    <div class="team">
-                        <div class="team-name">ESPAS-ESTICE</div>
-                        <div class="score">25</div>
+                    <div class="match" data-match-id="1" data-match-type="barrage">
+                        <div class="team">
+                            <div class="team-name">ESSLIL</div>
+                            <div class="score">-</div>
+                        </div>
+                        <div class="team">
+                            <div class="team-name">USCHOOL</div>
+                            <div class="score">-</div>
+                        </div>
                     </div>
-                    <div class="team">
-                        <div class="team-name">USCHOOL</div>
-                        <div class="score">14</div> <!-- Correction du score -->
+                    <div class="connector right"></div>
+                </div>
+                <!-- Match 2 -->
+                <div class="match-wrapper">
+                    <div class="match" data-match-id="2" data-match-type="barrage">
+                        <div class="team">
+                            <div class="team-name">LIDD</div>
+                            <div class="score">-</div>
+                        </div>
+                        <div class="team">
+                            <div class="team-name">FLD</div>
+                            <div class="score">-</div>
+                        </div>
                     </div>
+                    <div class="connector right"></div>
+                </div>
+                <!-- Match 3 -->
+                <div class="match-wrapper">
+                    <div class="match" data-match-id="3" data-match-type="barrage">
+                        <div class="team">
+                            <div class="team-name">ESPAS-ESTICE</div>
+                            <div class="score">-</div>
+                        </div>
+                        <div class="team">
+                            <div class="team-name">ESPOL</div>
+                            <div class="score">-</div>
+                        </div>
+                    </div>
+                    <div class="connector right"></div>
+                </div>
+                <!-- Match 4 -->
+                <div class="match-wrapper">
+                    <div class="match" data-match-id="4" data-match-type="barrage">
+                        <div class="team">
+                            <div class="team-name">PIKTURA</div>
+                            <div class="score">-</div>
+                        </div>
+                        <div class="team">
+                            <div class="team-name">FLSH</div>
+                            <div class="score">-</div>
+                        </div>
                     </div>
                     <div class="connector right"></div>
                 </div>
             </div>
-        </div>
 
-        <!-- SECTION PHASE FINALE -->
-        <div class="bracket phase-content" id="final-phase">
             <!-- Quarts de finale -->
             <div class="round">
-            <div class="round-title">Quarts de finale</div>
-            <!-- Match 1: ESPOL vs FGES -->
-            <div class="match-wrapper">
-                <div class="match" data-match-id="4" data-match-type="quarterfinal" data-position="1">
-                <div class="team">
-                    <div class="team-name">ESPOL</div>
-                    <div class="score">-</div>
+                <div class="round-title">Quarts de finale</div>
+                <!-- QF1 -->
+                <div class="match-wrapper">
+                    <div class="match" data-match-id="5" data-match-type="quarterfinal">
+                        <div class="team">
+                            <div class="team-name">FMMS</div>
+                            <div class="score">-</div>
+                        </div>
+                        <div class="team">
+                            <div class="team-name">À déterminer</div>
+                            <div class="score">-</div>
+                        </div>
+                    </div>
+                    <div class="connector top"></div>
                 </div>
-                <div class="team">
-                    <div class="team-name">FMMS</div>
-                    <div class="score">-</div>
+                <!-- QF2 -->
+                <div class="match-wrapper">
+                    <div class="match" data-match-id="6" data-match-type="quarterfinal">
+                        <div class="team">
+                            <div class="team-name">FGES</div>
+                            <div class="score">-</div>
+                        </div>
+                        <div class="team">
+                            <div class="team-name">À déterminer</div>
+                            <div class="score">-</div>
+                        </div>
+                    </div>
+                    <div class="connector bottom"></div>
                 </div>
+                <!-- QF3 -->
+                <div class="match-wrapper">
+                    <div class="match" data-match-id="7" data-match-type="quarterfinal">
+                        <div class="team">
+                            <div class="team-name">IKPO</div>
+                            <div class="score">-</div>
+                        </div>
+                        <div class="team">
+                            <div class="team-name">À déterminer</div>
+                            <div class="score">-</div>
+                        </div>
+                    </div>
+                    <div class="connector top"></div>
                 </div>
-                <div class="connector top"></div>
+                <!-- QF4 -->
+                <div class="match-wrapper">
+                    <div class="match" data-match-id="8" data-match-type="quarterfinal">
+                        <div class="team">
+                            <div class="team-name">ICAM</div>
+                            <div class="score">-</div>
+                        </div>
+                        <div class="team">
+                            <div class="team-name">À déterminer</div>
+                            <div class="score">-</div>
+                        </div>
+                    </div>
+                    <div class="connector bottom"></div>
+                </div>
             </div>
-            <!-- Match 2: FLSH vs IKPO -->
-            <div class="match-wrapper">
-                <div class="match" data-match-id="5" data-match-type="quarterfinal" data-position="2">
-                <div class="team">
-                    <div class="team-name">FLSH</div>
-                    <div class="score">-</div>
-                </div>
-                <div class="team">
-                    <div class="team-name">IKPO</div>
-                    <div class="score">-</div>
-                </div>
-                </div>
-                <div class="connector bottom"></div>
-            </div>
-            <!-- Match 3: JUNIA vs FLD -->
-            <div class="match-wrapper">
-                <div class="match" data-match-id="6" data-match-type="quarterfinal" data-position="3">
-                <div class="team">
-                    <div class="team-name">JUNIA</div>
-                    <div class="score">-</div>
-                </div>
-                <div class="team">
-                    <div class="team-name">FLD</div>
-                    <div class="score">-</div>
-                </div>
-                </div>
-                <div class="connector top"></div>
-            </div>
-            <!-- Match 4: ESPAS-ESTICE vs FGES -->
-            <div class="match-wrapper">
-                <div class="match" data-match-id="7" data-match-type="quarterfinal" data-position="4">
-                <div class="team">
-                    <div class="team-name">ESPAS-ESTICE</div>
-                    <div class="score">-</div>
-                </div>
-                <div class="team">
-                    <div class="team-name">FGES</div>
-                    <div class="score">-</div>
-                </div>
-                </div>
-                <div class="connector bottom"></div>
-            </div>
-            </div>
+
             <!-- Demi-finales -->
             <div class="round2">
             <div class="round-title">Demi-finales</div>
             <div class="match-wrapper">
-                <div class="match" data-match-id="8" data-match-type="semifinal" data-position="1">
+                <div class="match" data-match-id="9" data-match-type="semifinal" data-position="1">
                 <div class="team">
                     <div class="team-name">À déterminer</div>
                     <div class="score">0</div>
@@ -157,7 +201,7 @@
                 <div class="connector top"></div>
             </div>
             <div class="match-wrapper">
-                <div class="match" data-match-id="9" data-match-type="semifinal" data-position="2">
+                <div class="match" data-match-id="10" data-match-type="semifinal" data-position="2">
                 <div class="team">
                     <div class="team-name">À déterminer</div>
                     <div class="score">0</div>
@@ -174,7 +218,7 @@
             <div class="round3">
             <div class="round-title">Finale</div>
             <div class="match-wrapper">
-                <div class="match" data-match-id="11" data-match-type="final" data-position="1">
+                <div class="match" data-match-id="11" data-match-type="final-h" data-position="1">
                 <div class="team">
                     <div class="team-name">À déterminer</div>
                     <div class="score">0</div>
@@ -212,7 +256,7 @@
         <!-- SECTION CLASSEMENT FINAL -->
         <div class="bracket phase-content" id="ranking-phase">
             <div class="ranking-container">
-            <div class="round-title">Classement Final Volleyball</div>
+            <div class="round-title">Classement Final Basket</div>
             <div class="ranking-table">
                 <div class="ranking-row header">
                 <div class="rank">Position</div>
@@ -232,6 +276,7 @@
         <button class="back-button" onclick="window.location.href='../index.html'">Retour</button>
     </div>
     
+    <!-- Changer le lien vers tournament.js pour utiliser le bon chemin -->
     <script src="tournament.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
