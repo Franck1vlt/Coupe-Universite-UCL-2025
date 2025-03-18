@@ -20,7 +20,7 @@ let rankings = [];
 
 async function initializeRankings() {
     try {
-        const response = await fetch('/api/rankings/ambiance');
+        const response = await fetch('/api/rankings/route150');
         const data = await response.json();
         
         const rankingList = document.getElementById('rankingList');
@@ -121,7 +121,7 @@ async function updatePoints(action) {
         }
 
         // 1. Récupérer les points actuels
-        const response = await fetch('/api/rankings/ambiance');
+        const response = await fetch('/api/rankings/route150');
         const data = await response.json();
         const currentTeamData = data.rankings.find(r => r.nom_equipe === selectedTeam);
         const currentPoints = currentTeamData ? parseInt(currentTeamData.points) || 0 : 0;
@@ -134,7 +134,7 @@ async function updatePoints(action) {
             Math.max(0, currentPoints - pointsToAdd);
 
         // 3. Envoyer la mise à jour avec les nouveaux points absolus
-        const updateResponse = await fetch('/api/rankings/ambiance/update', {
+        const updateResponse = await fetch('/api/rankings/route150/update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -173,13 +173,13 @@ async function removePoints() {
 
 // Modifier la fonction resetRanking et l'exposition globale
 async function resetRanking() {
-    if (!confirm('Voulez-vous vraiment réinitialiser tous les points d\'ambiance ? Cette action est irréversible.')) {
+    if (!confirm('Voulez-vous vraiment réinitialiser tous les points de route 150 ? Cette action est irréversible.')) {
         return;
     }
 
     try {
         // Réinitialiser les points de toutes les équipes en une seule requête
-        const response = await fetch('/api/rankings/ambiance/reset', {
+        const response = await fetch('/api/rankings/route150/reset', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
@@ -195,7 +195,7 @@ async function resetRanking() {
         document.getElementById('teamSelect').value = '';
         document.getElementById('pointsInput').value = '';
         
-        alert('Points d\'ambiance réinitialisés avec succès !');
+        alert('Points de route 150 réinitialisés avec succès !');
     } catch (error) {
         console.error('Erreur lors de la réinitialisation:', error);
         alert('Une erreur est survenue lors de la réinitialisation des points');
@@ -213,8 +213,8 @@ document.addEventListener('DOMContentLoaded', initializeRankings);
 // Fonctions de gestion du localStorage
 function saveRankingsToLocal() {
     try {
-        localStorage.setItem('ambianceRankings', JSON.stringify(rankings));
-        localStorage.setItem('ambianceLastUpdate', new Date().getTime().toString());
+        localStorage.setItem('routeRankings', JSON.stringify(rankings));
+        localStorage.setItem('routeLastUpdate', new Date().getTime().toString());
     } catch (error) {
         console.error('Erreur lors de la sauvegarde locale:', error);
     }
@@ -222,7 +222,7 @@ function saveRankingsToLocal() {
 
 function loadRankingsFromLocal() {
     try {
-        const savedRankings = localStorage.getItem('ambianceRankings');
+        const savedRankings = localStorage.getItem('routeRankings');
         if (savedRankings) {
             rankings = JSON.parse(savedRankings);
             displayRanking();
@@ -239,14 +239,14 @@ function loadRankingsFromLocal() {
     }
 }
 
-async function simulateAmbianceRanking() {
-    if (!confirm('Voulez-vous simuler le classement d\'ambiance ? Cela réinitialisera les points actuels.')) {
+async function simulateRouteRanking() {
+    if (!confirm('Voulez-vous simuler le classement de route 150 ? Cela réinitialisera les points actuels.')) {
         return;
     }
 
     try {
         // D'abord réinitialiser tous les points
-        await fetch('/api/rankings/ambiance/reset', {
+        await fetch('/api/rankings/route150/reset', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
@@ -264,7 +264,7 @@ async function simulateAmbianceRanking() {
             
             console.log(`Attribution de ${points} points à ${team}`);
             
-            const response = await fetch('/api/rankings/ambiance/update', {
+            const response = await fetch('/api/rankings/route150/update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -280,7 +280,66 @@ async function simulateAmbianceRanking() {
 
         // Rafraîchir l'affichage
         await initializeRankings();
-        alert('Simulation du classement d\'ambiance terminée !');
+        alert('Simulation du classement de route 150 terminée !');
+
+    } catch (error) {
+        console.error('Erreur lors de la simulation:', error);
+        alert('Une erreur est survenue lors de la simulation');
+    }
+}
+
+async function simulateRoute150Ranking() {
+    if (!confirm('Est-ce bien le classement final de la Route150 ? Cela réinitialisera les points actuels.')) {
+        return;
+    }
+
+    try {
+        // Réinitialiser les points
+        await fetch('/api/rankings/route150/reset', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        // Définir l'ordre des équipes et leurs points
+        const rankingData = [
+            { team: 'FLSH', points: 75 },
+            { team: 'FMMS', points: 50 },
+            { team: 'FLD', points: 44 },
+            { team: 'ESPOL', points: 38 },
+            { team: 'ISTC', points: 33 },
+            { team: 'ICAM', points: 28 },
+            { team: 'ESPAS-ESTICE', points: 24 },
+            { team: 'JUNIA', points: 21 },
+            { team: 'IKPO', points: 18 },
+            { team: 'FGES', points: 15 },
+            { team: 'USCHOOL', points: 12 },
+            { team: 'IESEG', points: 9 },
+            { team: 'LiDD', points: 6 },
+            { team: 'ESSLIL', points: 4 }
+        ];
+
+        // Attribuer les points à chaque équipe
+        for (const entry of rankingData) {
+            console.log(`Attribution de ${entry.points} points à ${entry.team}`);
+            
+            const response = await fetch('/api/rankings/route150/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    teamName: entry.team,
+                    points: entry.points,
+                    action: 'add'
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erreur lors de l'attribution des points à ${entry.team}`);
+            }
+        }
+
+        // Rafraîchir l'affichage
+        await initializeRankings();
+        alert('Simulation du classement Route150 terminée !');
 
     } catch (error) {
         console.error('Erreur lors de la simulation:', error);
@@ -289,6 +348,9 @@ async function simulateAmbianceRanking() {
 }
 
 // Ajouter au bas du fichier
-window.simulateAmbianceRanking = simulateAmbianceRanking;
+window.simulateRoute150Ranking = simulateRoute150Ranking;
+
+// Ajouter au bas du fichier
+window.simulateRouteRanking = simulateRouteRanking;
 
 window.resetRanking = resetRanking;

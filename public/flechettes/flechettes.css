@@ -335,14 +335,6 @@ button:hover {
     gap: 16px;
 }
 
-.winner .score {
-    color: green;
-}
-
-.loser .score {
-    color: red;
-}
-
 .score-divider {
     margin: 0 8px;
 }
@@ -399,100 +391,5 @@ button:hover {
     font-weight: 500;
     min-width: 20px;
     text-align: center;
-}
-
-/* Styles pour le conteneur d'informations de match */
-.match-info-container {
-    background-color: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 15px;
-    border-radius: 10px;
-    margin: 20px auto;
-    max-width: 600px;
-    text-align: center;
-}
-
-.match-info-status {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 10px;
-    gap: 10px;
-}
-
-.match-info-teams {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-}
-
-.live-team {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 1.2em;
-}
-
-.live-team .score {
-    font-weight: bold;
-    font-size: 1.4em;
-}
-
-.score-divider {
-    font-size: 1.4em;
-    font-weight: bold;
-}
-
-/* Styles pour les statuts de match */
-.match.a-venir {
-    background-color: #f5f5f5;
-    cursor: pointer;
-}
-
-.match.en-cours {
-    background-color: #fff3e0;
-    animation: pulse 2s infinite;
-    border: 2px solid #ff9800;
-}
-
-.match.termine {
-    background-color: #e8f5e9;
-    border: 2px solid #4caf50;
-}
-
-@keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.4); }
-    70% { box-shadow: 0 0 0 10px rgba(255, 152, 0, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0); }
-}
-
-/* Style pour le statut dans match-info-container */
-.match-status {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-weight: bold;
-}
-
-.match.a-venir .match-status { color: #666; }
-.match.en-cours .match-status { color: #ff9800; }
-.match.termine .match-status { color: #4caf50; }
-
-/* Ajouter les styles pour les matchs désactivés */
-.match.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    pointer-events: none;
-    background-color: #f5f5f5;
-}
-
-.match.disabled::after {
-    content: "Match non disponible";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 0.8em;
-    color: #666;
 }
 

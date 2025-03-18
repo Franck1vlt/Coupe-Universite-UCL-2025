@@ -97,7 +97,7 @@ async function resetGame() {
 
     try {
         // Récupérer l'état actuel du tournoi
-        const tournamentState = JSON.parse(localStorage.getItem('handballTournamentState'));
+        const tournamentState = JSON.parse(localStorage.getItem('flechettesTournamentState'));
         
         if (tournamentState && tournamentState.matches) {
             // Mettre à jour le match avec le statut 'terminé'
@@ -114,11 +114,11 @@ async function resetGame() {
             };
 
             // Sauvegarder l'état mis à jour
-            localStorage.setItem('handballTournamentState', JSON.stringify(tournamentState));
+            localStorage.setItem('flechettesTournamentState', JSON.stringify(tournamentState));
         }
 
         // Redirection vers la page principale
-        window.location.href = 'handball.html' + (matchType === 'final' ? '#final-phase' : '#poule-phase');
+        window.location.href = 'flechettes.html' + (matchType === 'final' ? '#final-phase' : '#poule-phase');
 
     } catch (error) {
         console.error('Erreur:', error);
@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const matchId = new URLSearchParams(window.location.search).get('matchId');
     
     // Charger l'état du tournoi
-    const tournamentState = JSON.parse(localStorage.getItem('handballTournamentState'));
+    const tournamentState = JSON.parse(localStorage.getItem('flechettesTournamentState'));
     if (tournamentState && tournamentState.matches[matchId]) {
         const match = tournamentState.matches[matchId];
         

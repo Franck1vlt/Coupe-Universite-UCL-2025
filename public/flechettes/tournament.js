@@ -3,16 +3,6 @@
  * Gestion du tournoi, simulation et classement
  ***********************************************/
 
-// Liste des équipes de la poule
-const pouleTeams = [
-  "FGES",
-  "FMMS",
-  "FLD",
-  "ICAM",
-  "IKPO",
-  "JUNIA"
-];
-
 // Liste complète des équipes pour le classement final
 const allTeams = [
   "ESPAS-ESTICE",
@@ -43,41 +33,53 @@ allTeams.sort().forEach((name, index) => {
 
 // Définir les terrains
 const terrains = {
-    'poule': 8,          // Terrain de handball
-    'final': 8,          // Terrain de handball
+    'poule': 8,          // Terrain de Flechettes
+    'final': 8,          // Terrain de Flechettes
 };
+
+// Définition des équipes par poule
+const pouleATeams = ["ESPAS-ESTICE", "FGES", "FMMS", "FLSH"];
+const pouleBTeams = ["IKPO", "PIKTURA", "LiDD", "USCHOOL", "FLD"];
 
 // ----- STRUCTURE DU TOURNOI -----
 // La structure est définie par matchId avec les informations de chaque rencontre.
 let tournamentState = {
-  matches: {
-    // Matchs de poule (matchIds 1 à 12)
-    1: { matchType: 'poule', team1: 'FGES', team2: 'JUNIA', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '12:45' },
-    2: { matchType: 'poule', team1: 'FMMS', team2: 'IKPO', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '13:15' },
-    3: { matchType: 'poule', team1: 'ICAM', team2: 'FLD', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '13:45' },
-    4: { matchType: 'poule', team1: 'IKPO', team2: 'FGES', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '14:15' },
-    5: { matchType: 'poule', team1: 'JUNIA', team2: 'FLD', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '14:45' },
-    6: { matchType: 'poule', team1: 'FMMS', team2: 'ICAM', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '15:15' },
-    7: { matchType: 'poule', team1: 'FGES', team2: 'FLD', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '15:45' },
-    8: { matchType: 'poule', team1: 'IKPO', team2: 'ICAM', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '16:15' },
-    9: { matchType: 'poule', team1: 'JUNIA', team2: 'FMMS', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '16:45' },
-    10: { matchType: 'poule', team1: 'ICAM', team2: 'FGES', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '17:15' },
-    11: { matchType: 'poule', team1: 'FLD', team2: 'FMMS', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '17:45' },
-    12: { matchType: 'poule', team1: 'IKPO', team2: 'JUNIA', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '18:15' },
-    // Finale (matchId 13)
-    13: { matchType: 'final', team1: null, team2: null, score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '18:45' }
-  }
+    matches: {
+        // Poule A (matchIds 1 à 6)
+        1: { matchType: 'poule_a', team1: 'ESPAS-ESTICE', team2: 'FLSH', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '12:45' },
+        2: { matchType: 'poule_a', team1: 'FGES', team2: 'FMMS', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '13:15' },
+        3: { matchType: 'poule_a', team1: 'FLSH', team2: 'FGES', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '13:45' },
+        4: { matchType: 'poule_a', team1: 'ESPAS-ESTICE', team2: 'FMMS', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '14:15' },
+        5: { matchType: 'poule_a', team1: 'FMMS', team2: 'FLSH', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '14:45' },
+        6: { matchType: 'poule_a', team1: 'FGES', team2: 'ESPAS-ESTICE', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '15:15' },
+
+        // Poule B (matchIds 7 à 12)
+        7: { matchType: 'poule_b', team1: 'IKPO', team2: 'PIKTURA', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '15:45' },
+        8: { matchType: 'poule_b', team1: 'LiDD', team2: 'USCHOOL', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '16:15' },
+        9: { matchType: 'poule_b', team1: 'IKPO', team2: 'LiDD', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '16:45' },
+        10: { matchType: 'poule_b', team1: 'PIKTURA', team2: 'USCHOOL', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '17:15' },
+        11: { matchType: 'poule_b', team1: 'IKPO', team2: 'USCHOOL', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '17:45' },
+        12: { matchType: 'poule_b', team1: 'PIKTURA', team2: 'LiDD', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '18:15' },
+
+        // Demi-finales (matchIds 13 et 14)
+        13: { matchType: 'semifinal', team1: null, team2: null, score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '18:45', nextMatchWin: 17, nextMatchLose: 16 },
+        14: { matchType: 'semifinal', team1: null, team2: null, score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '19:15', nextMatchWin: 17, nextMatchLose: 16 },
+
+        // Matchs de classement (3ème et finale)
+        15: { matchType: 'smallfinal', team1: null, team2: null, score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '19:45' },
+        16: { matchType: 'final', team1: null, team2: null, score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '20:15' }
+    }
 };
 
 // Fonction pour sauvegarder l'état du tournoi
 function saveTournamentState() {
-    localStorage.setItem('handballTournamentState', JSON.stringify(tournamentState));
+    localStorage.setItem('flechettesTournamentState', JSON.stringify(tournamentState));
     localStorage.setItem('lastUpdate', new Date().toISOString());
 }
 
 // Fonction pour charger l'état du tournoi
 function loadTournamentState() {
-    const savedState = localStorage.getItem('handballTournamentState');
+    const savedState = localStorage.getItem('flechettesTournamentState');
     if (savedState) {
         tournamentState = JSON.parse(savedState);
         return true;
@@ -88,12 +90,14 @@ function loadTournamentState() {
 // ----- POINTS ATTRIBUÉS SELON LA PLACE FINALE -----
 // Les points sont attribués en fonction des résultats des matchs de poule et de la finale.
 const positionPoints = {
-  1: 50,
-  2: 40,
-  3: 30,
-  4: 20,
-  5: 15,
-  6: 10
+  1: 25,
+  2: 20,
+  3: 18,
+  4: 15,
+  5: 12,
+  6: 10,
+  7: 8,
+  8: 6,
 };
 
 // ----- INITIALISATION -----
@@ -153,7 +157,7 @@ function updateUI() {
   }
 
   // Sauvegarde automatique de l'état
-  localStorage.setItem('handballTournamentState', JSON.stringify(tournamentState));
+  localStorage.setItem('flechettesTournamentState', JSON.stringify(tournamentState));
 
   // Ajouter cette ligne après la mise à jour des matchs
   updateGroupStandings();
@@ -217,66 +221,65 @@ function fillTeamDiv(teamDiv, teamName, score, winnerName) {
 }
 
 function calculateTeamStats() {
-  // Initialiser les stats pour toutes les équipes de la poule
-  const teamStats = {};
-  
-  // S'assurer que chaque équipe a ses statistiques initialisées
-  pouleTeams.forEach(team => {
-      teamStats[team] = {
-          played: 0,
-          wins: 0,
-          draws: 0,
-          losses: 0,
-          points: 0,
-          goalsFor: 0,
-          goalsAgainst: 0
-      };
-  });
+    const statsA = {};
+    const statsB = {};
 
-  // Parcourir uniquement les matchs de poule terminés
-  for (let i = 1; i <= 12; i++) {
-      const match = tournamentState.matches[i];
-      if (match && match.status === 'terminé' && match.team1 && match.team2) {
-          const team1Stats = teamStats[match.team1];
-          const team2Stats = teamStats[match.team2];
+    // Initialiser les stats pour chaque poule
+    pouleATeams.forEach(team => {
+        statsA[team] = {
+            played: 0, wins: 0, draws: 0, losses: 0,
+            points: 0, goalsFor: 0, goalsAgainst: 0
+        };
+    });
 
-          if (!team1Stats || !team2Stats) continue; // Ignorer si une équipe n'est pas trouvée
+    pouleBTeams.forEach(team => {
+        statsB[team] = {
+            played: 0, wins: 0, draws: 0, losses: 0,
+            points: 0, goalsFor: 0, goalsAgainst: 0
+        };
+    });
 
-          team1Stats.played++;
-          team2Stats.played++;
+    // Traiter les matchs de la poule A
+    for (let i = 1; i <= 6; i++) {
+        processMatchStats(tournamentState.matches[i], statsA);
+    }
 
-          // Vérifier si c'est un match nul (scores égaux)
-          if (match.score1 === match.score2) {
-              // Match nul - incrémenter les compteurs draws
-              team1Stats.draws++;
-              team2Stats.draws++;
-              team1Stats.points += 2;
-              team2Stats.points += 2;
-          } else if (match.winner === match.team1) {
-              // Victoire team1
-              team1Stats.wins++;
-              team2Stats.losses++;
-              team1Stats.points += 3;
-              team2Stats.points += 1;
-          } else {
-              // Victoire team2
-              team2Stats.wins++;
-              team1Stats.losses++;
-              team2Stats.points += 3;
-              team1Stats.points += 1;
-          }
+    // Traiter les matchs de la poule B
+    for (let i = 7; i <= 12; i++) {
+        processMatchStats(tournamentState.matches[i], statsB);
+    }
 
-          // Mise à jour des buts
-          if (typeof match.score1 === 'number' && typeof match.score2 === 'number') {
-              team1Stats.goalsFor += match.score1;
-              team1Stats.goalsAgainst += match.score2;
-              team2Stats.goalsFor += match.score2;
-              team2Stats.goalsAgainst += match.score1;
-          }
-      }
-  }
+    return { pouleA: statsA, pouleB: statsB };
+}
 
-  return teamStats;
+// Fonction helper pour traiter les stats d'un match
+function processMatchStats(match, stats) {
+    if (match && match.status === 'terminé') {
+        stats[match.team1].played++;
+        stats[match.team2].played++;
+        
+        if (match.score1 === match.score2) {
+            stats[match.team1].draws++;
+            stats[match.team2].draws++;
+            stats[match.team1].points += 2;
+            stats[match.team2].points += 2;
+        } else if (match.winner === match.team1) {
+            stats[match.team1].wins++;
+            stats[match.team2].losses++;
+            stats[match.team1].points += 3;
+            stats[match.team2].points += 1;
+        } else {
+            stats[match.team2].wins++;
+            stats[match.team1].losses++;
+            stats[match.team2].points += 3;
+            stats[match.team1].points += 1;
+        }
+
+        stats[match.team1].goalsFor += match.score1;
+        stats[match.team1].goalsAgainst += match.score2;
+        stats[match.team2].goalsFor += match.score2;
+        stats[match.team2].goalsAgainst += match.score1;
+    }
 }
 
 // ----- SIMULATION D'UN MATCH -----
@@ -560,7 +563,7 @@ function updateRankingDisplay() {
 // Ajout de la fonction pour envoyer les points à l'API
 async function sendPointsToServer(teamPoints) {
   try {
-    const response = await fetch('/api/points/handball', {
+    const response = await fetch('/api/points/flechettes', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -589,7 +592,7 @@ function resetTournament() {
   if (!confirm('Voulez-vous vraiment réinitialiser le tournoi ? Toutes les données seront effacées.')) return;
   
   // Efface les données sauvegardées
-  localStorage.removeItem('handballTournamentState');
+  localStorage.removeItem('flechettesTournamentState');
   localStorage.removeItem('lastUpdate');
   
   // Recharge la page avec un état neuf
@@ -704,12 +707,13 @@ function toggleCorrectionMode() {
 
 // Ajouter cette nouvelle fonction pour gérer les stats de la poule
 function updateGroupStandings() {
-    // Calculer les statistiques
-    const teamStats = {};
-    
-    // Initialiser les stats pour chaque équipe de la poule
-    pouleTeams.forEach(team => {
-        teamStats[team] = {
+    // Initialisation des statistiques pour les deux poules
+    const statsA = {};
+    const statsB = {};
+
+    // Initialiser les stats pour la poule A
+    pouleATeams.forEach(team => {
+        statsA[team] = {
             played: 0,
             wins: 0,
             draws: 0,
@@ -720,72 +724,82 @@ function updateGroupStandings() {
         };
     });
 
-    // Mettre à jour les stats avec les résultats des matchs
-    for (let i = 1; i <= 12; i++) {
+    // Initialiser les stats pour la poule B
+    pouleBTeams.forEach(team => {
+        statsB[team] = {
+            played: 0,
+            wins: 0,
+            draws: 0,
+            losses: 0,
+            points: 0,
+            goalsFor: 0,
+            goalsAgainst: 0
+        };
+    });
+
+    // Traiter les matchs de la poule A (matchs 1-6)
+    for (let i = 1; i <= 6; i++) {
         const match = tournamentState.matches[i];
         if (match && match.status === 'terminé') {
-            // Équipe 1
-            teamStats[match.team1].played++;
-            teamStats[match.team1].goalsFor += match.score1;
-            teamStats[match.team1].goalsAgainst += match.score2;
-            
-            // Équipe 2
-            teamStats[match.team2].played++;
-            teamStats[match.team2].goalsFor += match.score2;
-            teamStats[match.team2].goalsAgainst += match.score1;
-
-            // Attribuer les points (victoire = 3pts, nul = 2pts, défaite = 1pt)
-            if (match.score1 === match.score2) {
-                teamStats[match.team1].draws++;
-                teamStats[match.team2].draws++;
-                teamStats[match.team1].points += 2;
-                teamStats[match.team2].points += 2;
-            } else if (match.winner === match.team1) {
-                teamStats[match.team1].wins++;
-                teamStats[match.team2].losses++;
-                teamStats[match.team1].points += 3;
-                teamStats[match.team2].points += 1;
-            } else {
-                teamStats[match.team2].wins++;
-                teamStats[match.team1].losses++;
-                teamStats[match.team2].points += 3;
-                teamStats[match.team1].points += 1;
-            }
+            processMatchStats(match, statsA);
         }
     }
 
-    // Trier les équipes
-    const sortedTeams = Object.entries(teamStats).sort((a, b) => {
-        if (b[1].points !== a[1].points) return b[1].points - a[1].points;
-        const diffA = a[1].goalsFor - a[1].goalsAgainst;
-        const diffB = b[1].goalsFor - b[1].goalsAgainst;
-        if (diffB !== diffA) return diffB - diffA;
-        return b[1].goalsFor - a[1].goalsFor;
-    });
+    // Traiter les matchs de la poule B (matchs 7-12)
+    for (let i = 7; i <= 12; i++) {
+        const match = tournamentState.matches[i];
+        if (match && match.status === 'terminé') {
+            processMatchStats(match, statsB);
+        }
+    }
 
-    // Mettre à jour l'affichage
-    const groupList = document.getElementById('groupList');
-    if (!groupList) return;
+    // Trier les équipes de chaque poule
+    const sortedTeamsA = Object.entries(statsA).sort(sortTeams);
+    const sortedTeamsB = Object.entries(statsB).sort(sortTeams);
 
-    groupList.innerHTML = sortedTeams.map(([team, stats], index) => `
-        <div class="ranking-row ${index < 2 ? 'qualified' : ''}">
-            <div class="rank">${index + 1}</div>
-            <div class="name">
-                <img src="/img/${team}.png" alt="${team}" class="team-logo-mini" />
-                ${team}
+    // Mettre à jour l'affichage de la poule A
+    const groupListA = document.getElementById('groupListA');
+    if (groupListA) {
+        groupListA.innerHTML = sortedTeamsA.map(([team, stats], index) => `
+            <div class="ranking-row ${index < 2 ? 'qualified' : ''}">
+                <div class="rank">${index + 1}</div>
+                <div class="name">
+                    <img src="/img/${team}.png" alt="${team}" class="team-logo-mini" />
+                    ${team}
+                </div>
+                <div class="stats">${stats.played}</div>
+                <div class="stats">${stats.wins}</div>
+                <div class="stats">${stats.draws}</div>
+                <div class="stats">${stats.losses}</div>
+                <div class="stats">${stats.points}</div>
+                <div class="stats">${stats.goalsFor}</div>
+                <div class="stats">${stats.goalsAgainst}</div>
+                <div class="stats">${stats.goalsFor - stats.goalsAgainst}</div>
             </div>
-            <div class="stats">${stats.played}</div>
-            <div class="stats">${stats.wins}</div>
-            <div class="stats">${stats.draws}</div>
-            <div class="stats">${stats.losses}</div>
-            <div class="stats">${stats.points}</div>
-            <div class="stats">${stats.goalsFor}</div>
-            <div class="stats">${stats.goalsAgainst}</div>
-            <div class="stats">${stats.goalsFor - stats.goalsAgainst}</div>
-        </div>
-    `).join('');
+        `).join('');
+    }
 
-    console.log('Classement mis à jour:', sortedTeams);
+    // Mettre à jour l'affichage de la poule B
+    const groupListB = document.getElementById('groupListB');
+    if (groupListB) {
+        groupListB.innerHTML = sortedTeamsB.map(([team, stats], index) => `
+            <div class="ranking-row ${index < 2 ? 'qualified' : ''}">
+                <div class="rank">${index + 1}</div>
+                <div class="name">
+                    <img src="/img/${team}.png" alt="${team}" class="team-logo-mini" />
+                    ${team}
+                </div>
+                <div class="stats">${stats.played}</div>
+                <div class="stats">${stats.wins}</div>
+                <div class="stats">${stats.draws}</div>
+                <div class="stats">${stats.losses}</div>
+                <div class="stats">${stats.points}</div>
+                <div class="stats">${stats.goalsFor}</div>
+                <div class="stats">${stats.goalsAgainst}</div>
+                <div class="stats">${stats.goalsFor - stats.goalsAgainst}</div>
+            </div>
+        `).join('');
+    }
 }
 
 // ----- GESTION DE LA FINALE -----
@@ -829,4 +843,132 @@ async function setupFinalMatch() {
     } catch (error) {
         console.error("Erreur lors de la configuration de la finale:", error);
     }
+}
+
+function setupSemiFinals() {
+    const stats = calculateTeamStats();
+    
+    // Trier les équipes de chaque poule
+    const sortedPouleA = Object.entries(stats.pouleA).sort(sortTeams);
+    const sortedPouleB = Object.entries(stats.pouleB).sort(sortTeams);
+
+    // Configurer les demi-finales
+    const sf1 = tournamentState.matches[13];
+    const sf2 = tournamentState.matches[14];
+
+    // SF1: 1er Poule A vs 2ème Poule B
+    sf1.team1 = sortedPouleA[0][0];
+    sf1.team2 = sortedPouleB[1][0];
+
+    // SF2: 2ème Poule A vs 1er Poule B
+    sf2.team1 = sortedPouleA[1][0];
+    sf2.team2 = sortedPouleB[0][0];
+
+    saveTournamentState();
+    updateUI();
+}
+
+// Fonction helper pour trier les équipes
+function sortTeams(a, b) {
+    if (a[1].points !== b[1].points) return b[1].points - a[1].points;
+    const diffA = a[1].goalsFor - a[1].goalsAgainst;
+    const diffB = b[1].goalsFor - b[1].goalsAgainst;
+    return diffB - diffA;
+}
+
+function updateGroupStandings(poule = 'A') {
+    // Sélectionner les équipes et matchs selon la poule
+    const teams = poule === 'A' ? pouleATeams : pouleBTeams;
+    const matchRange = poule === 'A' ? {start: 1, end: 6} : {start: 7, end: 12};
+    
+    const stats = {};
+    
+    // Initialiser les stats pour la poule sélectionnée
+    teams.forEach(team => {
+        stats[team] = {
+            played: 0,
+            wins: 0,
+            draws: 0,
+            losses: 0,
+            points: 0,
+            goalsFor: 0,
+            goalsAgainst: 0
+        };
+    });
+
+    // Traiter les matchs de la poule sélectionnée
+    for (let i = matchRange.start; i <= matchRange.end; i++) {
+        const match = tournamentState.matches[i];
+        if (match && match.status === 'terminé') {
+            processMatchStats(match, stats);
+        }
+    }
+
+    // Trier les équipes
+    const sortedTeams = Object.entries(stats).sort(sortTeams);
+
+    // Mettre à jour l'affichage
+    const groupList = document.getElementById('groupList');
+    if (groupList) {
+        groupList.innerHTML = sortedTeams.map(([team, stats], index) => `
+            <div class="ranking-row ${index < 2 ? 'qualified' : ''}">
+                <div class="rank">${index + 1}</div>
+                <div class="name">
+                    <img src="/img/${team}.png" alt="${team}" class="team-logo-mini" />
+                    ${team}
+                </div>
+                <div class="stats">${stats.played}</div>
+                <div class="stats">${stats.wins}</div>
+                <div class="stats">${stats.draws}</div>
+                <div class="stats">${stats.losses}</div>
+                <div class="stats">${stats.points}</div>
+                <div class="stats">${stats.goalsFor}</div>
+                <div class="stats">${stats.goalsAgainst}</div>
+                <div class="stats">${stats.goalsFor - stats.goalsAgainst}</div>
+            </div>
+        `).join('');
+    }
+
+    // Mettre à jour la liste des matchs
+    updateMatchesList(poule);
+}
+
+function updateMatchesList(poule) {
+    const matchesContainer = document.getElementById('currentPouleMatches');
+    const matchRange = poule === 'A' ? {start: 1, end: 6} : {start: 7, end: 12};
+    
+    if (matchesContainer) {
+        let matchesHTML = '';
+        for (let i = matchRange.start; i <= matchRange.end; i++) {
+            const match = tournamentState.matches[i];
+            matchesHTML += `
+                <div class="match-wrapper">
+                    <div class="match" data-match-id="${i}" data-match-type="poule_${poule.toLowerCase()}">
+                        <div class="team">
+                            <div class="team-name">
+                                <div class="team-logo" style="background-image:url('/img/${match.team1}.png')"></div>
+                                ${match.team1}
+                            </div>
+                            <div class="score">${match.score1 ?? '-'}</div>
+                        </div>
+                        <div class="team">
+                            <div class="team-name">
+                                <div class="team-logo" style="background-image:url('/img/${match.team2}.png')"></div>
+                                ${match.team2}
+                            </div>
+                            <div class="score">${match.score2 ?? '-'}</div>
+                        </div>
+                        <div class="match-info-container">
+                            <div class="match-time">${match.time}</div>
+                            <div class="match-status">${match.status.replace('_', ' ')}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        matchesContainer.innerHTML = matchesHTML;
+    }
+    
+    // Réappliquer les gestionnaires de clic sur les nouveaux matchs
+    addMatchClickHandlers();
 }

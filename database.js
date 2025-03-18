@@ -43,6 +43,8 @@ db.serialize(() => {
         match_type TEXT,
         id_terrain INTEGER,
         is_classement BOOLEAN DEFAULT 0,
+        chrono TEXT DEFAULT '00:00',
+        draw BOOLEAN DEFAULT 0,
         FOREIGN KEY(id_terrain) REFERENCES Terrain(id_terrain),
         FOREIGN KEY(id_tournois) REFERENCES Tournois(id_tournois)
     )`);
@@ -95,6 +97,15 @@ db.serialize(() => {
         FOREIGN KEY(id_equipe) REFERENCES Equipe(id_equipe),
         FOREIGN KEY(id_sport) REFERENCES Sport(id_sport)
     )`);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS Points_Bonus (
+            id_equipe INTEGER NOT NULL,
+            type_bonus TEXT NOT NULL,
+            points INTEGER DEFAULT 0,
+            UNIQUE(id_equipe, type_bonus)
+        )
+    `);
 });
 
 // Initialisation des données de base

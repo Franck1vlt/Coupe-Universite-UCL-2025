@@ -53,6 +53,10 @@ h1 {
     box-shadow: 0 0 20px rgba(0,0,0,0.1);
 }
 
+img.team-logo {
+    width: 30px;
+}
+
 .ranking-table th,
 .ranking-table td {
     padding: 12px;
@@ -98,7 +102,7 @@ h1 {
 
 .total-points {
     font-weight: bold;
-    background-color: #e3f2fd;
+    /* background-color: #e3f2fd; */
 }
 
 .highlight-1 { 

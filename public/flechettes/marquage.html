@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Table de Marquage - Football</title>
-  <link rel="stylesheet" href="football.css">
-  <script src="football.js" defer></script>
+  <title>Table de Marquage - Fléchettes</title>
+  <link rel="stylesheet" href="flechettes.css">
+  <script src="flechettes.js" defer></script>
 </head>
 <body>
   <header>
-    <h1>Football - Table de marquage</h1>
+    <h1>Fléchettes - Table de marquage</h1>
   </header>
   <main>
     <div class="gauche">
@@ -68,7 +68,7 @@
       </div>
       <div class="bouton_pied_page">
         <div class="button-row1">
-          <button onclick="location.href='football.html'">Retour</button>
+          <button onclick="location.href='handball.html'">Retour</button>
         </div>
         <div class="button-row2">
           <button onclick="openScoreDisplay()">Spectateurs</button>
@@ -147,6 +147,18 @@
         const matchType = urlParams.get('matchType');
         const isCorrection = urlParams.get('correction') === 'true';
 
+        // Fonction pour convertir le matchType en texte affichable
+        function getMatchTypeDisplay(type) {
+            const matchTypes = {
+                'qualification': 'Qualification',
+                'quarterfinal': 'Quart de finale',
+                'semifinal': 'Demi-finale',
+                'smallfinal': 'Petite Finale',
+                'final': 'Finale'
+            };
+            return matchTypes[type] || type;
+        }
+
         // Initialiser les sélecteurs
         if (team1Name) {
             document.getElementById('teamA').value = team1Name;
@@ -161,8 +173,10 @@
 
         // Mettre à jour le type de match
         if (matchType) {
-            document.getElementById('matchTypeSelector').value = matchType;
-            document.getElementById('matchType').textContent = matchType;
+            const displayMatchType = getMatchTypeDisplay(matchType);
+            const matchTypeSelector = document.getElementById('matchTypeSelector');
+            matchTypeSelector.value = displayMatchType;
+            document.getElementById('matchType').textContent = displayMatchType;
         }
 
         // Initialiser le terrain par défaut
@@ -170,10 +184,10 @@
 
         if (isCorrection) {
             // Pré-remplir les scores si c'est une correction
-            matchData.teamA.score = parseInt(urlParams.get('score1')) || 0;
-            matchData.teamB.score = parseInt(urlParams.get('score2')) || 0;
-            document.getElementById('teamAScore').textContent = matchData.teamA.score;
-            document.getElementById('teamBScore').textContent = matchData.teamB.score;
+            const score1 = parseInt(urlParams.get('score1')) || 0;
+            const score2 = parseInt(urlParams.get('score2')) || 0;
+            document.getElementById('teamAScore').textContent = score1;
+            document.getElementById('teamBScore').textContent = score2;
         }
     });
 

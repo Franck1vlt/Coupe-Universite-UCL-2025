@@ -17,26 +17,21 @@ const allTeams = [
 ];
 
 async function updateBasketRanking() {
-    try {s
+    try {
         // Récupérer les points de basket H et F
-        const [basketH, basketF] = await Promise.all([
-            fetch('/api/rankings/basket_h').then(r => r.json()),
-            fetch('/api/rankings/basket_f').then(r => r.json())
+        const basket = await Promise.all([
+            fetch('/api/rankings/basket').then(r => r.json()),
         ]);
 
         const allTeams = new Set([
-            ...basketH.rankings.map(r => r.team_name),
-            ...basketF.rankings.map(r => r.team_name)
+            ...basket.rankings.map(r => r.team_name),
         ]);
 
         const combinedRankings = Array.from(allTeams).map(team => {
-            const hPoints = basketH.rankings.find(r => r.team_name === team)?.points || 0;
-            const fPoints = basketF.rankings.find(r => r.team_name === team)?.points || 0;
+            const Points = basket.rankings.find(r => r.team_name === team)?.points || 0;
             return {
                 name: team,
-                pointsH: hPoints,
-                pointsF: fPoints,
-                totalPoints: hPoints + fPoints
+                totalPoints: Points,
             };
         });
 
@@ -70,18 +65,58 @@ async function updateBasketRanking() {
 
 async function updateGeneralRanking() {
     try {
-        const response = await fetch('/api/rankings/general');
-        const data = await response.json();
-        
+        // Récupérer tous les classements
+        const [sportsPoints, ambianceData, route150Data] = await Promise.all([
+            fetch('/api/rankings/sports').then(r => r.json()),
+            fetch('/api/rankings/ambiance').then(r => r.json()),
+            fetch('/api/rankings/route150').then(r => r.json())
+        ]);
+
+        // Initialiser le tableau des points totaux
+        const totalPoints = allTeams.map(team => ({
+            name: team,
+            sportsPoints: 0,
+            bonusPoints: 0,
+            totalPoints: 0
+        }));
+
+        // Ajouter les points des sports
+        sportsPoints.rankings.forEach(ranking => {
+            const team = totalPoints.find(t => t.name === ranking.team_name);
+            if (team) {
+                team.sportsPoints += (ranking.points || 0);
+            }
+        });
+
+        // Ajouter les points bonus (ambiance)
+        ambianceData.rankings.forEach(ranking => {
+            const team = totalPoints.find(t => t.name === ranking.team_name);
+            if (team) {
+                team.bonusPoints += (ranking.points || 0);
+            }
+        });
+
+        // Ajouter les points bonus (Route150)
+        route150Data.rankings.forEach(ranking => {
+            const team = totalPoints.find(t => t.name === ranking.team_name);
+            if (team) {
+                team.bonusPoints += (ranking.points || 0);
+            }
+        });
+
+        // Calculer les points totaux
+        totalPoints.forEach(team => {
+            team.totalPoints = team.sportsPoints + team.bonusPoints;
+        });
+
+        // Trier par points totaux décroissants
+        totalPoints.sort((a, b) => b.totalPoints - a.totalPoints);
+
+        // Afficher le classement
         const rankingList = document.getElementById('generalRankingList');
         rankingList.innerHTML = '';
 
-        // Filtrer les entrées nulles et invalides
-        const validRankings = data.rankings.filter(team => 
-            team && team.team_name && allTeams.includes(team.team_name)
-        );
-
-        validRankings.forEach((team, idx) => {
+        totalPoints.forEach((team, idx) => {
             const position = idx + 1;
             const highlightClass = position <= 3 ? `highlight-${position}` : '';
             
@@ -89,15 +124,18 @@ async function updateGeneralRanking() {
                 <div class="ranking-row ${highlightClass}">
                     <div class="rank">${position}</div>
                     <div class="team">
-                        <img src="/img/${team.team_name}.png" alt="${team.team_name}" class="team-logo-mini" />
-                        ${team.team_name}
+                        <img src="/img/${team.name}.png" alt="${team.name}" class="team-logo-mini" />
+                        ${team.name}
                     </div>
-                    <div class="points">${team.basket_points + team.foot_points}</div>
-                    <div class="points">${team.bonus_points}</div>
-                    <div class="points">${team.total_points}</div>
+                    <div class="points">${team.sportsPoints}</div>
+                    <div class="points">${team.bonusPoints}</div>
+                    <div class="points">${team.totalPoints}</div>
                 </div>
             `;
         });
+
+        console.log('Classement général mis à jour:', totalPoints);
+
     } catch (error) {
         console.error('Erreur lors de la mise à jour du classement général:', error);
     }
@@ -187,6 +225,23 @@ async function updateRanking() {
             const response = await fetch(`/api/rankings/${selectedView.toLowerCase()}`);
             const data = await response.json();
             
+            rankingTable.innerHTML = '';
+            data.rankings.forEach((team, index) => {
+                const row = `
+                    <tr class="${index < 3 ? `highlight-${index + 1}` : ''}">
+                        <td>${index + 1}</td>
+                        <td>
+                            <img src="/img/${team.nom_equipe}.png" alt="${team.nom_equipe}" class="team-logo-mini" />
+                            ${team.nom_equipe}
+                        </td>
+                        <td>${team.points || 0}</td>
+                    </tr>`;
+                rankingTable.innerHTML += row;
+            });
+        }
+        else if (selectedView === 'HANDBALL') {
+            const response = await fetch('/api/rankings/handball');
+            const data = await response.json();
             rankingTable.innerHTML = '';
             data.rankings.forEach((team, index) => {
                 const row = `

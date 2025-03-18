@@ -4,14 +4,14 @@
     padding: 20px;
 }
 
-h1 {
+header {
     text-align: center;
 }
 
 .controls {
     margin: 20px 0;
     padding: 20px;
-    background-color: #a9a9a9;
+    background-color: #022442;
     border-radius: 8px;
 }
 
@@ -79,7 +79,7 @@ h1 {
     margin-top: 20px;
 }
 
-.back-button, .reset-button {
+.back-button, .reset-button, .simulate-button {
     background-color: #ad0000;
     color: white;
     padding: 8px 16px;
