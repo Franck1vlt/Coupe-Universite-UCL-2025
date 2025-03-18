@@ -1,0 +1,918 @@
+:root {
+    --primary-color: #ffffff;
+    --secondary-color: #ffffff;
+    --highlight-color: #000000;
+    --winner-color: #ffffff;
+    --border-color: rgba(0, 0, 0);
+}
+
+body {
+    font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
+    background-color: var(--secondary-color);
+    color: rgb(0, 0, 0);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background-attachment: fixed;
+}
+
+.background-lines {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+    linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+    z-index: -1;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-top: 20px;
+}
+
+h1 {
+    font-size: 2.5rem;
+    margin: 0;
+    color: rgb(0, 0, 0);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.subtitle {
+    color: var(--highlight-color);
+    font-size: 1.2rem;
+    margin-top: 5px;
+}
+
+.tournament-container {
+    display: flex;
+    justify-content: center;
+    position: relative;
+    margin-top: 40px;
+    padding-top: 20px;
+    flex-direction: column;
+}
+
+.bracket {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    gap: 50px;
+}
+
+.round {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    min-width: 200px;
+    margin: 0 10px;
+}
+
+.round2 {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 200px;
+    margin: 0 10px;
+}
+
+.round3 {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 200px;
+    margin: 0 10px;
+}
+
+.round4 {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 200px;
+    margin: 0 10px;
+}
+
+.round-title {
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: var(--highlight-color);
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+}
+
+.match-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    height: 100px;
+    margin-bottom: 20px;
+}
+
+.match {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    position: relative;
+    padding-bottom: 25px;
+    width: 300px; /* Added standard width */
+    /* height: 120px; */ /* Added standard height */
+}
+
+.match:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    border-color: var(--highlight-color);
+}
+
+.match::before {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+.match.à-venir::before {
+    content: "À venir";
+    background-color: #f0f0f0;
+    color: #666;
+}
+
+.match.en-cours::before {
+    content: "En cours";
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.match.terminé::before {
+    content: "Terminé";
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.match.a-venir::before {
+    content: "À venir";
+    background-color: #f0f0f0;
+    color: #666;
+}
+
+.match.en-cours::before {
+    content: "En cours";
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.match.termine::before {
+    content: "Terminé";
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.team {
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.team:last-child {
+    border-bottom: none;
+}
+
+.team.winner {
+    background-color: transparent; /* Supprime le fond vert */
+    color: inherit; /* Rétablit la couleur de texte par défaut */
+    font-weight: normal;
+}
+
+.team.loser {
+    background-color: transparent; /* Supprime le fond rouge */
+    color: inherit; /* Rétablit la couleur de texte par défaut */
+    font-weight: normal;
+}
+
+.team.winner .score {
+    background-color: #4CAF50; /* Fond vert pour le score gagnant */
+    color: white;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
+    min-width: 24px;
+    display: inline-block;
+    text-align: center;
+}
+
+.team.loser .score {
+    background-color: #f44336; /* Fond rouge pour le score perdant */
+    color: white;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
+    min-width: 24px;
+    display: inline-block;
+    text-align: center;
+}
+
+.team-logo {
+    width: 20px; /* Réduit de 24px à 20px */
+    height: 20px; /* Réduit de 24px à 20px */
+    margin-right: 6px; /* Réduit de 8px à 6px */
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.team-logo-mini {
+    width: 16px; /* Version encore plus petite pour le tableau de classement */
+    height: 16px;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+.team-name {
+    color: #000000; /* Noir pour tous les noms d'équipes */
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.score {
+    font-weight: bold;
+    min-width: 24px;
+    text-align: center;
+    margin-left: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.connector {
+    position: absolute;
+    right: -10px;
+    height: 50%;
+    width: 10px;
+    border-right: 2px solid var(--border-color);
+}
+
+.connector.top {
+    top: 50%;
+    border-top: 2px solid var(--border-color);
+}
+
+.connector.bottom {
+    top: 0;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.connector.right {
+    left: -10px;
+    border-right: none;
+    border-left: 2px solid var(--border-color);
+}
+
+.trophy {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.trophy-icon {
+    font-size: 50px;
+    color: gold;
+    margin-bottom: 10px;
+}
+
+.final-teams {
+    text-align: center;
+    max-width: 160px;
+    margin: 10px auto;
+}
+
+.champion {
+    background: linear-gradient(to right, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C);
+    color: #333;
+    font-weight: bold;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 10px auto;
+    width: 80%;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    transition: all 0.5s ease;
+    opacity: 0.8;
+}
+
+.champion-crowned {
+    transform: scale(1.1);
+    opacity: 1;
+    box-shadow: 0 4px 20px rgba(191, 149, 63, 0.5);
+    animation: crownChampion 1s ease-out;
+}
+
+@keyframes crownChampion {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+}
+
+.small-final {
+    margin-top: 60px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.2);
+    padding-top: 20px;
+}
+
+.small-final-title {
+    text-align: center;
+    color: var(--highlight-color);
+    margin-bottom: 15px;
+    font-size: 1rem;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    overflow: auto;
+}
+
+.modal-content {
+    background-color: var(--secondary-color);
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    width: 80%;
+    max-width: 500px;
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    position: relative;
+}
+
+.close {
+    color: #aaa;
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: white;
+}
+
+.match-details {
+    padding: 15px;
+}
+
+.match-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.match-stage {
+    font-size: 0.9rem;
+    color: var(--highlight-color);
+}
+
+.match-date {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.match-teams {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.match-team {
+    text-align: center;
+    width: 45%;
+}
+
+.match-team-logo {
+    width: 60px;
+    height: 60px;
+    background-color: rgba(255, 255, 255, 0.1);
+    margin: 0 auto 10px;
+}
+
+.match-score {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 10%;
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+.match-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.score-input {
+    width: 50px;
+    text-align: center;
+    padding: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
+    color: white;
+    border-radius: 4px;
+}
+
+.submit-score {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.submit-score:hover {
+    background-color: var(--highlight-color);
+}
+
+button {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin-top: 40px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.loser-bracket {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 2px dashed var(--border-color);
+}
+
+.qualification-round {
+  margin-right: 30px;
+}
+
+.qualification-round .match-wrapper {
+  margin-bottom: 30px;
+}
+
+/* Mise à jour des connecteurs pour inclure les nouveaux matches */
+.loser-bracket .connector {
+  position: absolute;
+  right: -25px;
+  width: 25px;
+  border-top: 2px solid var(--border-color);
+  opacity: 0.5;
+}
+
+.phase-selector {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+}
+
+.phase-select {
+  padding: 8px 15px;
+  font-size: 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: 5px;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 200px;
+}
+
+.phase-select optgroup {
+  font-weight: bold;
+  font-style: normal;
+  padding: 5px 0;
+}
+
+.phase-select option {
+  padding: 5px 10px;
+  font-weight: normal;
+}
+
+.phase-select option:first-child {
+  font-weight: bold;
+}
+
+.phase-select:hover {
+  border-color: var(--highlight-color);
+}
+
+.phase-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+}
+
+.phase-content {
+  display: none;
+  width: 100%;
+}
+
+.phase-content {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ranking-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 40px auto;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.ranking-table {
+  width: 100%;
+}
+
+.ranking-row {
+  display: grid;
+  grid-template-columns: 0.5fr 2fr 1fr;
+  padding: 15px 20px;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  transition: 0.3s;
+}
+
+/* .ranking-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 100px;
+    padding: 15px 20px;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+} */
+
+.ranking-row:hover {
+  background-color: #f8f9fa;
+}
+
+.ranking-row.header {
+    background-color: var(--highlight-color);
+    color: white;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    gap: 20px;
+}
+
+.rank {
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.team-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.1em;
+}
+
+.points {
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.team-logo-mini {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+/* Styles pour les positions spéciales */
+.highlight-1 {
+  background: linear-gradient(45deg, #ffd70033, #ffffff);
+  font-weight: bold;
+}
+
+.highlight-2 {
+  background: linear-gradient(45deg, #c0c0c033, #ffffff);
+  font-weight: bold;
+}
+
+.highlight-3 {
+  background: linear-gradient(45deg, #cd7f3233, #ffffff);
+  font-weight: bold;
+}
+
+.classification-container {
+  width: 100%;
+  max-width: 1000px; /* Augmenté de 800px à 1000px */
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.classification-container .round {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+    justify-content: center;
+}
+
+/* CSS */
+.phase-content {
+    /* Pour final-phase, par exemple, on attend un display:flex */
+    display: flex;
+    /* autres propriétés de layout */
+}
+.hidden {
+    display: none !important;
+}
+
+#final-phase {
+    display: flex;
+    width: 100%;
+    flex-direction: row;
+}
+
+#final-phase .bracket {
+    display: flex;
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 20px;
+    gap: 40px;
+}
+
+#final-phase .round {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    min-height: 400px;
+    gap: 20px;
+}
+
+.classification-container {
+    display: flex;
+    width: 100%;
+    padding: 20px;
+    justify-content: center;
+}
+
+.classification-matches {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.classification-round {
+    display: flex;
+    justify-content: space-around;
+    gap: 20px;
+}
+
+.classification-title {
+    text-align: center;
+    font-size: 1.2em;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Ajuster les connecteurs pour l'affichage horizontal */
+.connector.horizontal-right {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    width: 40px;
+    height: 2px;
+    background-color: var(--border-color);
+}
+
+.ranking-container {
+width: 100%;
+max-width: 1000px;
+margin: 0 auto;
+padding: 20px;
+}
+
+.ranking-table {
+width: 100%;
+background: white;
+border-radius: 10px;
+box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+overflow: hidden;
+}
+
+.ranking-row {display: grid;grid-template-columns: 0.5fr 2fr repeat(8, 1fr);padding: 15px;border-bottom: 1px solid #eee;align-items: center;}
+
+.ranking-row.header {background: #000000;font-weight: bold;color: #ffffff;}
+
+.name {
+    color: white;
+}
+
+.ranking-row:hover {
+background: #f8f9fa;
+}
+
+.rank {
+text-align: center;
+font-weight: bold;
+}
+
+.team-name {display: flex;align-items: center;gap: 10px;color: black;}
+  
+.stats {
+text-align: center;
+}
+
+/* Styles pour les positions spéciales */
+.highlight-1 {
+background-color: #ffd700;
+}
+
+.highlight-2 {background-color: #c0c0c0;}
+
+.highlight-3 {
+background-color: #cd7f32;
+}
+
+.poule-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.matches-container {
+    margin-top: 40px;
+}
+
+.matches-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.round-title {
+    text-align: center;
+    font-size: 1.2em;
+    margin-bottom: 20px;
+    color: #333;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.match-info-container {
+    position: absolute;
+    top: 25px;
+    left: 50%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.match-time {
+    font-size: 0.9em;
+    color: #ffffff;
+    background-color: rgba(255, 0, 0, 0.8);
+    padding: 2px 8px;
+    border-radius: 5%;
+    font-weight: bold;
+}
+
+.match-status {
+    font-size: 0.8em;
+    padding: 2px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+.match[data-status="à_venir"] .match-status {
+    background-color: #f0f0f0;
+    color: #666;
+}
+
+.match[data-status="en_cours"] .match-status {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.match[data-status="terminé"] .match-status {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.match-info-container {
+    position: absolute;
+    top: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    text-align: center;
+    padding: 5px;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.match-time {
+    font-size: 0.9em;
+    color: #ffffff;
+    background-color: rgba(255, 0, 0, 0.8);
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.match-status {
+    font-size: 0.8em;
+    padding: 2px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+    background-color: #f0f0f0;
+    color: #666;
+}
+
+/* Ajout des styles spécifiques pour les matchs de classement */
+.match[data-match-type="classification_semifinal"],
+.match[data-match-type="classification_final"] {
+    background: rgba(255, 255, 255, 0.07);
+}
+
+/* Status pour les matchs de classement */
+.match[data-match-type^="classification"].en-cours {
+    background-color: #fff3e0;
+    animation: pulse 2s infinite;
+    border: 2px solid #ff9800;
+}
+
+.match[data-match-type^="classification"].termine {
+    background-color: #e8f5e9;
+    border: 2px solid #4caf50;
+}
+
+/* Ajuster l'affichage du statut pour les matchs de classement */
+.match[data-match-type^="classification"] .match-status {
+    font-size: 0.8em;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background-color: rgba(0, 0, 0, 0.1);
+}
