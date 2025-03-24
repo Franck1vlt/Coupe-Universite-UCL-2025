@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Affichage Score Football</title>
+    <title>Affichage Score Handball</title>
     <style>
         body {
             margin: 0;
@@ -11,7 +11,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #e0e0e0;
+            background-color: #ffffff;
             color: #000000;
             font-family: Arial, sans-serif;
             overflow: hidden;
@@ -20,38 +20,38 @@
         .score-board {
             text-align: center;
             width: 100%;
-            padding: 20px;
+            padding: 1.25rem;
         }
 
         .teams {
             display: flex;
             justify-content: space-around;
             font-size: 5em;
-            margin: 20px 0;
+            margin: 1.25rem 0;
             font-weight: bold;
         }
 
         .score-container {
             font-size: 12em;
             font-weight: bold;
-            margin: 40px 0;
+            margin: 2.5rem 0;
         }
 
         .score-divider {
-            margin: 0 40px;
+            margin: 0 2.5rem;
             color: #000000;
         }
 
         .match-info {
             font-size: 3em;
-            margin: 30px 0;
+            margin: 1.875rem 0;
         }
 
         .remaining-time {
             background-color: #000000;
-            padding: 10px 20px;
-            border-radius: 10px;
-            margin-right: 20px;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.625rem;
+            margin-right: 1.25rem;
             color: red
         }
 
@@ -62,26 +62,26 @@
         .cards {
             display: flex;
             justify-content: space-around;
-            margin-top: 40px;
+            margin-top: 2.5rem;
             font-size: 2.5em;
         }
 
         .team-cards {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 1.25rem;
         }
 
         .card-icon {
-            width: 40px;
+            width: 2.5rem;
             height: auto;
             vertical-align: middle;
         }
 
         .team-logo {
-            width: 80px;
-            height: 80px;
-            margin: 0 20px;
+            width: 5rem;
+            height: 5rem;
+            margin: 0 1.25rem;
             object-fit: contain;
         }
 
@@ -95,7 +95,22 @@
             50% { transform: scale(1.2); }
             100% { transform: scale(1); }
         }
+
+        /* Ajout d'un indicateur de mode secours */
+        .fallback-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1000;
+            display: none;
+        }
     </style>
+    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <div class="score-board">
@@ -132,18 +147,192 @@
             </div>
         </div>
     </div>
+    
+    <!-- Indicateur de mode secours -->
+    <div class="fallback-indicator" id="fallbackIndicator">Mode hors-ligne</div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            function updateDisplay() {
-                const matchData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
+            // Variables pour stocker les données du match et la connexion
+            let matchData = {};
+            let socket;
+            let localStoragePolling = null;
+            const matchId = new URLSearchParams(window.location.search).get('matchId');
+            const id_terrain = new URLSearchParams(window.location.search).get('id_terrain') || 8; // Handball par défaut
+            let socketConnected = false;
+            let useFallback = false;
+            const fallbackIndicator = document.getElementById('fallbackIndicator');
+            
+            // Activez toujours le polling localStorage en parallèle à Socket.io
+            // pour assurer la synchronisation sur tous les ordinateurs
+            setupLocalStoragePolling();
+
+            // Fonction pour activer l'indicateur de mode secours
+            function activateFallbackIndicator() {
+                if (fallbackIndicator) {
+                    fallbackIndicator.style.display = 'block';
+                    setTimeout(() => {
+                        fallbackIndicator.style.opacity = '0.7';
+                    }, 100);
+                    setTimeout(() => {
+                        fallbackIndicator.style.opacity = '0';
+                    }, 5000);
+                    setTimeout(() => {
+                        if (!useFallback) {
+                            fallbackIndicator.style.display = 'none';
+                        }
+                    }, 5500);
+                }
+            }
+            
+            // Fonction pour établir la connexion Socket.io
+            function connectSocketIO() {
+                try {
+                    console.log('Tentative de connexion Socket.io...');
+                    
+                    // Connexion au namespace /handball avec options
+                    socket = io('/handball', {
+                        forceNew: true, // Force une nouvelle connexion pour éviter les problèmes de multiplexage
+                        reconnectionAttempts: 5, 
+                        timeout: 10000,
+                        reconnectionDelay: 1000,
+                        reconnectionDelayMax: 5000,
+                        auth: { clientType: 'display', matchId: matchId }
+                    });
+                    
+                    // Événement de connexion réussie
+                    socket.on('connect', function() {
+                        console.log('Socket.io connecté');
+                        socketConnected = true;
+                        
+                        // S'enregistrer pour ce match spécifique
+                        socket.emit('registerDisplay', {
+                            matchId: matchId,
+                            id_terrain: id_terrain
+                        });
+                        
+                        // Demander les données actuelles du match
+                        socket.emit('requestData', {
+                            matchId: matchId,
+                            id_terrain: id_terrain
+                        });
+                        
+                        // Envoyer un broadcast pour informer les autres clients qu'un nouvel affichage est connecté
+                        socket.emit('displayConnected', {
+                            matchId: matchId,
+                            id_terrain: id_terrain
+                        });
+                    });
+                    
+                    // Gestion des erreurs de connexion
+                    socket.on('connect_error', function(error) {
+                        console.error('Erreur de connexion Socket.io:', error);
+                        socketConnected = false;
+                        useFallback = true;
+                        activateFallbackIndicator();
+                        setupLocalStoragePolling();
+                    });
+                    
+                    // Gestion de la déconnexion
+                    socket.on('disconnect', function() {
+                        console.log('Socket.io déconnecté');
+                        socketConnected = false;
+                        useFallback = true;
+                        activateFallbackIndicator();
+                        setupLocalStoragePolling();
+                    });
+                    
+                    // Écoute des mises à jour de score
+                    socket.on('scoreUpdate', function(data) {
+                        if (data && data.matchId === matchId) {
+                            console.log('Mise à jour reçue via Socket.io:', data);
+                            matchData = data;
+                            updateDisplay();
+                        }
+                    });
+                    
+                    // Ajouter un mécanisme de reconnexion
+                    socket.io.on('reconnect', () => {
+                        console.log('Socket.io reconnecté');
+                        socketConnected = true;
+                        useFallback = false;
+                        
+                        // Réenregistrer l'affichage
+                        socket.emit('registerDisplay', {
+                            matchId: matchId,
+                            id_terrain: id_terrain
+                        });
+                        
+                        // Demander une mise à jour des données
+                        socket.emit('requestData', {
+                            matchId: matchId,
+                            id_terrain: id_terrain
+                        });
+                    });
+
+                    // Ajouter une gestion explicite de la reconnexion
+                    socket.io.on('reconnect_attempt', (attempt) => {
+                        console.log(`Tentative de reconnexion #${attempt}`);
+                    });
+
+                    socket.io.on('reconnect', () => {
+                        console.log('Socket.io reconnecté - ré-enregistrement');
+                        socket.emit('registerDisplay', {
+                            matchId: matchId,
+                            id_terrain: id_terrain
+                        });
+                    });
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Erreur lors de la création Socket.io:', error);
+                    socketConnected = false;
+                    useFallback = true;
+                    activateFallbackIndicator();
+                    setupLocalStoragePolling();
+                    return false;
+                }
+            }
+
+            // Configuration du polling localStorage comme solution de secours
+            function setupLocalStoragePolling() {
+                // Toujours activer le polling, même si Socket.io fonctionne
+                console.log('Configuration du polling localStorage');
                 
+                // Arrêter le polling existant s'il y en a un
+                if (localStoragePolling) {
+                    clearInterval(localStoragePolling);
+                }
+                
+                localStoragePolling = setInterval(function() {
+                    try {
+                        // Essayer d'abord avec la clé spécifique au match
+                        let data = JSON.parse(localStorage.getItem(`liveMatchData_${matchId}`));
+                        
+                        // Si non trouvé, essayer avec la clé générique
+                        if (!data) {
+                            data = JSON.parse(localStorage.getItem('liveMatchData'));
+                        }
+                        
+                        if (data && data.matchId == matchId) {
+                            console.log('Données récupérées depuis localStorage:', data);
+                            matchData = data;
+                            updateDisplay();
+                        }
+                    } catch (error) {
+                        console.error('Erreur lors de la lecture de localStorage:', error);
+                    }
+                }, 300); // Polling plus rapide (300ms)
+            }
+
+            // Fonction pour mettre à jour l'affichage
+            function updateDisplay() {
                 // Mise à jour des équipes et du type de match
                 document.getElementById('teamAName').textContent = matchData.team1 || 'TEAM A';
                 document.getElementById('teamBName').textContent = matchData.team2 || 'TEAM B';
                 document.getElementById('matchType').textContent = matchData.matchType || 'Match en cours';
                 
-                // Correction des chemins des logos
+                // Mise à jour des logos
                 const logoA = document.getElementById('logoA');
                 const logoB = document.getElementById('logoB');
                 
@@ -157,9 +346,19 @@
                     logoB.onerror = () => logoB.src = '../img/default.png';
                 }
                 
-                // Mise à jour des scores
-                document.getElementById('teamAScore').textContent = matchData.score1 || '0';
-                document.getElementById('teamBScore').textContent = matchData.score2 || '0';
+                // Appliquer une animation à l'élément qui a changé
+                const animateIfChanged = (elementId, newValue) => {
+                    const element = document.getElementById(elementId);
+                    if (element.textContent !== String(newValue)) {
+                        element.classList.add('score-change');
+                        setTimeout(() => element.classList.remove('score-change'), 500);
+                    }
+                    element.textContent = newValue || '0';
+                };
+                
+                // Mise à jour des scores avec animation
+                animateIfChanged('teamAScore', matchData.score1);
+                animateIfChanged('teamBScore', matchData.score2);
                 
                 // Mise à jour des cartons
                 document.getElementById('teamAYellowCard').textContent = matchData.yellowCards1 || '0';
@@ -171,11 +370,125 @@
                 document.getElementById('gameChrono').textContent = matchData.chrono || '00:00';
             }
 
-            // Mise à jour initiale
-            updateDisplay();
+            // Tenter d'établir la connexion Socket.io, sinon utiliser localStorage
+            console.log('Tentative de connexion à Socket.io...');
+            if (!connectSocketIO()) {
+                console.log('Passage au mode localStorage');
+                setupLocalStoragePolling();
+            }
+            
+            // Ping périodique pour maintenir la connexion active si Socket.io est utilisé
+            setInterval(function() {
+                if (socketConnected && socket) {
+                    socket.emit('ping', { 
+                        matchId: matchId,
+                        id_terrain: id_terrain
+                    });
+                }
+            }, 30000);
+            
+            // Vérifier immédiatement s'il y a des données dans localStorage
+            try {
+                const initialData = JSON.parse(localStorage.getItem('liveMatchData'));
+                if (initialData && initialData.matchId === matchId) {
+                    console.log('Données initiales trouvées dans localStorage');
+                    matchData = initialData;
+                    updateDisplay();
+                }
+            } catch (error) {
+                console.error('Erreur lors de la lecture des données initiales:', error);
+            }
+            
+            // S'assurer que nous avons des données après un certain temps
+            setTimeout(() => {
+                if (!matchData.team1) {
+                    console.log('Aucune donnée disponible après délai, tentative de lecture locale');
+                    setupLocalStoragePolling();
+                    try {
+                        const data = JSON.parse(localStorage.getItem('liveMatchData'));
+                        if (data && data.matchId === matchId) {
+                            matchData = data;
+                            updateDisplay();
+                        } else {
+                            console.warn('Aucune donnée disponible dans localStorage');
+                        }
+                    } catch (e) {
+                        console.error('Erreur lors de la récupération des données:', e);
+                    }
+                }
+            }, 3000);
+            
+            // Ajouter un mécanisme de rechargement périodique forcé pour assurer la synchronisation
+            setInterval(() => {
+                console.log('Vérification périodique des données');
+                
+                if (socketConnected && socket) {
+                    socket.emit('requestData', {
+                        matchId: matchId,
+                        id_terrain: id_terrain
+                    });
+                }
+                
+                // On vérifie aussi localStorage dans tous les cas
+                try {
+                    const data = JSON.parse(localStorage.getItem('liveMatchData'));
+                    if (data && data.matchId === matchId) {
+                        matchData = data;
+                        updateDisplay();
+                    }
+                } catch (e) {
+                    console.error('Erreur lors de la vérification périodique:', e);
+                }
+            }, 3000); // Vérification toutes les 3 secondes
 
-            // Mise à jour toutes les 100ms
-            setInterval(updateDisplay, 100);
+            // Force refresh - Actualisation périodique de l'affichage avec détection avancée des désynchronisations
+            setInterval(function() {
+                if (socketConnected) {
+                    try {
+                        socket.emit('ping', { 
+                            matchId: matchId, 
+                            timestamp: Date.now(),
+                            clientData: {
+                                score1: matchData.score1,
+                                score2: matchData.score2,
+                                timestamp: matchData.timestamp || 0
+                            } 
+                        });
+                    } catch (err) {
+                        console.error('Erreur lors du ping Socket.io:', err);
+                    }
+                }
+                
+                // Vérifier localStorage aussi
+                try {
+                    const localData = JSON.parse(localStorage.getItem(`liveMatchData_${matchId}`)) || 
+                                     JSON.parse(localStorage.getItem('liveMatchData'));
+                    
+                    if (localData && localData.matchId == matchId) {
+                        // Comparer les timestamps pour n'utiliser que les données plus récentes
+                        const localTimestamp = localData.timestamp || 0;
+                        const currentTimestamp = matchData.timestamp || 0;
+                        
+                        if (localTimestamp > currentTimestamp) {
+                            console.log('Données plus récentes trouvées dans localStorage');
+                            matchData = localData;
+                            updateDisplay();
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Erreur lors de la lecture de localStorage:', e);
+                }
+            }, 2000);
+
+            // Ajouter un gestionnaire pour les réponses ping/pong
+            socket.on('pong', function(data) {
+                // Si le serveur indique qu'il a des données mais qu'elles sont plus récentes que les nôtres,
+                // demander une mise à jour
+                if (data.hasData && data.lastUpdateTime && (!matchData.timestamp || data.lastUpdateTime > matchData.timestamp)) {
+                    console.log('Données sur le serveur plus récentes que les nôtres, demande de mise à jour');
+                    socket.emit('requestData', { matchId: matchId });
+                }
+            });
         });
     </script>
 </body>

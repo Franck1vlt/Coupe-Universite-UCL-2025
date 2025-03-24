@@ -81,56 +81,60 @@
           <div class="score-line">
             <span id="teamAName">Team A</span> <span id="teamAScore">0</span> - <span id="teamBScore">0</span> <span id="teamBName">Team B</span>
           </div>
-          <div class="details-line">
-            <span id="matchType">Type de Match</span>
-          </div>
-          <div class="points-section">
-            <div class="points-control">
-              <span class="points-label">Buts :</span>
-              <button onclick="subPoint('A')" class="control-button" accesskey="e">-</button>
-              <button onclick="addPoint('A')" class="control-button" accesskey="a">+</button>
-            </div>
-    
-            <div class="timer" id="gameChrono">00:00</div>
 
-            <div class="points-control">
-              <span class="points-label">Buts :</span>
-              <button onclick="subPoint('B')" class="control-button" accesskey="r">-</button>
-              <button onclick="addPoint('B')" class="control-button" accesskey="z">+</button>
+          <!-- Section match normal -->
+          <div id="normalMatchSection">
+            <div class="details-line">
+              <span id="matchType">Type de Match</span>
             </div>
-          </div>
-    
-          <div class="cards-section">
-            <div class="yellow-card">
-              <div class="card-row">
-                <span>Cartons Jaunes : <span id="teamAYellowCard">0</span></span>
-                <button onclick="subYellowCard('A')" class="control-button" accesskey="u">-</button>
-                <button onclick="addYellowCard('A')" class="control-button" accesskey="t">+</button>
+            <div class="points-section">
+              <div class="points-control">
+                <span class="points-label">Buts :</span>
+                <button onclick="subPoint('A')" class="control-button" accesskey="e">-</button>
+                <button onclick="addPoint('A')" class="control-button" accesskey="a">+</button>
               </div>
-              <div class="card-row">
-                <span>Cartons Jaunes : <span id="teamBYellowCard">0</span></span>
-                <button onclick="subYellowCard('B')" class="control-button" accesskey="i">-</button>
-                <button onclick="addYellowCard('B')" class="control-button" accesskey="y">+</button>
+      
+              <div class="timer" id="gameChrono">00:00</div>
+      
+              <div class="points-control">
+                <span class="points-label">Buts :</span>
+                <button onclick="subPoint('B')" class="control-button" accesskey="r">-</button>
+                <button onclick="addPoint('B')" class="control-button" accesskey="z">+</button>
               </div>
             </div>
-            <div class="red-card">
-              <div class="card-row">
-                <span>Cartons Rouges : <span id="teamARedCard">0</span></span>
-                <button onclick="subRedCard('A')" class="control-button" accesskey="o">-</button>
-                <button onclick="addRedCard('A')" class="control-button" accesskey="p">+</button>
+      
+            <div class="cards-section">
+              <div class="yellow-card">
+                <div class="card-row">
+                  <span>Cartons Jaunes : <span id="teamAYellowCard">0</span></span>
+                  <button onclick="subYellowCard('A')" class="control-button" accesskey="u">-</button>
+                  <button onclick="addYellowCard('A')" class="control-button" accesskey="t">+</button>
+                </div>
+                <div class="card-row">
+                  <span>Cartons Jaunes : <span id="teamBYellowCard">0</span></span>
+                  <button onclick="subYellowCard('B')" class="control-button" accesskey="i">-</button>
+                  <button onclick="addYellowCard('B')" class="control-button" accesskey="y">+</button>
+                </div>
               </div>
-              <div class="card-row">
-                <span>Cartons Rouges : <span id="teamBRedCard">0</span></span>
-                <button onclick="subRedCard('B')" class="control-button" accesskey="o">-</button>
-                <button onclick="addRedCard('B')" class="control-button" accesskey="p">+</button>
+              <div class="red-card">
+                <div class="card-row">
+                  <span>Cartons Rouges : <span id="teamARedCard">0</span></span>
+                  <button onclick="subRedCard('A')" class="control-button" accesskey="o">-</button>
+                  <button onclick="addRedCard('A')" class="control-button" accesskey="p">+</button>
+                </div>
+                <div class="card-row">
+                  <span>Cartons Rouges : <span id="teamBRedCard">0</span></span>
+                  <button onclick="subRedCard('B')" class="control-button" accesskey="o">-</button>
+                  <button onclick="addRedCard('B')" class="control-button" accesskey="p">+</button>
+                </div>
               </div>
             </div>
           </div>
     
           <div class="bottom-controls">
-            <button onclick="startChrono()" accesskey="s">Start</button>
-            <button onclick="stopChrono()" accesskey="d">Stop</button>
-            <button onclick="resetGame()">End</button>
+            <button onclick="startChrono()" id="startGameButton">Start</button>
+            <button onclick="stopChrono()" id="stopGameButton">Stop</button>
+            <button onclick="resetGame()" id="endGameButton">Terminer</button>
           </div>
             
         </div>
@@ -142,10 +146,24 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Récupérer les paramètres de l'URL
         const urlParams = new URLSearchParams(window.location.search);
+        const matchId = urlParams.get('matchId');
         const team1Name = urlParams.get('team1');
         const team2Name = urlParams.get('team2');
         const matchType = urlParams.get('matchType');
         const isCorrection = urlParams.get('correction') === 'true';
+
+        // Fonction pour convertir le matchType en texte affichable
+        function getMatchTypeDisplay(type) {
+            const matchTypes = {
+                'quarterfinal': 'Quart de finale',
+                'semifinal': 'Demi-finale',
+                'smallfinal': 'Petite Finale',
+                'final': 'Finale',
+                'classification_semifinal': 'Demi-finale de classement',
+                'classification_final': 'Finale de classement'
+            };
+            return matchTypes[type] || type;
+        }
 
         // Initialiser les sélecteurs
         if (team1Name) {
@@ -175,6 +193,21 @@
             document.getElementById('teamAScore').textContent = matchData.teamA.score;
             document.getElementById('teamBScore').textContent = matchData.teamB.score;
         }
+        
+        // Notifier le serveur du début ou de la reprise du match via WebSocket
+        if (typeof initializeWebSocket === 'function') {
+            initializeWebSocket();
+            setTimeout(() => {
+                sendMessage(JSON.stringify({
+                    type: 'startMatch',
+                    matchId: matchId,
+                    team1: team1Name,
+                    team2: team2Name,
+                    matchType: matchType,
+                    status: isCorrection ? 'correction' : 'en_cours'
+                }));
+            }, 500); // Petit délai pour s'assurer que la connexion WebSocket est établie
+        }
     });
 
     function updateMatchType() {
@@ -185,19 +218,29 @@
 
     function openScoreDisplay() {
         // Stocker les données actuelles dans le localStorage
-        localStorage.setItem('liveMatchData', JSON.stringify({
+        const liveData = {
             team1: document.getElementById('teamA').value,
             team2: document.getElementById('teamB').value,
             matchType: document.getElementById('matchType').textContent,
             matchId: new URLSearchParams(window.location.search).get('matchId'),
-            score1: 0,
-            score2: 0,
-            yellowCards1: 0,
-            yellowCards2: 0,
-            redCards1: 0,
-            redCards2: 0,
-            chrono: '00:00'
-        }));
+            score1: matchData ? matchData.teamA.score : 0,
+            score2: matchData ? matchData.teamB.score : 0,
+            yellowCards1: matchData ? matchData.teamA.yellowCards : 0,
+            yellowCards2: matchData ? matchData.teamB.yellowCards : 0,
+            redCards1: matchData ? matchData.teamA.redCards : 0,
+            redCards2: matchData ? matchData.teamB.redCards : 0,
+            chrono: document.getElementById('gameChrono').textContent
+        };
+        localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+
+        // Envoyer via WebSocket
+        if (typeof sendMessage === 'function') {
+            sendMessage(JSON.stringify({
+                type: 'displayUpdate',
+                matchId: liveData.matchId,
+                data: liveData
+            }));
+        }
 
         // Ouvrir la fenêtre d'affichage
         const displayWindow = window.open('affichage_score.html', '_blank');
@@ -205,19 +248,36 @@
 
     // Fonction pour mettre à jour les données en direct
     function updateLiveData() {
+        if (!matchData) return;
+        
         const liveData = {
-            score1: document.getElementById('teamAScore').textContent,
-            score2: document.getElementById('teamBScore').textContent,
-            yellowCards1: document.getElementById('teamAYellowCard').textContent,
-            yellowCards2: document.getElementById('teamBYellowCard').textContent,
-            redCards1: document.getElementById('teamARedCard').textContent,
-            redCards2: document.getElementById('teamBRedCard').textContent,
+            matchId: new URLSearchParams(window.location.search).get('matchId'),
+            score1: matchData.teamA.score,
+            score2: matchData.teamB.score,
+            yellowCards1: matchData.teamA.yellowCards,
+            yellowCards2: matchData.teamB.yellowCards,
+            redCards1: matchData.teamA.redCards,
+            redCards2: matchData.teamB.redCards,
             chrono: document.getElementById('gameChrono').textContent
         };
+        
+        const storedData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
         localStorage.setItem('liveMatchData', JSON.stringify({
-            ...JSON.parse(localStorage.getItem('liveMatchData') || '{}'),
+            ...storedData,
             ...liveData
         }));
+        
+        // Envoyer via WebSocket
+        if (typeof sendMessage === 'function') {
+            sendMessage(JSON.stringify({
+                type: 'liveUpdate',
+                matchId: liveData.matchId,
+                data: {
+                    ...storedData,
+                    ...liveData
+                }
+            }));
+        }
     }
 
     // Ajouter l'observateur pour mettre à jour les données en direct

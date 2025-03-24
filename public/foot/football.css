@@ -496,3 +496,37 @@ button:hover {
     color: #666;
 }
 
+/* Styles pour les tirs au but */
+.penalties-section {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.penalties-title {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+    color: #ff9800;
+}
+
+.penalties-score-line {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.penalties-controls {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 10px;
+}
+
+/* Style pour l'étoile du vainqueur des tirs au but */
+.penalty-winner::after {
+    content: ' ⭐';
+    color: gold;
+    font-size: 0.8em;
+    vertical-align: super;
+}
+

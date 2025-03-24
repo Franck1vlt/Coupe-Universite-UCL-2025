@@ -5,44 +5,143 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Volley Ball H</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- Dans styles.css, pensez à définir par exemple : 
-         .phase-content { display: flex; } 
-         .hidden { display: none !important; }
-    -->
-    <style>
-      .correction-button {
+    <!-- Fonction pour charger Socket.IO de manière conditionnelle -->
+    <script>
+        function loadSocketIO() {
+            return new Promise((resolve, reject) => {
+                // Vérifier si le serveur est accessible avant de charger Socket.IO
+                fetch('/socket.io/socket.io.js', { 
+                    method: 'HEAD',
+                    cache: 'no-store',
+                    signal: AbortSignal.timeout(3000)
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Serveur accessible, charger Socket.IO
+                        const script = document.createElement('script');
+                        script.src = '/socket.io/socket.io.js';
+                        script.onload = () => {
+                            console.log('Socket.IO chargé avec succès');
+                            resolve(true);
+                        };
+                        script.onerror = (error) => {
+                            console.error('Erreur lors du chargement de Socket.IO:', error);
+                            reject(error);
+                        };
+                        document.head.appendChild(script);
+                    } else {
+                        console.warn('Serveur accessible mais retourne une erreur:', response.status);
+                        reject(new Error(`Erreur serveur: ${response.status}`));
+                    }
+                })
+                .catch(error => {
+                    console.error('Serveur non accessible lors de la tentative de chargement de Socket.IO:', error);
+                    reject(error);
+                });
+            });
+        }
+
+        // Essayer de charger Socket.IO, mais continuer même en cas d'échec
+        loadSocketIO().catch(error => {
+            console.warn('Application démarrée sans Socket.IO:', error);
+            // Créer une notification pour l'utilisateur
+            document.addEventListener('DOMContentLoaded', () => {
+                const offlineNotice = document.createElement('div');
+                offlineNotice.id = 'offlineNotice';
+                offlineNotice.innerHTML = `
+                    <div style="position: fixed; bottom: 20px; right: 20px; background-color: #fff3cd; 
+                         color: #856404; padding: 10px; border-radius: 4px; z-index: 1000; 
+                         box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                        Mode hors ligne actif - Les données sont sauvegardées localement.
+                        <br><small>Serveur non disponible: ${error.message}</small>
+                    </div>
+                `;
+                document.body.appendChild(offlineNotice);
+            });
+        });
+    </script>
+<style>
+    .correction-button {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: #f44336;
+      color: white;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+
+    .correction-button:hover {
+      transform: scale(1.1);
+      background-color: #d32f2f;
+    }
+
+    .match.terminé {
+      cursor: pointer;
+    }
+
+    .match.terminé:hover {
+      border: 2px solid #f44336;
+    }
+
+    /* Style pour le statut de connexion */
+    .connection-status {
         position: fixed;
         top: 20px;
-        right: 20px;
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background-color: #f44336;
-        color: white;
-        border: none;
-        cursor: pointer;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
+        right: 100px;
+        padding: 8px 12px;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: bold;
         z-index: 1000;
         transition: all 0.3s ease;
-      }
-  
-      .correction-button:hover {
-        transform: scale(1.1);
-        background-color: #d32f2f;
-      }
-  
-      .match.terminé {
-        cursor: pointer;
-      }
-  
-      .match.terminé:hover {
-        border: 2px solid #f44336;
-      }
-    </style>
+        display: flex;
+        align-items: center;
+        min-width: 150px;
+    }
+    
+    .connection-status::before {
+        content: '';
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+        background-color: #f8d7da;
+    }
+    
+    .connection-status.connected::before {
+        background-color: #28a745;
+    }
+    
+    .connection-status.offline::before {
+        background-color: #ffc107;
+    }
+    
+    .connection-status.disconnected::before {
+        background-color: #dc3545;
+    }
+    
+    .connection-status.connecting::before {
+        background-color: #6c757d;
+        animation: pulse 1s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 0.6; }
+        50% { opacity: 1; }
+        100% { opacity: 0.6; }
+    }
+  </style>
 </head>
 <body>
     <button id="correctionMode" class="correction-button" onclick="toggleCorrectionMode()">✏️</button>
@@ -67,7 +166,7 @@
             <div class="round-title">Qualifications</div>
                 <!-- Match 1 -->
                 <div class="match-wrapper">
-                    <div class="match" data-match-id="1" data-match-type="qualification">
+                    <div class="match terminé" data-match-id="1" data-match-type="qualification">
                     <div class="team">
                         <div class="team-name">FMMS</div>
                         <div class="score">25</div>
@@ -76,12 +175,17 @@
                         <div class="team-name">ESPAS-ESTICE</div>
                         <div class="score">12</div>
                     </div>
+                    <div class="match-info-container">
+                        <div class="match-time">04/02</div>
+                        <div class="match-status">terminé</div>
+                    </div>
                     </div>
                     <div class="connector right"></div>
                 </div>
+                
                 <!-- Match 2 -->
                 <div class="match-wrapper">
-                    <div class="match" data-match-id="2" data-match-type="qualification">
+                    <div class="match terminé" data-match-id="2" data-match-type="qualification">
                     <div class="team">
                         <div class="team-name">FLD</div>
                         <div class="score">25</div>
@@ -90,12 +194,17 @@
                         <div class="team-name">PIKTURA</div>
                         <div class="score">20</div>
                     </div>
+                    <div class="match-info-container">
+                        <div class="match-time">04/02</div>
+                        <div class="match-status">terminé</div>
+                    </div>
                     </div>
                     <div class="connector right"></div>
                 </div>
+                
                 <!-- Match 3 -->
                 <div class="match-wrapper">
-                    <div class="match" data-match-id="3" data-match-type="qualification">
+                    <div class="match terminé" data-match-id="3" data-match-type="qualification">
                     <div class="team">
                         <div class="team-name">FLSH</div>
                         <div class="score">25</div>
@@ -103,6 +212,10 @@
                     <div class="team">
                         <div class="team-name">IKPO</div>
                         <div class="score">14</div>
+                    </div>
+                    <div class="match-info-container">
+                        <div class="match-time">04/02</div>
+                        <div class="match-status">terminé</div>
                     </div>
                     </div>
                     <div class="connector right"></div>
@@ -126,6 +239,10 @@
                     <div class="team-name">FGES</div>
                     <div class="score">-</div>
                 </div>
+                <div class="match-info-container">
+                    <div class="match-time">9:30</div>
+                    <div class="match-status">à venir</div>
+                </div>
                 </div>
                 <div class="connector top"></div>
             </div>
@@ -139,6 +256,10 @@
                 <div class="team">
                     <div class="team-name">JUNIA</div>
                     <div class="score">-</div>
+                </div>
+                <div class="match-info-container">
+                    <div class="match-time">9:30</div>
+                    <div class="match-status">à venir</div>
                 </div>
                 </div>
                 <div class="connector bottom"></div>
@@ -154,6 +275,10 @@
                     <div class="team-name">IESEG</div>
                     <div class="score">-</div>
                 </div>
+                <div class="match-info-container">
+                    <div class="match-time">10:30</div>
+                    <div class="match-status">à venir</div>
+                </div>
                 </div>
                 <div class="connector top"></div>
             </div>
@@ -167,6 +292,10 @@
                 <div class="team">
                     <div class="team-name">ESPOL</div>
                     <div class="score">-</div>
+                </div>
+                <div class="match-info-container">
+                    <div class="match-time">10:30</div>
+                    <div class="match-status">à venir</div>
                 </div>
                 </div>
                 <div class="connector bottom"></div>
@@ -185,6 +314,10 @@
                     <div class="team-name">À déterminer</div>
                     <div class="score">0</div>
                 </div>
+                <div class="match-info-container">
+                    <div class="match-time">11:30</div>
+                    <div class="match-status">à venir</div>
+                </div>
                 </div>
                 <div class="connector top"></div>
             </div>
@@ -198,6 +331,10 @@
                     <div class="team-name">À déterminer</div>
                     <div class="score">0</div>
                 </div>
+                <div class="match-info-container">
+                    <div class="match-time">11:30</div>
+                    <div class="match-status">à venir</div>
+                </div>
                 </div>
                 <div class="connector bottom"></div>
             </div>
@@ -206,7 +343,7 @@
             <div class="round3">
             <div class="round-title">Finale</div>
             <div class="match-wrapper">
-                <div class="match" data-match-id="11" data-match-type="final-h" data-position="1">
+                <div class="match" data-match-id="11" data-match-type="final" data-position="1">
                 <div class="team">
                     <div class="team-name">À déterminer</div>
                     <div class="score">0</div>
@@ -214,6 +351,10 @@
                 <div class="team">
                     <div class="team-name">À déterminer</div>
                     <div class="score">0</div>
+                </div>
+                <div class="match-info-container">
+                    <div class="match-time">12:30</div>
+                    <div class="match-status">à venir</div>
                 </div>
                 </div>
             </div>
@@ -227,6 +368,10 @@
                 <div class="team">
                     <div class="team-name">À déterminer</div>
                     <div class="score">0</div>
+                </div>
+                <div class="match-info-container">
+                    <div class="match-time">12:30</div>
+                    <div class="match-status">à venir</div>
                 </div>
                 </div>
             </div>
@@ -244,11 +389,11 @@
         <!-- SECTION CLASSEMENT FINAL -->
         <div class="bracket phase-content" id="ranking-phase">
             <div class="ranking-container">
-            <div class="round-title">Classement Final Basket</div>
+            <div class="round-title">Classement Final Volleyball</div>
             <div class="ranking-table">
                 <div class="ranking-row header">
                 <div class="rank">Position</div>
-                <div class="team-name">Équipe</div>
+                <div class="teamname">Équipe</div>
                 <div class="points">Points</div>
                 </div>
                 <div id="rankingList">
@@ -257,41 +402,155 @@
             </div>
             </div>
         </div>
-    </div>
-    <div style="text-align: center;">
-        <button class="reset-button" id="resetTournament" onclick="resetTournament()">Réinitialiser le tournoi</button>
-        <button onclick="simulateTournament()">Simuler la compétition</button>
-        <button class="back-button" onclick="window.location.href='../index.html'">Retour</button>
+      </div>
+      <div style="text-align: center;">
+          <button class="reset-button" id="resetTournament" onclick="resetTournament()">Réinitialiser le tournoi</button>
+          <button onclick="simulateTournament()">Simuler la compétition</button>
+          <button class="back-button" onclick="window.location.href='../index.html'">Retour</button>
+      </div>
     </div>
     
     <script src="tournament.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const phaseSelect = document.getElementById('phaseSelect');
-      const phaseContents = document.querySelectorAll('.phase-content');
-      
-      phaseSelect.addEventListener('change', async function() {
-        const selectedPhase = phaseSelect.value;
-        phaseContents.forEach(function(content) {
-          if (content.id === selectedPhase) {
-            content.classList.remove('hidden');
-          } else {
-            content.classList.add('hidden');
-          }
-        });
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          const phaseSelect = document.getElementById('phaseSelect');
+          const phaseContents = document.querySelectorAll('.phase-content');
+          
+          phaseSelect.addEventListener('change', async function() {
+            const selectedPhase = phaseSelect.value;
+            phaseContents.forEach(function(content) {
+              if (content.id === selectedPhase) {
+                content.classList.remove('hidden');
+              } else {
+                content.classList.add('hidden');
+              }
+            });
+            
+            if (selectedPhase === 'ranking-phase') {
+              try {
+                await updateRankingDisplay();
+              } catch (error) {
+                console.error('Erreur lors de la mise à jour du classement masculin:', error);
+              }
+            }
+          });
+          
+          // Déclencher l'événement change initial de manière asynchrone
+          setTimeout(() => phaseSelect.dispatchEvent(new Event('change')), 0);
+        });  
         
-        if (selectedPhase === 'ranking-phase') {
-          try {
-            await updateRankingDisplay();
-          } catch (error) {
-            console.error('Erreur lors de la mise à jour du classement:', error);
-          }
+        // Ajouter au script existant
+        document.addEventListener('DOMContentLoaded', function() {
+            // Code existant...
+            
+            // Surveiller l'état de la connexion au serveur
+            const connectionStatus = document.getElementById('connectionStatus');
+            
+            function updateConnectionStatus(state) {
+                if (!connectionStatus) return;
+                
+                connectionStatus.classList.remove('connected', 'disconnected', 'connecting', 'offline');
+                
+                if (state === 'connected') {
+                    connectionStatus.textContent = 'Connexion: ✅';
+                    connectionStatus.classList.add('connected');
+                } else if (state === 'disconnected') {
+                    connectionStatus.textContent = 'Connexion: ❌';
+                    connectionStatus.classList.add('disconnected');
+                } else if (state === 'offline') {
+                    connectionStatus.textContent = 'Mode hors ligne';
+                    connectionStatus.classList.add('offline');
+                } else {
+                    connectionStatus.textContent = 'Vérification...';
+                    connectionStatus.classList.add('connecting');
+                }
+            }
+            
+            // Vérifier l'état de la connexion avec un timeout pour éviter les attentes trop longues
+            function checkConnection() {
+                updateConnectionStatus('connecting');
+                
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 3000);
+                
+                fetch('/api/matches/volleyballH', { 
+                    method: 'HEAD',
+                    cache: 'no-store',
+                    signal: controller.signal
+                })
+                .then(response => {
+                    clearTimeout(timeout);
+                    if (response.ok) {
+                        updateConnectionStatus('connected');
+                    } else {
+                        updateConnectionStatus('disconnected');
+                    }
+                })
+                .catch(() => {
+                    clearTimeout(timeout);
+                    updateConnectionStatus('offline');
+                });
+            }
+            
+            // Vérifier la connexion immédiatement puis toutes les 30 secondes (réduit pour économiser les ressources)
+            checkConnection();
+            setInterval(checkConnection, 30000);
+        });
+    </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Fonction pour mettre à jour les statuts des matchs
+        function updateMatchStatus(status) {
+            const matches = document.querySelectorAll('.match');
+            matches.forEach(match => {
+                const matchStatus = match.querySelector('.match-status');
+                if (!matchStatus) return;
+
+                let text = '';
+                let bgColor = '';
+                let textColor = '';
+
+                switch (status) {
+                    case 'à_venir':
+                        text = 'À venir';
+                        bgColor = '#f0f0f0';
+                        textColor = '#666';
+                        break;
+                    case 'en_cours':
+                        text = 'En cours';
+                        bgColor = '#fff3cd';
+                        textColor = '#856404';
+                        break;
+                    case 'terminé':
+                        text = 'Terminé';
+                        bgColor = '#d4edda';
+                        textColor = '#155724';
+                        break;
+                    default:
+                        text = 'Inconnu';
+                        bgColor = '#f8d7da';
+                        textColor = '#721c24';
+                }
+
+                matchStatus.textContent = text;
+                matchStatus.style.backgroundColor = bgColor;
+                matchStatus.style.color = textColor;
+                match.setAttribute('data-status', status);
+            });
         }
-      });
-      
-      // Déclencher l'événement change initial de manière asynchrone
-      setTimeout(() => phaseSelect.dispatchEvent(new Event('change')), 0);
-    });  
+
+        // Initialisation des statuts des matchs
+        updateMatchStatus('à_venir');
+
+        // Exemple : mise à jour dynamique d'un match spécifique
+        setTimeout(() => {
+            const match = document.querySelector('.match[data-match-id="4"]');
+            if (match) {
+                match.querySelector('.match-status').textContent = 'En cours';
+                match.setAttribute('data-status', 'en_cours');
+            }
+        }, 2000);
+    });
     </script>
 </body>
 </html>

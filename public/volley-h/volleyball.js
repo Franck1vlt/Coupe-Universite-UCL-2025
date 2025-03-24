@@ -6,6 +6,61 @@ let matchData = {
     matchId: new URLSearchParams(window.location.search).get('matchId')
 };
 
+// Ajouter les variables WebSocket
+let socket;
+let socketConnected = false;
+
+// Initialisation WebSocket
+function initWebSocket() {
+    try {
+        // Vérifier si Socket.IO est disponible
+        if (typeof io === 'undefined') {
+            console.error('Socket.IO n\'est pas chargé');
+            return;
+        }
+        
+        socket = io();
+        
+        socket.on('connect', () => {
+            console.log('Connecté au serveur WebSocket');
+            socketConnected = true;
+            // Mettre à jour un indicateur visuel si nécessaire
+        });
+        
+        socket.on('disconnect', () => {
+            console.log('Déconnecté du serveur WebSocket');
+            socketConnected = false;
+            // Mettre à jour un indicateur visuel si nécessaire
+        });
+        
+        socket.on('connect_error', (error) => {
+            console.error('Erreur de connexion WebSocket:', error);
+            socketConnected = false;
+        });
+        
+        // Écouter les mises à jour d'autres clients
+        socket.on('match_updated', (data) => {
+            // Vérifier si c'est notre match actuel
+            if (data.matchId === matchData.matchId) {
+                console.log('Mise à jour WebSocket reçue pour notre match:', data);
+                // Mettre à jour les scores si nécessaire
+                // Mais éviter les boucles de mise à jour
+            }
+        });
+    } catch (error) {
+        console.error('Erreur lors de l\'initialisation WebSocket:', error);
+    }
+}
+
+// Structure de données du match (exemple)
+let volleyHMatchData = {
+    matchId: new URLSearchParams(window.location.search).get('matchId'),
+    teamA: { score: 0 },
+    teamB: { score: 0 },
+    chrono: '00:00',
+    status: 'en cours'
+};
+
 // Déplacer la fonction updateTeams dans le scope global
 function updateTeams() {
     const teamA = document.getElementById('teamA');
@@ -40,7 +95,7 @@ function updateChrono() {
         `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-// Fonctions pour les points et cartons
+// Fonctions pour les points
 function addPoint(team) {
     matchData[`team${team}`].score++;
     updateDisplay();
@@ -53,31 +108,57 @@ function subPoint(team) {
     }
 }
 
-function addYellowCard(team) {
-    matchData[`team${team}`].yellowCards++;
-    updateDisplay();
-}
+// Fonction pour mettre à jour le statut du match via WebSocket
+function updateMatchStatus(status = 'en_cours') {
+    const matchId = new URLSearchParams(window.location.search).get('matchId');
+    if (!matchId) return;
 
-function subYellowCard(team) {
-    if (matchData[`team${team}`].yellowCards > 0) {
-        matchData[`team${team}`].yellowCards--;
-        updateDisplay();
+    console.log(`Tentative d'envoi du statut "${status}" pour le match ${matchId}`);
+
+    // Mettre à jour localement
+    const liveData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
+    liveData.status = status;
+    localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+
+    // Mettre à jour l'indicateur de statut visuel dans l'interface
+    if (typeof updateStatusIndicator === 'function') {
+        updateStatusIndicator(status);
+    }
+
+    // Si WebSocket est disponible et connecté, utiliser WebSocket
+    if (socket && socketConnected) {
+        console.log(`Envoi du statut "${status}" pour le match ${matchId} via WebSocket`);
+        
+        socket.emit('update_match_status', {
+            matchId: matchId,
+            status: status,
+            score1: matchData.teamA.score,
+            score2: matchData.teamB.score
+        });
+    } else {
+        // Fallback HTTP si WebSocket n'est pas disponible
+        fetch(`/api/match-status/${matchId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                status: status,
+                score1: matchData.teamA.score,
+                score2: matchData.teamB.score,
+                id_terrain: 9 // Par défaut pour volleyball
+            })
+        }).then(response => {
+            if (!response.ok) {
+                console.error(`Erreur lors de la mise à jour du statut: ${response.status}`);
+            } else {
+                console.log(`Statut du match mis à jour avec succès: ${status}`);
+            }
+        }).catch(error => {
+            console.error('Erreur lors de la mise à jour du statut:', error);
+        });
     }
 }
 
-function addRedCard(team) {
-    matchData[`team${team}`].redCards++;
-    updateDisplay();
-}
-
-function subRedCard(team) {
-    if (matchData[`team${team}`].redCards > 0) {
-        matchData[`team${team}`].redCards--;
-        updateDisplay();
-    }
-}
-
-// Fonction de fin de match
+// Fonction de fin de match avec WebSocket
 async function resetGame() {
     if (!confirm('Voulez-vous vraiment terminer le match ?')) return;
 
@@ -91,6 +172,9 @@ async function resetGame() {
     const loser = score1 > score2 ? team2 : team1;
 
     try {
+        // Mettre à jour le statut en "terminé"
+        updateMatchStatus('terminé');
+        
         // Récupérer l'état actuel du tournoi
         const tournamentState = JSON.parse(localStorage.getItem('volleyHTournamentState')) || { matches: {} };
         
@@ -137,47 +221,111 @@ async function resetGame() {
             localStorage.setItem('volleyHTournamentState', JSON.stringify(tournamentState));
         }
 
-        // Envoyer les résultats au serveur
-        await fetch('/api/match-result', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
+        // Envoyer les données via WebSocket si disponible
+        if (socket && socketConnected) {
+            console.log('Envoi de la fin de match via WebSocket');
+            
+            socket.emit('update_match', {
                 matchId,
                 team1,
                 team2,
                 score1,
                 score2,
-                matchType,
                 status: 'terminé',
                 winner,
-                loser
-            })
-        });
+                loser,
+                matchType
+            });
+            
+            // Attendre confirmation WebSocket
+            await new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    socket.off('update_match_success');
+                    socket.off('update_match_error');
+                    reject(new Error('Délai d\'attente WebSocket dépassé'));
+                }, 3000);
+                
+                socket.once('update_match_success', () => {
+                    clearTimeout(timeout);
+                    resolve();
+                });
+                
+                socket.once('update_match_error', (error) => {
+                    clearTimeout(timeout);
+                    reject(new Error(error.message || 'Erreur WebSocket'));
+                });
+            });
+            
+            console.log('Fin de match confirmée via WebSocket');
+        } else {
+            // Fallback HTTP si WebSocket n'est pas disponible
+            // Envoyer les résultats au serveur via HTTP
+            const matchResponse = await fetch('/api/match-status/' + matchId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: 'terminé',
+                    score1: score1,
+                    score2: score2,
+                    id_terrain: 9 // ID du terrain pour le volleyball
+                })
+            });
 
-        // Attendre un peu avant la redirection pour assurer la sauvegarde
-        await new Promise(resolve => setTimeout(resolve, 100));
+            if (!matchResponse.ok) {
+                throw new Error(`Erreur lors de la mise à jour du statut du match: ${matchResponse.status}`);
+            }
+
+            // Attendre que les données du statut soient bien enregistrées
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Envoyer ensuite les résultats finaux
+            const resultResponse = await fetch('/api/match-result', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    matchId,
+                    team1,
+                    team2,
+                    score1,
+                    score2,
+                    matchType,
+                    status: 'terminé',
+                    winner,
+                    loser,
+                    id_tournois: 4  // ID spécifique pour le tournoi de volleyball hommes
+                })
+            });
+
+            if (!resultResponse.ok) {
+                throw new Error(`Erreur lors de l'enregistrement des résultats: ${resultResponse.status}`);
+            }
+
+            // Attendre un peu plus longtemps pour assurer la sauvegarde complète
+            await new Promise(resolve => setTimeout(resolve, 800));
+        }
+
+        // Notifier l'utilisateur avant la redirection
+        alert('Match terminé avec succès! Redirection vers le tableau des matchs...');
 
         // Redirection vers la page principale
         window.location.href = 'volleyball.html#final-phase';
 
     } catch (error) {
-        console.error('Erreur:', error);
-        alert('Erreur lors de la sauvegarde du match');
+        console.error('Erreur lors de la fin du match:', error);
+        alert('Erreur lors de la sauvegarde du match: ' + error.message + 
+              '\nVeuillez essayer à nouveau ou contacter l\'administrateur.');
     }
 }
 
 // Fonction de mise à jour de l'affichage
-function updateDisplay() {
+async function updateDisplay() {
     document.getElementById('teamAScore').textContent = matchData.teamA.score;
     document.getElementById('teamBScore').textContent = matchData.teamB.score;
-    document.getElementById('teamAYellowCard').textContent = matchData.teamA.yellowCards;
-    document.getElementById('teamBYellowCard').textContent = matchData.teamB.yellowCards;
-    document.getElementById('teamARedCard').textContent = matchData.teamA.redCards;
-    document.getElementById('teamBRedCard').textContent = matchData.teamB.redCards;
 
-    // Mettre à jour les données en direct
     const liveData = {
         matchId: new URLSearchParams(window.location.search).get('matchId'),
         team1: document.getElementById('teamAName').textContent,
@@ -185,31 +333,181 @@ function updateDisplay() {
         matchType: document.getElementById('matchType').textContent,
         score1: matchData.teamA.score,
         score2: matchData.teamB.score,
-        yellowCards1: matchData.teamA.yellowCards,
-        yellowCards2: matchData.teamB.yellowCards,
-        redCards1: matchData.teamA.redCards,
-        redCards2: matchData.teamB.redCards,
         chrono: document.getElementById('gameChrono').textContent,
-        status: 'en cours'
+        status: 'en_cours'
     };
 
+    // Sauvegarder en localStorage
     localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+
+    // Mettre à jour l'objet volleyHMatchData
+    volleyHMatchData.teamA.score = matchData.teamA.score;
+    volleyHMatchData.teamB.score = matchData.teamB.score;
+    volleyHMatchData.chrono = document.getElementById('gameChrono').textContent;
+    
+    // Sauvegarder en localStorage
+    localStorage.setItem(
+        `liveMatchData_volleyH_${volleyHMatchData.matchId}`,
+        JSON.stringify(volleyHMatchData)
+    );
+
+    // Stocker les données à synchroniser
+    window.dataToSync = {
+        matchId: liveData.matchId,
+        status: liveData.status,
+        score1: liveData.score1,
+        score2: liveData.score2
+    };
+
+    // Envoyer les données au serveur via WebSocket si disponible
+    if (socket && socketConnected) {
+        socket.emit('update_match_status', {
+            matchId: liveData.matchId,
+            status: liveData.status,
+            score1: liveData.score1,
+            score2: liveData.score2
+        });
+    } else {
+        // Sinon on utilise le code HTTP existant
+        try {
+            const response = await fetch('/api/match-status/' + liveData.matchId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: liveData.status,
+                    score1: liveData.score1,
+                    score2: liveData.score2,
+                    id_terrain: 9 // ID du terrain pour le volleyball
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            console.log('Données synchronisées avec le serveur avec succès');
+            window.lastSyncSuccess = true;
+        } catch (error) {
+            console.error('Erreur lors de l\'envoi des données au serveur:', error);
+            window.lastSyncSuccess = false;
+        }
+    }
+}
+
+// Fonction pour synchroniser périodiquement avec le serveur
+function setupPeriodicSync() {
+    // Tenter de synchroniser toutes les 3 secondes
+    window.syncInterval = setInterval(async () => {
+        if (window.dataToSync && window.dataToSync.matchId) {
+            // Si la dernière synchronisation a échoué, on réessaie
+            if (window.lastSyncSuccess !== true) {
+                try {
+                    console.log('Tentative de resynchronisation...');
+                    const response = await fetch('/api/match-status/' + window.dataToSync.matchId, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            status: window.dataToSync.status,
+                            score1: window.dataToSync.score1,
+                            score2: window.dataToSync.score2,
+                            id_terrain: 9 // ID du terrain pour le volleyball
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    console.log('Resynchronisation réussie');
+                    window.lastSyncSuccess = true;
+                } catch (error) {
+                    console.error('Échec de la resynchronisation:', error);
+                }
+            }
+        }
+    }, 3000); // Toutes les 3 secondes
+}
+
+// Variable globale pour le serveur
+let server = 'A';
+
+function changeServer() {
+    // Alterner le serveur entre A et B
+    server = server === 'A' ? 'B' : 'A';
+
+    // Mettre à jour l'affichage dans marquage.html
+    document.getElementById('serverA').style.visibility = server === 'A' ? 'visible' : 'hidden';
+    document.getElementById('serverB').style.visibility = server === 'B' ? 'visible' : 'hidden';
+
+    // Mettre à jour les données en direct pour synchroniser avec affichage_score.html
+    const liveData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
+    liveData.server = server;
+    localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+}
+
+// Fonction pour changer le serveur (appelée par le bouton "Service")
+function ChangeServer() {
+    // Alterner le serveur entre A et B
+    server = server === 'A' ? 'B' : 'A';
+
+    // Mettre à jour les icônes de volleyball
+    const ballIconA = document.getElementById('ballIconA');
+    const ballIconB = document.getElementById('ballIconB');
+    if (ballIconA && ballIconB) {
+        ballIconA.style.visibility = server === 'A' ? 'visible' : 'hidden';
+        ballIconB.style.visibility = server === 'B' ? 'visible' : 'hidden';
+    }
+
+    // Mettre à jour les données en direct pour synchroniser avec affichage_score.html
+    const liveData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
+    liveData.server = server;
+    localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+
+    // Mise à jour des icônes dans marquage.html
+    const ballIconAInMarquage = document.getElementById('ballIconA');
+    const ballIconBInMarquage = document.getElementById('ballIconB');
+    if (ballIconAInMarquage && ballIconBInMarquage) {
+        ballIconAInMarquage.style.visibility = server === 'A' ? 'visible' : 'hidden';
+        ballIconBInMarquage.style.visibility = server === 'B' ? 'visible' : 'hidden';
+    }
 }
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', () => {
-    // Mettre le match en status "en cours" au chargement
+    // Initialiser WebSocket
+    initWebSocket();
+    
+    // Mettre le match en status "en cours" au chargement avec un léger délai
     const matchId = new URLSearchParams(window.location.search).get('matchId');
-    fetch(`/api/match-status/${matchId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            status: 'en cours',
-            score1: 0,
-            score2: 0
-        })
-    });
+    if (matchId) {
+        setTimeout(() => {
+            console.log("Initialisation du statut 'en_cours'");
+            updateMatchStatus('en_cours');
+        }, 1500); // Augmenter le délai pour s'assurer que le socket est initialisé
+    }
+
+    // Rendre les icônes de volleyball invisibles par défaut
+    const ballIconA = document.getElementById('ballIconA');
+    const ballIconB = document.getElementById('ballIconB');
+    if (ballIconA && ballIconB) {
+        ballIconA.style.visibility = 'hidden';
+        ballIconB.style.visibility = 'hidden';
+    }
 
     updateTeams();
     updateDisplay();
+    
+    // Configurer la synchronisation périodique
+    setupPeriodicSync();
+    
+    // Nettoyer l'intervalle de synchronisation lorsque l'utilisateur quitte la page
+    window.addEventListener('beforeunload', () => {
+        if (window.syncInterval) {
+            clearInterval(window.syncInterval);
+        }
+    });
 });

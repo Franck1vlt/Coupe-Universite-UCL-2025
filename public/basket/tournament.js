@@ -3,6 +3,9 @@
  * Gestion du tournoi, simulation et classement
  ***********************************************/
 
+// Variable globale pour le mode correction
+let correctionModeActive = false;
+
 // ----- LISTE DES ÉQUIPES -----
 // On affiche toutes les équipes pour le classement final.
 // La liste est triée alphabétiquement par défaut et les logos sont chargés depuis /img/{NomEquipe}.png.
@@ -82,7 +85,10 @@ let tournamentState = {
       status: 'à_venir',
       winner: null,
       loser: null,
-      nextMatchWin: 8  // Changé de 12 à 8
+      nextMatchWin: 8,  // Changé de 12 à 8
+      nextMatchPosition: 'team1', // Ajouter cette précision
+      time: '13:15',
+      id_terrain: 9
     },
     5: {
       matchType: 'quarterfinal', 
@@ -93,7 +99,10 @@ let tournamentState = {
       status: 'à_venir',
       winner: null,
       loser: null,
-      nextMatchWin: 8  // Changé de 12 à 8
+      nextMatchWin: 8,  // Changé de 12 à 8
+      nextMatchPosition: 'team2', // Ajouter cette précision
+      time: '14:00',
+      id_terrain: 9
     },
     6: {
       matchType: 'quarterfinal',
@@ -104,7 +113,10 @@ let tournamentState = {
       status: 'à_venir',
       winner: null,
       loser: null,
-      nextMatchWin: 9  // Changé de 13 à 9
+      nextMatchWin: 9,  // Changé de 13 à 9
+      nextMatchPosition: 'team1', // Ajouter cette précision
+      time: '14:45',
+      id_terrain: 9
     },
     7: {
       matchType: 'quarterfinal',
@@ -115,7 +127,10 @@ let tournamentState = {
       status: 'à_venir',
       winner: null,
       loser: null,
-      nextMatchWin: 9  // Changé de 13 à 9
+      nextMatchWin: 9,  // Changé de 13 à 9
+      nextMatchPosition: 'team2', // Ajouter cette précision
+      time: '15:30',
+      id_terrain: 9
     },
     // Demi-finales (matchIds 12 et 13)
     8: {  // Changé de 8 à 12
@@ -128,7 +143,9 @@ let tournamentState = {
       winner: null,
       loser: null,
       nextMatchWin: 11,
-      nextMatchLose: 10
+      nextMatchLose: 10,
+      time: '16:15',
+      id_terrain: 9
     },
     9: {  // Changé de 9 à 13
       matchType: 'semifinal',
@@ -140,7 +157,9 @@ let tournamentState = {
       winner: null,
       loser: null,
       nextMatchWin: 11,
-      nextMatchLose: 10
+      nextMatchLose: 10,
+      time: '17:00',
+      id_terrain: 9
     },
     // Petite finale (matchId 10) pour la 3ème / 4ème place
     10: {
@@ -151,7 +170,9 @@ let tournamentState = {
       score2: null,
       status: 'à_venir',
       winner: null,
-      loser: null
+      loser: null,
+      time: '18:30',
+      id_terrain: 9
     },
     // Finale (matchId 15) pour la 1ère / 2ème place
     11: {
@@ -162,7 +183,9 @@ let tournamentState = {
       score2: null,
       status: 'à_venir',
       winner: null,
-      loser: null
+      loser: null,
+      time: '19:15',
+      id_terrain: 9
     },
 
     // Match Féminin - Finale FLD vs FLSH
@@ -174,7 +197,9 @@ let tournamentState = {
       score2: null,
       status: 'à_venir',
       winner: null,
-      loser: null
+      loser: null,
+      time: '17:45',
+      id_terrain: 9
     }
   }
 };
@@ -215,14 +240,14 @@ const positionPointsFeminin = {
 document.addEventListener('DOMContentLoaded', function() {
   // Tente de charger l'état sauvegardé
   if (loadTournamentState()) {
-      console.log('État précédent du tournoi chargé');
   } else {
-      console.log('Nouveau tournoi initialisé');
   }
   linkWinnersAndLosers();
   updateUI();
   addMatchClickHandlers();  // Ajouter les gestionnaires de clic
   initializePageState();
+  // Vérifier périodiquement les matches en cours (toutes les 5 secondes)
+  setInterval(checkActiveMatches, 5000);
 });
 
 // ----- LIEN ENTRE LES MATCHES (Vainqueur/Perdant vers le match suivant) -----
@@ -231,31 +256,121 @@ function linkWinnersAndLosers() {
     if (match.winner && match.nextMatchWin) {
       const nextMatch = tournamentState.matches[match.nextMatchWin];
       if (nextMatch) {
-        if (!nextMatch.team1) nextMatch.team1 = match.winner;
-        else if (!nextMatch.team2) nextMatch.team2 = match.winner;
+        // Déterminer la position pour le vainqueur
+        if (match.nextMatchPosition) {
+          // Utiliser la position spécifiée
+          nextMatch[match.nextMatchPosition] = match.winner;
+        } else if (parseInt(mId) === 8) {
+          // Semi-finale 1: vainqueur en team1 pour la finale
+          nextMatch.team1 = match.winner;
+        } else if (parseInt(mId) === 9) {
+          // Semi-finale 2: vainqueur en team2 pour la finale
+          nextMatch.team2 = match.winner;
+        } else if (!nextMatch.team1) {
+          nextMatch.team1 = match.winner;
+        } else if (!nextMatch.team2) {
+          nextMatch.team2 = match.winner;
+        }
       }
     }
+    
     if (match.loser && match.nextMatchLose) {
       const nextMatch = tournamentState.matches[match.nextMatchLose];
       if (nextMatch) {
-        if (!nextMatch.team1) nextMatch.team1 = match.loser;
-        else if (!nextMatch.team2) nextMatch.team2 = match.loser;
+        // Déterminer la position pour le perdant
+        if (parseInt(mId) === 8) {
+          // Semi-finale 1: perdant en team1 pour la petite finale
+          nextMatch.team1 = match.loser;
+        } else if (parseInt(mId) === 9) {
+          // Semi-finale 2: perdant en team2 pour la petite finale
+          nextMatch.team2 = match.loser;
+        } else if (!nextMatch.team1) {
+          nextMatch.team1 = match.loser;
+        } else if (!nextMatch.team2) {
+          nextMatch.team2 = match.loser;
+        }
       }
     }
   }
 }
 
-// ----- MISE À JOUR DE L'INTERFACE (affichage des scores, logos et couleurs) -----
+// Amélioration de la fonction updateUI pour détecter les matchs en cours
 function updateUI() {
+  // Vérifier d'abord si un match est en cours
+  const currentMatchState = JSON.parse(localStorage.getItem('currentMatchState') || '{}');
+  const currentMatchId = currentMatchState.matchId;
+  const isMatchInProgress = currentMatchState.status === 'en_cours';
+  
+  // Vérifions que le match en cours n'est pas déjà marqué comme terminé dans tournamentState
+  if (currentMatchId && isMatchInProgress && 
+      tournamentState.matches[currentMatchId] && 
+      tournamentState.matches[currentMatchId].status === 'terminé') {
+    // Le match est marqué comme terminé mais l'état indique qu'il est en cours
+    // On nettoie l'état incohérent
+    localStorage.removeItem('currentMatchState');
+    localStorage.removeItem('currentMatchId');
+    hideMatchTimeDisplay();
+  } else if (currentMatchId && isMatchInProgress) {
+    // Si un match est en cours, mettre à jour son statut visuellement
+    const matchElement = document.querySelector(`.match[data-match-id='${currentMatchId}']`);
+    if (matchElement) {
+      const statusElement = matchElement.querySelector('.match-status');
+      if (statusElement) {
+        statusElement.textContent = 'en cours';
+        
+        // Appliquer les classes CSS
+        matchElement.classList.remove('à_venir', 'terminé');
+        matchElement.classList.add('en_cours');
+        matchElement.classList.remove('à-venir');
+        matchElement.classList.add('en-cours');
+      }
+      
+      // Aussi mettre à jour l'objet tournamentState pour refléter le statut
+      if (tournamentState.matches[currentMatchId]) {
+        tournamentState.matches[currentMatchId].status = 'en_cours';
+      }
+    }
+  }
+
+  // Continuer avec la mise à jour UI normale
   Object.entries(tournamentState.matches).forEach(([matchId, matchData]) => {
     const matchElement = document.querySelector(`.match[data-match-id='${matchId}']`);
     if (!matchElement) return;
+
+    // Désactiver les matchs qui ne peuvent pas encore être joués
+    if (!canPlayMatch(matchId)) {
+      matchElement.classList.add('disabled');
+    } else {
+      matchElement.classList.remove('disabled');
+    }
+
+    // Mettre à jour le statut
+    const statusElement = matchElement.querySelector('.match-status');
+    if (statusElement) {
+      // Afficher le statut de façon consistante
+      let displayStatus = matchData.status;
+      if (matchData.status === 'en_cours') displayStatus = 'en cours';
+      if (matchData.status === 'à_venir') displayStatus = 'à venir';
+      
+      statusElement.textContent = displayStatus;
+      
+      // Appliquer manuellement les classes CSS pour le statut
+      matchElement.classList.remove('à_venir', 'en_cours', 'terminé');
+      matchElement.classList.add(matchData.status);
+      
+      // Ajouter également les classes avec tiret pour la compatibilité CSS
+      matchElement.classList.remove('à-venir', 'en-cours');
+      if (matchData.status === 'en_cours') matchElement.classList.add('en-cours');
+      else if (matchData.status === 'à_venir') matchElement.classList.add('à-venir');
+    }
+    
+    // Mise à jour des équipes
     const teamDivs = matchElement.querySelectorAll('.team');
     if (teamDivs.length < 2) return;
-    fillTeamDiv(teamDivs[0], matchData.team1, matchData.score1, matchData.winner);
-    fillTeamDiv(teamDivs[1], matchData.team2, matchData.score2, matchData.winner);
-    matchElement.classList.remove('a_venir','en_cours','termine');
-    matchElement.classList.add(matchData.status);
+    
+    // Mise à jour détaillée des équipes et scores
+    updateTeamInfo(teamDivs[0], matchData.team1, matchData.score1, matchData.winner);
+    updateTeamInfo(teamDivs[1], matchData.team2, matchData.score2, matchData.winner);
   });
   
   // Mise à jour automatique du classement après chaque changement
@@ -271,46 +386,62 @@ function updateUI() {
       // Ajouter une animation pour le champion
       championDiv.classList.add('champion-crowned');
     } else {
-      championDiv.textContent = 'À déterminer';
+      championDiv.textContent = '-';
       championDiv.style.display = 'block';
       championDiv.classList.remove('champion-crowned');
     }
   }
 
+  // Supprimer l'appel à debugSemifinals qui cause l'erreur
+  // debugSemifinals();  // Cette ligne causait l'erreur
+
   // Sauvegarde automatique de l'état
   localStorage.setItem('basketTournamentState', JSON.stringify(tournamentState));
 }
 
-function fillTeamDiv(teamDiv, teamName, score, winnerName) {
+// Nouvelle fonction pour la mise à jour détaillée des infos d'équipe
+function updateTeamInfo(teamDiv, teamName, score, winnerName) {
+  if (!teamDiv) return;
+  
+  // Mettre à jour le nom de l'équipe
   const nameDiv = teamDiv.querySelector('.team-name');
-  const scoreDiv = teamDiv.querySelector('.score');
-  if (!nameDiv || !scoreDiv) return;
-  if (!teamName) {
-    nameDiv.innerHTML = `<div class='team-logo'></div>À déterminer`;
-    scoreDiv.textContent = '-';
-    teamDiv.classList.remove('winner','loser');
-    return;
-  }
-  const teamObj = teams[teamName];
-  const logoUrl = teamObj ? teamObj.logo : `/img/default.png`;
-  nameDiv.innerHTML = `<div class='team-logo' style="background-image:url('${logoUrl}')"></div>${teamName}`;
-  if (score === null || score === undefined) {
-    scoreDiv.textContent = '-';
-    teamDiv.classList.remove('winner','loser');
-  } else {
-    scoreDiv.textContent = score;
-    if (winnerName) {
-      if (teamName === winnerName) {
-        teamDiv.classList.add('winner');
-        teamDiv.classList.remove('loser');
-      } else {
-        teamDiv.classList.add('loser');
-        teamDiv.classList.remove('winner');
-      }
+  if (nameDiv) {
+    if (teamName) {
+      const teamObj = teams[teamName];
+      const logoUrl = teamObj ? teamObj.logo : `/img/default.png`;
+      nameDiv.innerHTML = `<div class='team-logo' style="background-image:url('${logoUrl}')"></div>${teamName}`;
     } else {
-      teamDiv.classList.remove('winner','loser');
+      nameDiv.innerHTML = `<div class='team-logo'></div>-`;
     }
   }
+  
+  // Mettre à jour le score
+  const scoreDiv = teamDiv.querySelector('.score');
+  if (scoreDiv) {
+    if (score !== null && score !== undefined) {
+      scoreDiv.textContent = score;
+    } else {
+      scoreDiv.textContent = '-';
+    }
+  }
+  
+  // Mettre à jour les classes winner/loser
+  if (teamName && winnerName) {
+    if (teamName === winnerName) {
+      teamDiv.classList.add('winner');
+      teamDiv.classList.remove('loser');
+    } else {
+      teamDiv.classList.add('loser');
+      teamDiv.classList.remove('winner');
+    }
+  } else {
+    teamDiv.classList.remove('winner', 'loser');
+  }
+}
+
+// Remplacer fillTeamDiv qui est maintenant inutilisée
+function fillTeamDiv(teamDiv, teamName, score, winnerName) {
+  updateTeamInfo(teamDiv, teamName, score, winnerName);
 }
 
 // ----- SIMULATION D'UN MATCH -----
@@ -332,20 +463,8 @@ async function simulateMatch(matchId) {
     match.loser = match.team2;
   }
   match.status = 'terminé';
-  if (match.nextMatchWin) {
-    const nmw = tournamentState.matches[match.nextMatchWin];
-    if (nmw) {
-      if (!nmw.team1) nmw.team1 = match.winner;
-      else if (!nmw.team2) nmw.team2 = match.winner;
-    }
-  }
-  if (match.nextMatchLose) {
-    const nml = tournamentState.matches[match.nextMatchLose];
-    if (nml) {
-      if (!nml.team1) nml.team1 = match.loser;
-      else if (!nml.team2) nml.team2 = match.loser;
-    }
-  }
+  
+  // Ne plus gérer directement les placements ici, car linkWinnersAndLosers s'en chargera
   
   // Si c'est la finale (match 11), mettre à jour le champion
   if (matchId === 11) { // Changé de 15 à 11
@@ -356,9 +475,9 @@ async function simulateMatch(matchId) {
     }
   }
   
-  // La mise à jour de l'UI inclut maintenant automatiquement le classement
+  await linkWinnersAndLosers();
   await updateUI();
-  saveTournamentState(); // Sauvegarde après chaque match
+  saveTournamentState();
 }
 
 // ----- SIMULATION DE LA COMPÉTITION -----
@@ -451,7 +570,7 @@ async function updateRankingDisplay() {
       rankingList.innerHTML += `
         <div class="ranking-row ${highlightClass}">
           <div class="rank">${position}</div>
-          <div class="team-name">
+          <div class="teamname">
             <img src="/img/${team.name}.png" alt="${team.name}" class="team-logo-mini" />
             ${team.name}
           </div>
@@ -462,22 +581,26 @@ async function updateRankingDisplay() {
       `;
     });
     
+    // Tentative d'envoi au serveur, mais continue même en cas d'échec
     await sendPointsToServer(teamPoints);
     saveTournamentState();
   } catch (error) {
-    console.error('Erreur lors de la mise à jour du classement:', error);
+    console.warn('Erreur lors de la mise à jour du classement:', error);
+    // Continue l'exécution même en cas d'erreur
   }
 }
 
 // Ajout de la fonction pour envoyer les points à l'API
 async function sendPointsToServer(teamPoints) {
   try {
-    const response = await fetch('/api/rankings/basket_h/update', {
+    const response = await fetch('/api/rankings/basket/update', {  // Modification du chemin
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(teamPoints)
+      body: JSON.stringify({
+        points: teamPoints
+      })
     });
 
     if (!response.ok) {
@@ -485,11 +608,12 @@ async function sendPointsToServer(teamPoints) {
     }
 
     const result = await response.json();
-    console.log('Points mis à jour avec succès:', result);
     return result;
   } catch (error) {
-    console.error('Erreur lors de l\'envoi des points:', error);
-    throw error; // Propager l'erreur pour la gestion plus haut
+    // On ne propage plus l'erreur pour éviter l'interruption
+    console.warn('Erreur lors de l\'envoi des points:', error);
+    // Continue l'exécution même en cas d'erreur
+    return null;
   }
 }
 
@@ -497,12 +621,57 @@ async function sendPointsToServer(teamPoints) {
 function resetTournament() {
   if (!confirm('Voulez-vous vraiment réinitialiser le tournoi ? Toutes les données seront effacées.')) return;
   
-  // Efface les données sauvegardées
-  localStorage.removeItem('basketTournamentState');
-  localStorage.removeItem('lastUpdate');
+  // Liste complète de tous les éléments du localStorage à supprimer
+  const keysToRemove = [
+    'basketTournamentState', 
+    'lastUpdate',
+    'currentMatchState',
+    'currentMatchId',
+    'basketballMatchStates',
+    'basketballLastMatch',
+    'liveMatchData'
+  ];
   
-  // Recharge la page avec un état neuf
-  window.location.reload();
+  // Supprimer tous les éléments du localStorage liés au basket
+  keysToRemove.forEach(key => localStorage.removeItem(key));
+  
+  // Réinitialiser explicitement l'état des matchs problématiques,
+  // notamment le match 6
+  if (tournamentState && tournamentState.matches) {
+    // Pour tous les matchs sauf les matchs déjà joués (1, 2, 3)
+    for (let i = 4; i <= 12; i++) {
+      if (tournamentState.matches[i]) {
+        const match = tournamentState.matches[i];
+        
+        // Conserver seulement les équipes pour les matchs de qualification et les finales prédéfinies
+        if (i >= 4 && i <= 7 || i === 12) {
+          // Ne pas toucher aux équipes pour les quarts et finale féminine
+          match.score1 = null;
+          match.score2 = null;
+          match.status = 'à_venir';
+          match.winner = null;
+          match.loser = null;
+        } else {
+          // Réinitialiser complètement pour les demi-finales, petite finale, finale
+          match.team1 = null;
+          match.team2 = null;
+          match.score1 = null;
+          match.score2 = null;
+          match.status = 'à_venir';
+          match.winner = null;
+          match.loser = null;
+        }
+      }
+    }
+  }
+  
+  // Enregistrer l'état réinitialisé
+  localStorage.setItem('basketTournamentState', JSON.stringify(tournamentState));
+  
+  // Recharger la page pour afficher le tournoi réinitialisé
+  setTimeout(() => {
+    window.location.reload();
+  }, 500);
 }
 
 // ----- EXPOSITION DES FONCTIONS GLOBALES -----
@@ -517,20 +686,18 @@ function addMatchClickHandlers() {
             const matchId = this.dataset.matchId;
             const matchData = tournamentState?.matches?.[matchId];
             
-            // Vérifier si le match existe dans tournamentState
             if (!matchData) {
                 console.error(`Match ${matchId} non trouvé dans tournamentState`);
                 return;
             }
 
-            // Empêcher la sélection directe de la finale homme
-            if (matchData.matchType === 'final-h' && (!matchData.team1 || !matchData.team2)) {
-                alert('La finale sera disponible une fois les demi-finales terminées');
+            // Vérifier si les matchs précédents sont terminés
+            if (!canPlayMatch(matchId)) {
+                alert('Les matchs précédents doivent être terminés avant de pouvoir jouer ce match');
                 return;
             }
 
             if (correctionModeActive && matchData.status === 'terminé') {
-                // Mode correction pour un match terminé
                 if (confirm('Voulez-vous corriger ce match ?')) {
                     const params = new URLSearchParams({
                         matchId: matchId,
@@ -544,7 +711,6 @@ function addMatchClickHandlers() {
                     window.location.href = `marquage.html?${params.toString()}`;
                 }
             } else if (matchData.status === 'à_venir') {
-                // Comportement normal pour un nouveau match
                 const params = new URLSearchParams({
                     matchId: matchId,
                     team1: matchData.team1 || '',
@@ -557,19 +723,30 @@ function addMatchClickHandlers() {
     });
 }
 
-let correctionModeActive = false;
-
-function toggleCorrectionMode() {
-    correctionModeActive = !correctionModeActive;
-    const button = document.getElementById('correctionMode');
+// Ajouter cette nouvelle fonction pour vérifier si un match peut être joué
+function canPlayMatch(matchId) {
+    const match = tournamentState.matches[matchId];
     
-    if (correctionModeActive) {
-        button.style.backgroundColor = '#4CAF50';
-        button.title = 'Mode correction actif';
-    } else {
-        button.style.backgroundColor = '#f44336';
-        button.title = 'Mode correction inactif';
+    // Vérifier le type de match
+    switch(match.matchType) {
+        case 'semifinal':
+            // Vérifier que tous les quarts sont terminés
+            return areAllMatchesComplete([4, 5, 6, 7]);
+        case 'smallfinal':
+        case 'final-h':
+            // Vérifier que toutes les demi-finales sont terminées
+            return areAllMatchesComplete([8, 9]);
+        default:
+            return true;
     }
+}
+
+// Fonction auxiliaire pour vérifier si tous les matchs d'un groupe sont terminés
+function areAllMatchesComplete(matchIds) {
+    return matchIds.every(id => 
+        tournamentState.matches[id] && 
+        tournamentState.matches[id].status === 'terminé'
+    );
 }
 
 // Ajouter une fonction pour gérer l'état initial de la page
@@ -597,3 +774,155 @@ async function resetGame() {
         alert('Erreur lors de la sauvegarde du match');
     }
 }
+
+let matchStates = {};
+
+function updateMatchState(matchId, state) {
+    const match = document.querySelector(`[data-match-id="${matchId}"]`);
+    if (match) {
+        const statusEl = match.querySelector('.match-status');
+        if (statusEl) {
+            statusEl.textContent = state;
+            statusEl.className = `match-status ${state}`;
+        }
+    }
+}
+
+function endMatch(matchId, score1, score2) {
+    const match = document.querySelector(`[data-match-id="${matchId}"]`);
+    if (match) {
+        const scores = match.querySelectorAll('.score');
+        scores[0].textContent = score1;
+        scores[1].textContent = score2;
+        updateMatchState(matchId, 'terminé');
+        
+        // Sauvegarder l'état
+        matchStates[matchId] = {
+            status: 'terminé',
+            score1: score1,
+            score2: score2
+        };
+        localStorage.setItem('basketballMatchStates', JSON.stringify(matchStates));
+    }
+
+    // Synchroniser avec le serveur
+    syncMatchState(matchId);
+    window.location.href = 'basketball.html';
+}
+
+function showScoreForm(matchId) {
+    const html = `
+        <div class="score-form" id="scoreForm">
+            <h3>Entrez les scores</h3>
+            <input type="number" id="score1" placeholder="Score équipe 1" required>
+            <input type="number" id="score2" placeholder="Score équipe 2" required>
+            <button onclick="submitScores(${matchId})">Valider</button>
+            <button onclick="closeScoreForm()">Annuler</button>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', html);
+    document.getElementById('scoreForm').classList.add('active');
+}
+
+function closeScoreForm() {
+    const form = document.getElementById('scoreForm');
+    if (form) {
+        form.remove();
+    }
+}
+
+function submitScores(matchId) {
+    const score1 = document.getElementById('score1').value;
+    const score2 = document.getElementById('score2').value;
+    endMatch(matchId, score1, score2);
+    closeScoreForm();
+}
+
+// Charger les états au chargement de la page
+document.addEventListener('DOMContentLoaded', function() {
+    const savedStates = localStorage.getItem('basketballMatchStates');
+    if (savedStates) {
+        matchStates = JSON.parse(savedStates);
+        for (const [matchId, state] of Object.entries(matchStates)) {
+            if (state.status === 'terminé') {
+                endMatch(matchId, state.score1, state.score2);
+            }
+        }
+    }
+});
+
+// Fonction pour synchroniser les données des matchs depuis le serveur
+async function syncMatchState(matchId) {
+    try {
+        const response = await fetch(`/api/matches/basket/${matchId}`);
+        if (!response.ok) {
+            throw new Error(`Erreur lors de la synchronisation du match ${matchId}: ${response.statusText}`);
+        }
+        const matchData = await response.json();
+        if (matchData) {
+            // Mettre à jour l'état local du match
+            const match = tournamentState.matches[matchId];
+            if (match) {
+                match.status = matchData.status;
+                match.score1 = matchData.score1;
+                match.score2 = matchData.score2;
+                match.winner = matchData.winner;
+                match.loser = matchData.loser;
+            }
+            updateUI(); // Mettre à jour l'interface utilisateur
+        }
+    } catch (error) {
+        console.error('Erreur lors de la synchronisation des données:', error);
+    }
+}
+
+// Amélioration pour la vérification périodique des matches en cours
+function checkActiveMatches() {
+  const currentMatchState = JSON.parse(localStorage.getItem('currentMatchState') || '{}');
+  // Vérifier si le match est toujours actif (moins de 3 heures)
+  if (currentMatchState.matchId && currentMatchState.timestamp) {
+    const now = new Date().getTime();
+    const matchTime = currentMatchState.timestamp;
+    // Si le match est actif depuis plus de 3 heures, le considérer comme abandonné
+    if (now - matchTime > 3 * 60 * 60 * 1000) {
+      localStorage.removeItem('currentMatchState');
+      localStorage.removeItem('currentMatchId');
+      localStorage.removeItem('liveMatchData');
+    } else {
+      // Vérifier que ce match n'est pas déjà terminé dans tournamentState
+      const match = tournamentState.matches[currentMatchState.matchId];
+      if (match && match.status === 'terminé') {
+        // Le match est terminé mais l'état indique qu'il est en cours
+        // On nettoie l'état incohérent
+        localStorage.removeItem('currentMatchState');
+        localStorage.removeItem('currentMatchId');
+        localStorage.removeItem('liveMatchData');
+      } else {
+        // Le match est en cours, mise à jour de l'UI
+        updateUI();
+      }
+    }
+  }
+}
+
+function toggleCorrectionMode() {
+    correctionModeActive = !correctionModeActive;
+    const button = document.getElementById('correctionMode');
+    
+    if (button) {
+        if (correctionModeActive) {
+            button.style.backgroundColor = '#4CAF50';
+            button.title = 'Mode correction actif';
+            console.log('Mode correction activé');
+        } else {
+            button.style.backgroundColor = '#f44336';
+            button.title = 'Mode correction inactif';
+            console.log('Mode correction désactivé');
+        }
+    } else {
+        console.error("Bouton 'correctionMode' introuvable");
+    }
+}
+
+// ----- EXPOSITION DE LA FONCTION DE CORRECTION -----
+window.toggleCorrectionMode = toggleCorrectionMode;

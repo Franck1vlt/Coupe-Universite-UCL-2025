@@ -3,14 +3,67 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Table de Marquage - Volleyball Hommes</title>
+  <title>Table de Marquage - Volleyball Femmes</title>
   <link rel="stylesheet" href="volleyball.css">
+  <!-- Ajouter Socket.IO avant les scripts personnalisés -->
+  <script src="/socket.io/socket.io.js"></script>
   <script src="volleyball.js" defer></script>
+  <style>
+    #connectionIndicator {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-weight: bold;
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+    #reconnectButton {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 1000;
+    }
+    .connection-toast {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      padding: 10px 15px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      border-radius: 5px;
+      z-index: 1001;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .connection-toast.visible {
+      opacity: 1;
+    }
+  </style>
 </head>
 <body>
   <header>
-    <h1>Volleyball Hommes - Table de marquage</h1>
+    <h1>Volleyball Femmes - Table de marquage</h1>
+    <div id="connectionStatus" class="connection-status">
+        <span class="status-icon">⚪</span>
+        <span class="status-text">Vérification de la connexion...</span>
+        <span class="latency-indicator"></span>
+    </div>
+    <div id="matchStatusIndicator" style="position: absolute; top: 10px; right: 10px; background: #fff3cd; padding: 5px 10px; border-radius: 5px; font-weight: bold;">
+      Statut: En cours...
+    </div>
   </header>
+  <!-- Indicateur de connexion -->
+  <div id="connectionIndicator"></div>
+  <!-- Toast pour les notifications de connexion -->
+  <div id="connectionToast" class="connection-toast"></div>
   <main>
     <div class="gauche">
       <div class="parametres-match">
@@ -68,7 +121,7 @@
       </div>
       <div class="bouton_pied_page">
         <div class="button-row1">
-          <button onclick="location.href='basketball.html'">Retour</button>
+          <button onclick="location.href='volleyball.html'">Retour</button>
         </div>
         <div class="button-row2">
           <button onclick="openScoreDisplay()">Spectateurs</button>
@@ -78,15 +131,21 @@
     <div class="droite">
       <div class="scoreboard">
         <div class="score-display">
+          <div class="team-line">
+            <span id="teamAName">Team A</span> 
+            <span id="teamBName">Team B</span>
+          </div>
           <div class="score-line">
-            <span id="teamAName">Team A</span> <span id="teamAScore">0</span> - <span id="teamBScore">0</span> <span id="teamBName">Team B</span>
+            <img src="volley-ball.png" alt="Volleyball Icon" class="ball-icon" id="ballIconA">
+            <span id="teamAScore">0</span> - <span id="teamBScore">0</span>
+            <img src="volley-ball.png" alt="Volleyball Icon" class="ball-icon" id="ballIconB">
           </div>
           <div class="details-line">
             <span id="matchType">Type de Match</span>
           </div>
           <div class="points-section">
             <div class="points-control">
-              <span class="points-label">Buts :</span>
+              <span class="points-label">Points :</span>
               <button onclick="subPoint('A')" class="control-button" accesskey="e">-</button>
               <button onclick="addPoint('A')" class="control-button" accesskey="a">+</button>
             </div>
@@ -94,42 +153,16 @@
             <div class="timer" id="gameChrono">00:00</div>
 
             <div class="points-control">
-              <span class="points-label">Buts :</span>
+              <span class="points-label">Points :</span>
               <button onclick="subPoint('B')" class="control-button" accesskey="r">-</button>
               <button onclick="addPoint('B')" class="control-button" accesskey="z">+</button>
             </div>
           </div>
     
-          <div class="cards-section">
-            <div class="yellow-card">
-              <div class="card-row">
-                <span>Cartons Jaunes : <span id="teamAYellowCard">0</span></span>
-                <button onclick="subYellowCard('A')" class="control-button" accesskey="u">-</button>
-                <button onclick="addYellowCard('A')" class="control-button" accesskey="t">+</button>
-              </div>
-              <div class="card-row">
-                <span>Cartons Jaunes : <span id="teamBYellowCard">0</span></span>
-                <button onclick="subYellowCard('B')" class="control-button" accesskey="i">-</button>
-                <button onclick="addYellowCard('B')" class="control-button" accesskey="y">+</button>
-              </div>
-            </div>
-            <div class="red-card"></div>
-              <div class="card-row">
-                <span>Cartons Rouges : <span id="teamARedCard">0</span></span>
-                <button onclick="subRedCard('A')" class="control-button" accesskey="o">-</button>
-                <button onclick="addRedCard('A')" class="control-button" accesskey="p">+</button>
-              </div>
-              <div class="card-row">
-                <span>Cartons Rouges : <span id="teamBRedCard">0</span></span>
-                <button onclick="subRedCard('B')" class="control-button" accesskey="o">-</button>
-                <button onclick="addRedCard('B')" class="control-button" accesskey="p">+</button>
-              </div>
-            </div>
-          </div>
-    
           <div class="bottom-controls">
-            <button onclick="startChrono()" accesskey="s">Start</button>
-            <button onclick="stopChrono()" accesskey="d">Stop</button>
+            <button onclick="startChrono()">Start</button>
+            <button onclick="stopChrono()">Stop</button>
+            <button onclick="ChangeServer()">Service</button>
             <button onclick="resetGame()">End</button>
           </div>
             
@@ -137,6 +170,8 @@
       </div>
     </div>
   </main>
+  <!-- Bouton de reconnexion manuel -->
+  <button id="reconnectButton" onclick="manualReconnect()">🔄 Reconnecter</button>
   <script>
     // Attendre que le DOM soit chargé avant d'initialiser
     document.addEventListener('DOMContentLoaded', function() {
@@ -150,11 +185,13 @@
         // Fonction pour convertir le matchType en texte affichable
         function getMatchTypeDisplay(type) {
             const matchTypes = {
-                'qualification': 'Qualification',
+                'poule': 'Poule',
+                'Poule': 'Poule',
                 'quarterfinal': 'Quart de finale',
                 'semifinal': 'Demi-finale',
                 'smallfinal': 'Petite Finale',
-                'final': 'Finale'
+                'final': 'Finale',
+                'Finale': 'Finale'
             };
             return matchTypes[type] || type;
         }
@@ -198,8 +235,8 @@
     }
 
     function openScoreDisplay() {
-        // Stocker les données actuelles dans le localStorage
-        localStorage.setItem('liveMatchData', JSON.stringify({
+        // Stocker les données actuelles dans le localStorage avec une clé spécifique
+        localStorage.setItem('liveMatchData_volleyF', JSON.stringify({
             team1: document.getElementById('teamA').value,
             team2: document.getElementById('teamB').value,
             matchType: document.getElementById('matchType').textContent,
@@ -219,17 +256,18 @@
 
     // Fonction pour mettre à jour les données en direct
     function updateLiveData() {
+        const teamAScore = document.getElementById('teamAScore');
+        const teamBScore = document.getElementById('teamBScore');
+        const gameChrono = document.getElementById('gameChrono');
+
         const liveData = {
-            score1: document.getElementById('teamAScore').textContent,
-            score2: document.getElementById('teamBScore').textContent,
-            yellowCards1: document.getElementById('teamAYellowCard').textContent,
-            yellowCards2: document.getElementById('teamBYellowCard').textContent,
-            redCards1: document.getElementById('teamARedCard').textContent,
-            redCards2: document.getElementById('teamBRedCard').textContent,
-            chrono: document.getElementById('gameChrono').textContent
+            score1: teamAScore ? teamAScore.textContent : 0,
+            score2: teamBScore ? teamBScore.textContent : 0,
+            chrono: gameChrono ? gameChrono.textContent : '00:00'
         };
-        localStorage.setItem('liveMatchData', JSON.stringify({
-            ...JSON.parse(localStorage.getItem('liveMatchData') || '{}'),
+
+        localStorage.setItem('liveMatchData_volleyF', JSON.stringify({
+            ...JSON.parse(localStorage.getItem('liveMatchData_volleyF') || '{}'),
             ...liveData
         }));
     }
@@ -237,11 +275,130 @@
     // Ajouter l'observateur pour mettre à jour les données en direct
     const observer = new MutationObserver(updateLiveData);
     const scoreboard = document.querySelector('.scoreboard');
-    observer.observe(scoreboard, { 
-        subtree: true, 
-        childList: true,
-        characterData: true,
-        characterDataOldValue: true
+    if (scoreboard) {
+        observer.observe(scoreboard, { 
+            subtree: true, 
+            childList: true,
+            characterData: true,
+            characterDataOldValue: true
+        });
+    }
+
+    // Afficher le statut actuel du match
+    function updateStatusIndicator(status = 'en_cours') {
+      const indicator = document.getElementById('matchStatusIndicator');
+      if (!indicator) return;
+      
+      let text = 'Statut: ';
+      let bgColor = '';
+      let textColor = '';
+      
+      switch(status) {
+        case 'à_venir':
+          text += 'À venir';
+          bgColor = '#f0f0f0';
+          textColor = '#666';
+          break;
+        case 'en_cours':
+          text += 'En cours';
+          bgColor = '#fff3cd';
+          textColor = '#856404';
+          break;
+        case 'terminé':
+          text += 'Terminé';
+          bgColor = '#d4edda';
+          textColor = '#155724';
+          break;
+        default:
+          text += 'Inconnu';
+          bgColor = '#f8d7da';
+          textColor = '#721c24';
+      }
+      
+      indicator.textContent = text;
+      indicator.style.backgroundColor = bgColor;
+      indicator.style.color = textColor;
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialiser l'indicateur de statut
+      updateStatusIndicator('en_cours');
+      
+      // Mettre à jour le statut lorsque la page se charge
+      setTimeout(() => {
+        if (typeof updateMatchStatus === 'function') {
+          updateMatchStatus('en_cours');
+        }
+      }, 1000);
+    });
+
+    // Fonction pour forcer la reconnexion manuellement
+    function manualReconnect() {
+      if (typeof socket !== 'undefined' && socket) {
+        showConnectionToast('Tentative de reconnexion...');
+        socket.disconnect();
+        setTimeout(() => {
+          socket.connect();
+          // Vérifier après 3 secondes si la connexion a réussi
+          setTimeout(() => {
+            if (socket.connected) {
+              showConnectionToast('Reconnexion réussie!');
+            } else {
+              showConnectionToast('Échec de la reconnexion. Veuillez réessayer.');
+            }
+          }, 3000);
+        }, 1000);
+      } else {
+        showConnectionToast('Socket.IO non disponible');
+      }
+    }
+    
+    // Afficher un toast de notification
+    function showConnectionToast(message) {
+      const toast = document.getElementById('connectionToast');
+      if (toast) {
+        toast.textContent = message;
+        toast.classList.add('visible');
+        setTimeout(() => toast.classList.remove('visible'), 3000);
+      }
+    }
+
+    function updateConnectionUI(state, details = '') {
+        const status = document.getElementById('connectionStatus');
+        const icon = status.querySelector('.status-icon');
+        const text = status.querySelector('.status-text');
+        
+        switch (state) {
+            case 'connected':
+                icon.textContent = '🟢';
+                text.textContent = 'Connecté';
+                status.className = 'connection-status connected';
+                break;
+            case 'disconnected':
+                icon.textContent = '🔴';
+                text.textContent = 'Déconnecté' + (details ? `: ${details}` : '');
+                status.className = 'connection-status disconnected';
+                break;
+            case 'reconnecting':
+                icon.textContent = '🟡';
+                text.textContent = 'Reconnexion en cours...';
+                status.className = 'connection-status reconnecting';
+                break;
+            default:
+                icon.textContent = '⚪';
+                text.textContent = 'Vérification...';
+                status.className = 'connection-status';
+        }
+    }
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialiser le match volley-h si besoin
+        // ...existing code...
+
+        // Mettre à jour l'affichage à chaque action
+        // par exemple sur un bouton + ou - :
+        // myButton.addEventListener('click', updateDisplay);
     });
   </script>
 </body>

@@ -5,6 +5,8 @@
 
 // Variables globales
 let correctionModeActive = false;
+let socket;
+let socketConnected = false;
 
 function toggleCorrectionMode() {
     correctionModeActive = !correctionModeActive;
@@ -209,19 +211,611 @@ const positionPoints = {
 
 // ----- INITIALISATION -----
 document.addEventListener('DOMContentLoaded', function() {
-  // Tente de charger l'état sauvegardé
-  if (loadTournamentState()) {
-      console.log('État précédent du tournoi chargé');
-  } else {
-      console.log('Nouveau tournoi initialisé');
+  // Ajouter un indicateur de synchronisation dans l'interface
+  addSyncIndicator();
+  
+  // Initialiser la connexion WebSocket
+  initWebSocket();
+  
+  // Charger d'abord depuis le serveur, puis utiliser le local storage comme fallback
+  initFromServer().then(success => {
+    if (!success && loadTournamentState()) {
+      console.log('État précédent du tournoi chargé depuis le localStorage');
+    }
+    
+    // Recalculer les liens entre matchs pour s'assurer de la cohérence
+    linkWinnersAndLosers();
+    updateUI();
+    addMatchClickHandlers();
+    initializePageState();
+  });
+});
+
+// Ajouter un indicateur de synchronisation
+function addSyncIndicator() {
+  const indicator = document.createElement('div');
+  indicator.id = 'syncIndicator';
+  indicator.style.position = 'fixed';
+  indicator.style.top = '45px';
+  indicator.style.right = '10px';
+  indicator.style.padding = '5px 10px';
+  indicator.style.background = '#f0f0f0';
+  indicator.style.borderRadius = '5px';
+  indicator.style.fontSize = '12px';
+  indicator.style.zIndex = '1000';
+  indicator.style.display = 'flex';
+  indicator.style.alignItems = 'center';
+  indicator.textContent = 'Status: Non synchronisé';
+  
+  document.body.appendChild(indicator);
+  
+  // Ajouter un bouton de rafraîchissement
+  const refreshButton = document.createElement('button');
+  refreshButton.textContent = '🔄';
+  refreshButton.style.marginLeft = '8px';
+  refreshButton.style.background = 'none';
+  refreshButton.style.border = 'none';
+  refreshButton.style.fontSize = '16px';
+  refreshButton.style.cursor = 'pointer';
+  refreshButton.title = 'Forcer la synchronisation avec le serveur';
+  refreshButton.onclick = () => syncWithServer(true);
+  
+  indicator.appendChild(refreshButton);
+}
+
+// Mettre à jour l'indicateur de synchronisation
+function updateSyncIndicator(status, message) {
+  const indicator = document.getElementById('syncIndicator');
+  if (!indicator) return;
+  
+  if (status === 'success') {
+    indicator.style.background = '#d4edda';
+    indicator.style.color = '#155724';
+    indicator.textContent = `Synchronisé: ${message}`;
+  } else if (status === 'error') {
+    indicator.style.background = '#f8d7da';
+    indicator.style.color = '#721c24';
+    indicator.textContent = `Erreur: ${message}`;
+  } else if (status === 'syncing') {
+    indicator.style.background = '#fff3cd';
+    indicator.style.color = '#856404';
+    indicator.textContent = 'Synchronisation...';
+  }
+}
+
+// Fonction pour initialiser l'état du tournoi depuis le serveur
+async function initFromServer() {
+    updateSyncIndicator('syncing', '');
+    try {
+        console.log('Chargement initial des données depuis le serveur...');
+        const response = await fetch('/api/matches/volleyballH');
+        if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
+        const data = await response.json();
+        if (data.matches && Array.isArray(data.matches)) {
+            // D'abord essayer de charger depuis localStorage comme fallback immédiat
+            const localData = localStorage.getItem('volleyHTournamentState');
+            if (localData) {
+                console.log('Données trouvées dans le localStorage, utilisées comme fallback initial');
+                // Charger les données locales au cas où le serveur échoue
+                tournamentState = JSON.parse(localData);
+            }
+            
+            // Essayer jusqu'à 3 fois avec délai entre les tentatives
+            let attempts = 0;
+            let success = false;
+            
+            while (attempts < 3 && !success) {
+                try {
+                    console.log(`Tentative ${attempts + 1}/3 de connexion au serveur...`);
+                    const response = await fetch('/api/matches/volleyball');
+                    
+                    console.log('Réponse brute du serveur:', response);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Erreur HTTP: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log('Données reçues du serveur:', data);
+                    
+                    // Vérifier si les données contiennent au moins un match valide
+                    if (data && data.matches && Array.isArray(data.matches)) {
+                        // On reconstitue l'état du tournoi à partir des données du serveur
+                        const serverMatches = {};
+                        let matchCount = 0;
+                        
+                        // Si aucun match n'est retourné, on conserve l'état local
+                        if (data.matches.length === 0) {
+                            console.log('Aucun match retourné par le serveur, conservation de l\'état local');
+                            updateSyncIndicator('success', 'État local conservé (aucun match sur le serveur)');
+                            return true; // Considérer comme un succès car c'est une situation normale
+                        }
+                        
+                        data.matches.forEach(match => {
+                            if (match && match.id_match) {
+                                const matchId = match.id_match.toString();
+                                matchCount++;
+                                
+                                // Conserver la structure existante du match si elle existe
+                                const existingMatch = tournamentState.matches[matchId] || {};
+                                
+                                // Fusionner les données avec des valeurs par défaut sécurisées
+                                serverMatches[matchId] = {
+                                    ...existingMatch,
+                                    matchType: match.match_type || existingMatch.matchType || 'qualification',
+                                    team1: match.team1 || existingMatch.team1 || null,
+                                    team2: match.team2 || existingMatch.team2 || null,
+                                    score1: match.score_equipe1 !== undefined ? match.score_equipe1 : (existingMatch.score1 || 0),
+                                    score2: match.score_equipe2 !== undefined ? match.score_equipe2 : (existingMatch.score2 || 0),
+                                    status: match.status || existingMatch.status || 'à_venir',
+                                    winner: match.winner || existingMatch.winner || null,
+                                    loser: match.loser || existingMatch.loser || null,
+                                    nextMatchWin: existingMatch.nextMatchWin || null,
+                                    nextMatchLose: existingMatch.nextMatchLose || null
+                                };
+                            }
+                        });
+                        
+                        // Si au moins un match valide a été trouvé, mettre à jour l'état
+                        if (matchCount > 0) {
+                            console.log(`${matchCount} matchs valides trouvés dans les données du serveur`);
+                            
+                            // Pour les matchs qui n'existent pas sur le serveur mais qui sont définis dans notre structure par défaut
+                            Object.keys(tournamentState.matches).forEach(matchId => {
+                                if (!serverMatches[matchId]) {
+                                    console.log(`Match ${matchId} non trouvé sur le serveur, utilisation de la structure par défaut`);
+                                    serverMatches[matchId] = tournamentState.matches[matchId];
+                                }
+                            });
+                            
+                            // Mettre à jour l'état du tournoi
+                            tournamentState.matches = serverMatches;
+                            
+                            // Sauvegarder en localStorage pour les chargements futurs
+                            saveTournamentState();
+                            
+                            console.log(`État du tournoi mis à jour depuis le serveur (${matchCount} matchs)`);
+                            updateSyncIndicator('success', `${matchCount} matchs chargés pour le tournoi masculin`);
+                            success = true;
+                        } else {
+                            console.warn('Aucun match valide trouvé dans les données du serveur');
+                            // Au lieu d'échouer, utiliser les données locales par défaut si présentes
+                            if (localData) {
+                                console.log('Utilisation des données locales par défaut');
+                                success = true; // Considérer comme un succès
+                                updateSyncIndicator('success', 'État local utilisé (aucun match valide sur le serveur)');
+                            } else {
+                                throw new Error('Aucun match valide dans les données');
+                            }
+                        }
+                    } else {
+                        console.warn('Format de données incorrect depuis le serveur:', data);
+                        // Utiliser la structure locale par défaut si présente
+                        if (localData) {
+                            console.log('Utilisation des données locales en raison d\'un format de données incorrect');
+                            success = true;
+                            updateSyncIndicator('success', 'État local utilisé (format incorrect des données serveur)');
+                        } else {
+                            throw new Error('Format de données incorrect');
+                        }
+                    }
+                } catch (error) {
+                    attempts++;
+                    console.warn(`Tentative ${attempts}/3 échouée: ${error.message}`, error);
+                    if (attempts < 3) {
+                        // Attendre de plus en plus longtemps entre les tentatives
+                        await new Promise(r => setTimeout(r, attempts * 1000));
+                    }
+                }
+            }
+            
+            // Si toutes les tentatives ont échoué mais que nous avons chargé les données locales au début
+            if (!success && localData) {
+                console.log('Utilisation des données locales après échec des tentatives serveur');
+                updateSyncIndicator('error', 'Serveur inaccessible - données locales utilisées');
+                return true;
+            }
+            
+            if (!success && !localData) {
+                updateSyncIndicator('error', 'Impossible de charger les données du tournoi');
+                console.error('Impossible de charger les données du tournoi après 3 tentatives');
+                return false;
+            }
+            
+            return true;
+            
+        } else {
+            updateSyncIndicator('error', 'Aucun match disponible pour le tournoi masculin');
+        }
+    } catch (error) {
+        console.error('Erreur lors de l\'initialisation depuis le serveur:', error);
+        updateSyncIndicator('error', 'Erreur serveur - données locales utilisées');
+        return loadTournamentState();
+    }
+    return true;
+}
+
+// Fonction pour synchroniser l'état du tournoi avec le serveur
+function setupServerSynchronization(interval = 3000) {
+  // Ne rien faire si WebSocket est activé
+  if (socket && socketConnected) {
+    console.log('Synchronisation HTTP désactivée car WebSocket est actif');
+    return;
   }
   
-  // Recalculer les liens entre matchs pour s'assurer de la cohérence
+  // Utiliser la synchronisation HTTP classique comme fallback
+  console.log('Configuration de la synchronisation HTTP (fallback) toutes les ' + interval + 'ms');
+  setInterval(syncWithServer, interval);
+}
+
+// Fonction pour synchroniser avec le serveur
+async function syncWithServer(forceFullSync = false) {
+    try {
+        updateSyncIndicator('syncing', '');
+        const response = await fetch('/api/matches/volleyballH');
+        if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
+        const data = await response.json();
+        if (data.matches && Array.isArray(data.matches)) {
+            let hasChanges = false;
+            let updatedCount = 0;
+            
+            // Mettre à jour les matchs dans tournamentState
+            data.matches.forEach(match => {
+                const matchId = match.id_match.toString();
+                if (tournamentState.matches[matchId]) {
+                    const currentMatch = tournamentState.matches[matchId];
+                    
+                    // Vérifier si les données du match ont changé
+                    const scoreChanged = match.score_equipe1 !== currentMatch.score1 || match.score_equipe2 !== currentMatch.score2;
+                    const statusChanged = match.status !== currentMatch.status;
+                    const winnerChanged = match.winner !== currentMatch.winner || match.loser !== currentMatch.loser;
+                    const teamsChanged = match.team1 !== currentMatch.team1 || match.team2 !== currentMatch.team2;
+                    
+                    // Si forceFullSync est true, considérer tous les matchs comme modifiés
+                    if (forceFullSync || scoreChanged || statusChanged || winnerChanged || teamsChanged) {
+                        console.log(`Mise à jour du match ${matchId} depuis le serveur:`, {
+                            avant: {
+                                team1: currentMatch.team1,
+                                team2: currentMatch.team2,
+                                score: `${currentMatch.score1}-${currentMatch.score2}`,
+                                status: currentMatch.status,
+                                winner: currentMatch.winner
+                            },
+                            après: {
+                                team1: match.team1,
+                                team2: match.team2,
+                                score: `${match.score_equipe1}-${match.score_equipe2}`,
+                                status: match.status,
+                                winner: match.winner
+                            }
+                        });
+                        
+                        // Mettre à jour les données
+                        tournamentState.matches[matchId].team1 = match.team1;
+                        tournamentState.matches[matchId].team2 = match.team2;
+                        tournamentState.matches[matchId].score1 = match.score_equipe1;
+                        tournamentState.matches[matchId].score2 = match.score_equipe2;
+                        tournamentState.matches[matchId].status = match.status;
+                        tournamentState.matches[matchId].winner = match.winner;
+                        tournamentState.matches[matchId].loser = match.loser;
+                        
+                        hasChanges = true;
+                        updatedCount++;
+                    }
+                }
+            });
+            
+            if (hasChanges) {
+                console.log(`${updatedCount} match(es) mis à jour depuis le serveur`);
+                
+                // Recalculer les liens et mettre à jour l'interface
+                linkWinnersAndLosers();
+                updateUI();
+                saveTournamentState();
+                
+                updateSyncIndicator('success', `${updatedCount} match(es) mis à jour pour le tournoi masculin`);
+            } else {
+                updateSyncIndicator('success', 'Aucun changement pour le tournoi masculin');
+            }
+        } else {
+            updateSyncIndicator('success', 'Aucun changement pour le tournoi masculin');
+        }
+    } catch (error) {
+        console.error('Erreur lors de la synchronisation avec le serveur:', error);
+        updateSyncIndicator('error', 'Erreur de synchronisation pour le tournoi masculin');
+    }
+}
+
+// Fonction pour initialiser la connexion WebSocket
+function initWebSocket() {
+  try {
+    // Vérifier si Socket.IO est disponible
+    if (typeof io === 'undefined') {
+      console.error('Socket.IO n\'est pas chargé. Vérifiez que le script est inclus dans votre page HTML.');
+      return;
+    }
+    
+    socket = io();
+    
+    socket.on('connect', () => {
+      console.log('Connecté au serveur WebSocket');
+      socketConnected = true;
+      updateConnectionStatus('connected');
+    });
+    
+    socket.on('disconnect', () => {
+      console.log('Déconnecté du serveur WebSocket');
+      socketConnected = false;
+      updateConnectionStatus('disconnected');
+    });
+    
+    socket.on('connect_error', (error) => {
+      console.error('Erreur de connexion WebSocket:', error);
+      socketConnected = false;
+      updateConnectionStatus('disconnected');
+    });
+    
+    socket.on('matches_data', (data) => {
+      console.log('Données de matchs reçues via WebSocket:', data);
+      if (data.success && data.matches && Array.isArray(data.matches)) {
+        updateMatchesFromWebSocket(data.matches);
+      }
+    });
+    
+    socket.on('match_updated', (data) => {
+      console.log('Mise à jour de match reçue via WebSocket:', data);
+      if (data && data.matchId) {
+        updateSingleMatchFromWebSocket(data);
+      }
+    });
+    
+    socket.on('matches_error', (error) => {
+      console.error('Erreur WebSocket lors de la récupération des matchs:', error);
+      updateSyncIndicator('error', 'Erreur WebSocket: ' + (error.message || 'Inconnu'));
+    });
+    
+    socket.on('match_status_updated', (data) => {
+      console.log('Mise à jour du statut de match reçue via WebSocket:', data);
+      if (data && data.matchId) {
+        // Mise à jour spécifique du statut d'un match
+        const matchId = data.matchId.toString();
+        
+        if (tournamentState.matches[matchId]) {
+          const match = tournamentState.matches[matchId];
+          let hasChanges = false;
+          
+          if (data.status && data.status !== match.status) {
+            console.log(`Mise à jour du statut du match ${matchId} : ${match.status} -> ${data.status}`);
+            match.status = data.status;
+            hasChanges = true;
+          }
+          
+          if (data.score1 !== undefined && data.score1 !== match.score1) {
+            match.score1 = data.score1;
+            hasChanges = true;
+          }
+          
+          if (data.score2 !== undefined && data.score2 !== match.score2) {
+            match.score2 = data.score2;
+            hasChanges = true;
+          }
+          
+          if (hasChanges) {
+            // Mettre à jour l'UI pour refléter les changements
+            updateUI();
+            updateSyncIndicator('success', `Statut du match ${matchId} mis à jour en temps réel`);
+          }
+        }
+      }
+    });
+
+    socket.on('tournament_reset', (data) => {
+        console.log('Notification de réinitialisation du tournoi reçue:', data);
+        if (data.id_tournois === 4) { // Pour le tournoi de volleyball hommes
+            // Recharger les données depuis le serveur
+            initFromServer().then(() => {
+                // Recalculer les liens et mettre à jour l'interface
+                linkWinnersAndLosers();
+                updateUI();
+                updateSyncIndicator('success', 'Tournoi réinitialisé par un administrateur');
+            });
+        }
+    });
+    
+  } catch (error) {
+    console.error('Erreur lors de l\'initialisation WebSocket:', error);
+  }
+}
+
+// Fonction pour mettre à jour les matchs depuis WebSocket
+function updateMatchesFromWebSocket(matches) {
+  if (!matches || matches.length === 0) return;
+  
+  const serverMatches = {};
+  let matchCount = 0;
+  
+  matches.forEach(match => {
+    if (match && match.id_match) {
+      const matchId = match.id_match.toString();
+      matchCount++;
+      
+      // Conserver la structure existante du match si elle existe
+      const existingMatch = tournamentState.matches[matchId] || {};
+      
+      // Fusionner les données
+      serverMatches[matchId] = {
+        ...existingMatch,
+        matchType: match.match_type || existingMatch.matchType || 'qualification',
+        team1: match.team1 || existingMatch.team1 || null,
+        team2: match.team2 || existingMatch.team2 || null,
+        score1: match.score_equipe1 !== undefined ? match.score_equipe1 : (existingMatch.score1 || 0),
+        score2: match.score_equipe2 !== undefined ? match.score_equipe2 : (existingMatch.score2 || 0),
+        status: match.status || existingMatch.status || 'à_venir',
+        winner: match.winner || existingMatch.winner || null,
+        loser: match.loser || existingMatch.loser || null,
+        nextMatchWin: existingMatch.nextMatchWin || null,
+        nextMatchLose: existingMatch.nextMatchLose || null
+      };
+    }
+  });
+  
+  // Pour les matchs qui n'existent pas sur le serveur
+  Object.keys(tournamentState.matches).forEach(matchId => {
+    if (!serverMatches[matchId]) {
+      serverMatches[matchId] = tournamentState.matches[matchId];
+    }
+  });
+  
+  // Mettre à jour l'état du tournoi
+  tournamentState.matches = serverMatches;
+  
+  // Recalculer les liens et mettre à jour l'interface
   linkWinnersAndLosers();
   updateUI();
-  addMatchClickHandlers();
-  initializePageState();
-});
+  saveTournamentState();
+  
+  updateSyncIndicator('success', `${matchCount} matchs synchronisés via WebSocket`);
+}
+
+// Fonction pour mettre à jour un seul match depuis WebSocket
+function updateSingleMatchFromWebSocket(data) {
+  const { matchId, team1, team2, score1, score2, status, winner, loser } = data;
+  
+  if (!matchId || !tournamentState.matches[matchId]) return;
+  
+  const match = tournamentState.matches[matchId];
+  let hasChanges = false;
+  
+  if (team1 && team1 !== match.team1) {
+    match.team1 = team1;
+    hasChanges = true;
+  }
+  
+  if (team2 && team2 !== match.team2) {
+    match.team2 = team2;
+    hasChanges = true;
+  }
+  
+  if (score1 !== undefined && score1 !== match.score1) {
+    match.score1 = score1;
+    hasChanges = true;
+  }
+  
+  if (score2 !== undefined && score2 !== match.score2) {
+    match.score2 = score2;
+    hasChanges = true;
+  }
+  
+  if (status && status !== match.status) {
+    console.log(`WebSocket - Mise à jour du statut du match ${matchId} : "${match.status}" → "${status}"`);
+    match.status = status;
+    hasChanges = true;
+  }
+  
+  if (winner && winner !== match.winner) {
+    match.winner = winner;
+    hasChanges = true;
+  }
+  
+  if (loser && loser !== match.loser) {
+    match.loser = loser;
+    hasChanges = true;
+  }
+  
+  if (hasChanges) {
+    console.log(`Match ${matchId} mis à jour depuis WebSocket`);
+    linkWinnersAndLosers();
+    updateUI();
+    saveTournamentState();
+    updateSyncIndicator('success', `Match ${matchId} mis à jour en temps réel`);
+  }
+}
+
+// Modifier la fonction updateConnectionStatus pour utiliser l'état WebSocket
+function updateConnectionStatus(state) {
+    const connectionStatus = document.getElementById('connectionStatus');
+    if (!connectionStatus) return;
+    
+    if (state === 'connected') {
+        connectionStatus.textContent = 'WebSocket: ✅ Connecté';
+        connectionStatus.style.background = '#d4edda';
+        connectionStatus.style.color = '#155724';
+    } else if (state === 'disconnected') {
+        connectionStatus.textContent = 'WebSocket: ❌ Déconnecté';
+        connectionStatus.style.background = '#f8d7da';
+        connectionStatus.style.color = '#721c24';
+    } else if (state === 'connecting') {
+        connectionStatus.textContent = 'WebSocket: ⌛ Connexion...';
+        connectionStatus.style.background = '#fff3cd';
+        connectionStatus.style.color = '#856404';
+    }
+}
+
+// Remplacer la fonction sendMatchResultToServer pour utiliser WebSocket quand disponible
+async function sendMatchResultToServer(matchId, matchData) {
+    console.log(`Envoi des résultats du match ${matchId} au serveur:`, matchData);
+    
+    // Si WebSocket est disponible et connecté, utiliser WebSocket
+    if (socket && socketConnected) {
+        return new Promise((resolve, reject) => {
+            socket.emit('update_match', {
+                matchId,
+                team1: matchData.team1,
+                team2: matchData.team2,
+                score1: matchData.score1,
+                score2: matchData.score2,
+                status: matchData.status,
+                winner: matchData.winner,
+                loser: matchData.loser,
+                matchType: matchData.matchType
+            });
+            
+            // Définir un délai de 5 secondes pour la réponse
+            const timeoutId = setTimeout(() => {
+                socket.off('update_match_success');
+                socket.off('update_match_error');
+                reject(new Error('Délai d\'attente dépassé pour la mise à jour WebSocket'));
+            }, 5000);
+            
+            socket.once('update_match_success', (response) => {
+                clearTimeout(timeoutId);
+                resolve(response);
+            });
+            
+            socket.once('update_match_error', (error) => {
+                clearTimeout(timeoutId);
+                reject(new Error(error.message || 'Erreur lors de la mise à jour WebSocket'));
+            });
+        });
+    }
+    
+    // Sinon, utiliser HTTP comme avant
+    const response = await fetch('/api/match-result', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            matchId,
+            team1: matchData.team1,
+            team2: matchData.team2,
+            score1: matchData.score1,
+            score2: matchData.score2,
+            status: matchData.status,
+            winner: matchData.winner,
+            loser: matchData.loser,
+            matchType: matchData.matchType,
+            id_tournois: 4 // ID du tournoi de volleyball hommes
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    return result;
+}
 
 // ----- LIEN ENTRE LES MATCHES (Vainqueur/Perdant vers le match suivant) -----
 function linkWinnersAndLosers() {
@@ -245,6 +839,7 @@ function linkWinnersAndLosers() {
             const semifinalId = i <= 5 ? 8 : 9;
             const semifinal = tournamentState.matches[semifinalId];
             
+            // Important: Ne pas modifier le statut du match suivant
             if (!semifinal.team1) {
                 semifinal.team1 = match.winner;
             } else if (!semifinal.team2 && semifinal.team1 !== match.winner) {
@@ -311,10 +906,81 @@ function updateUI() {
         fillTeamDiv(teamDivs[0], matchData.team1, matchData.score1, matchData.winner);
         fillTeamDiv(teamDivs[1], matchData.team2, matchData.score2, matchData.winner);
         
+        // Mettre à jour l'état du match et l'heure
+        const statusElement = matchElement.querySelector('.match-status');
+        const timeElement = matchElement.querySelector('.match-time');
+        
+        // Déboguer pour voir les valeurs exactes
+        console.log(`Match ${matchId} - status: "${matchData.status}"`);
+        
+        if (statusElement) {
+            // Normaliser l'affichage du statut
+            let displayStatus;
+            switch(matchData.status) {
+                case 'à_venir':
+                case 'a_venir':
+                    displayStatus = 'à venir';
+                    break;
+                case 'en_cours':
+                case 'en cours':
+                    displayStatus = 'en cours';
+                    break;
+                case 'terminé':
+                case 'termine':
+                    displayStatus = 'terminé';
+                    break;
+                default:
+                    displayStatus = matchData.status || 'à venir';
+            }
+            statusElement.textContent = displayStatus;
+        }
+        
         // Mettre à jour la classe CSS du statut du match
-        matchElement.classList.remove('a_venir', 'en_cours', 'termine');
-        matchElement.classList.add(matchData.status === 'terminé' ? 'termine' : 
-                                  matchData.status === 'en_cours' ? 'en_cours' : 'a_venir');
+        matchElement.classList.remove('a_venir', 'en_cours', 'termine', 'à_venir', 'terminé');
+        
+        // Normaliser également les classes CSS
+        let cssClass;
+        switch(matchData.status) {
+            case 'en_cours':
+            case 'en cours':
+                cssClass = 'en_cours';
+                break;
+            case 'terminé':
+            case 'termine':
+                cssClass = 'termine';
+                break;
+            default:
+                cssClass = 'a_venir';
+        }
+        matchElement.classList.add(cssClass);
+        
+        // Définir également l'attribut data-status pour ciblage CSS
+        matchElement.setAttribute('data-status', matchData.status);
+        
+        // Définir l'heure selon le type de match
+        if (timeElement) {
+            let matchTime;
+            switch(matchData.matchType) {
+                case 'qualification':
+                    matchTime = '04/02';
+                    break;
+                case 'quarterfinal':
+                    matchTime = matchId <= 5 ? '9:00' : '10:00';
+                    break;
+                case 'semifinal':
+                    matchTime = '11:00';
+                    break;
+                case 'smallfinal':
+                    matchTime = '12:00';
+                    break;
+                case 'final':
+                    matchTime = '12:00';
+                    break;
+                default:
+                    matchTime = '-';
+            }
+            timeElement.textContent = matchTime;
+        }
     });
     
     // Mise à jour du classement
@@ -329,7 +995,7 @@ function updateUI() {
             championDiv.style.display = 'block';
             championDiv.classList.add('champion-crowned');
         } else {
-            championDiv.textContent = 'À déterminer';
+            championDiv.textContent = '-';
             championDiv.style.display = 'block';
             championDiv.classList.remove('champion-crowned');
         }
@@ -346,7 +1012,7 @@ function fillTeamDiv(teamDiv, teamName, score, winnerName) {
     if (!nameDiv || !scoreDiv) return;
     
     if (!teamName) {
-        nameDiv.innerHTML = `<div class='team-logo'></div>À déterminer`;
+        nameDiv.innerHTML = `<div class='team-logo'></div>-`;
         scoreDiv.textContent = '-';
         teamDiv.classList.remove('winner', 'loser');
         return;
@@ -401,11 +1067,87 @@ async function simulateMatch(matchId) {
     
     match.status = 'terminé';
     
+    // Envoyer les données au serveur immédiatement
+    try {
+        updateSyncIndicator('syncing', 'Sauvegarde du match...');
+        await sendMatchResultToServer(matchId, match);
+        updateSyncIndicator('success', 'Match sauvegardé sur le serveur');
+    } catch (error) {
+        console.error('Erreur lors de la sauvegarde du match sur le serveur:', error);
+        updateSyncIndicator('error', 'Échec de la sauvegarde');
+    }
+    
     // Mettre à jour la progression du tournoi
     await linkWinnersAndLosers();
     await updateUI();
     
     saveTournamentState();
+}
+
+// Remplacer la fonction sendMatchResultToServer pour utiliser WebSocket quand disponible
+async function sendMatchResultToServer(matchId, matchData) {
+    console.log(`Envoi des résultats du match ${matchId} au serveur:`, matchData);
+    
+    // Si WebSocket est disponible et connecté, utiliser WebSocket
+    if (socket && socketConnected) {
+        return new Promise((resolve, reject) => {
+            socket.emit('update_match', {
+                matchId,
+                team1: matchData.team1,
+                team2: matchData.team2,
+                score1: matchData.score1,
+                score2: matchData.score2,
+                status: matchData.status,
+                winner: matchData.winner,
+                loser: matchData.loser,
+                matchType: matchData.matchType
+            });
+            
+            // Définir un délai de 5 secondes pour la réponse
+            const timeoutId = setTimeout(() => {
+                socket.off('update_match_success');
+                socket.off('update_match_error');
+                reject(new Error('Délai d\'attente dépassé pour la mise à jour WebSocket'));
+            }, 5000);
+            
+            socket.once('update_match_success', (response) => {
+                clearTimeout(timeoutId);
+                resolve(response);
+            });
+            
+            socket.once('update_match_error', (error) => {
+                clearTimeout(timeoutId);
+                reject(new Error(error.message || 'Erreur lors de la mise à jour WebSocket'));
+            });
+        });
+    }
+    
+    // Sinon, utiliser HTTP comme avant
+    const response = await fetch('/api/match-result', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            matchId,
+            team1: matchData.team1,
+            team2: matchData.team2,
+            score1: matchData.score1,
+            score2: matchData.score2,
+            status: matchData.status,
+            winner: matchData.winner,
+            loser: matchData.loser,
+            matchType: matchData.matchType,
+            id_tournois: 4 // ID du tournoi de volleyball hommes
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    return result;
 }
 
 // ----- SIMULATION DE LA COMPÉTITION -----
@@ -415,20 +1157,31 @@ async function simulateTournament() {
                      .map(x => parseInt(x))
                      .sort((a, b) => a - b);
     
-    for (const id of ids) {
-        const match = tournamentState.matches[id];
-        if ((match.status === 'à_venir' || match.status === 'en_cours') && match.team1 && match.team2) {
-            await simulateMatch(id);
-            // Ajouter un délai pour que l'utilisateur puisse voir la progression
-            await new Promise(resolve => setTimeout(resolve, 300));
+    updateSyncIndicator('syncing', 'Simulation du tournoi...');
+    
+    try {
+        for (const id of ids) {
+            const match = tournamentState.matches[id];
+            if ((match.status === 'à_venir' || match.status === 'en_cours') && match.team1 && match.team2) {
+                await simulateMatch(id);
+                // Ajouter un délai pour que l'utilisateur puisse voir la progression
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
         }
+        
+        await linkWinnersAndLosers();
+        saveTournamentState();
+        updateRankingDisplay();
+        updateSyncIndicator('success', 'Tournoi simulé avec succès');
+        
+        // Forcer une resynchronisation complète avec le serveur
+        await syncWithServer(true);
+        
+        alert('Simulation terminée !');
+    } catch (error) {
+        console.error('Erreur lors de la simulation du tournoi:', error);
+        updateSyncIndicator('error', 'Erreur: ' + error.message);
     }
-    
-    await linkWinnersAndLosers();
-    saveTournamentState();
-    updateRankingDisplay();
-    
-    alert('Simulation terminée !');
 }
 
 // ----- CALCUL DU CLASSEMENT FINAL -----
@@ -513,7 +1266,7 @@ async function updateRankingDisplay() {
             rankingList.innerHTML += `
                 <div class="ranking-row ${highlightClass}">
                     <div class="rank">${position}</div>
-                    <div class="team-name">
+                    <div class="teamname">
                         <img src="/img/${team.name}.png" alt="${team.name}" class="team-logo-mini" />
                         ${team.name}
                     </div>
@@ -532,7 +1285,9 @@ async function updateRankingDisplay() {
 async function sendPointsToServer(teamPoints) {
     try {
         console.log('Points à envoyer:', teamPoints);
-
+        // Temporairement désactivé jusqu'à ce que l'API soit prête
+        return { success: true, message: 'API simulation' };
+        /* À décommenter quand l'API sera prête
         const response = await fetch('/api/rankings/volley_h/update', {
             method: 'POST',
             headers: {
@@ -542,32 +1297,158 @@ async function sendPointsToServer(teamPoints) {
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Erreur serveur:', errorText);
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+            throw new Error(`HTTP error! status: ${response.status}`);nt() {
+        }seront remis à zéro.')) {
 
         const result = await response.json();
-        console.log('Réponse du serveur:', result);
         return result;
+        */
     } catch (error) {
-        console.error('Erreur lors de l\'envoi des points:', error);
-        throw error;
+        console.log('Points non envoyés - API non disponible:', error);
+        return { success: true, message: 'API simulation' };
     }
 }
 
 // ----- RÉINITIALISATION DU TOURNOI -----
-function resetTournament() {
-    if (!confirm('Voulez-vous vraiment réinitialiser le tournoi ? Toutes les données seront effacées.')) {
+async function resetTournament() {
+    if (!confirm('Voulez-vous vraiment réinitialiser le tournoi ? Tous les matchs sauf les qualifications seront remis à zéro.')) {
         return;
     }
     
-    // Effacer les données sauvegardées
-    localStorage.removeItem('volleyHTournamentState');
-    localStorage.removeItem('lastUpdate');
-    
-    // Recharger la page
-    window.location.reload();
+    try {
+        updateSyncIndicator('syncing', 'Réinitialisation des matchs en cours...');
+        
+        // Si WebSocket est disponible, utilisons-le
+        if (socket && socketConnected) {
+            return new Promise((resolve, reject) => {
+                socket.emit('reset_tournament_except_qualif', { id_tournois: 4 });
+                
+                const timeoutId = setTimeout(() => {
+                    socket.off('reset_success');
+                    socket.off('reset_error');
+                    reject(new Error('Délai d\'attente dépassé pour la réinitialisation WebSocket'));
+                }, 5000);
+                
+                socket.once('reset_success', () => {
+                    clearTimeout(timeoutId);
+                    
+                    // Conserver uniquement les matchs de qualification dans la structure locale
+                    const qualifMatches = {};
+                    for (let i = 1; i <= 3; i++) {
+                        qualifMatches[i] = tournamentState.matches[i];
+                    }
+                    
+                    // Réinitialiser les autres matchs (4 à 11)
+                    for (let i = 4; i <= 11; i++) {
+                        const matchType = i <= 7 ? 'quarterfinal' : 
+                                        i <= 9 ? 'semifinal' : 
+                                        i === 10 ? 'smallfinal' : 'final';
+                        
+                        qualifMatches[i] = {
+                            ...tournamentState.matches[i],
+                            score1: null,
+                            score2: null,
+                            status: 'à_venir',
+                            winner: null,
+                            loser: null,
+                            matchType: matchType
+                        };
+                        
+                        // Conserver les informations des équipes pour QF seulement
+                        if (i > 7) {
+                            qualifMatches[i].team1 = null;
+                            qualifMatches[i].team2 = null;
+                        }
+                    }
+                    
+                    tournamentState.matches = qualifMatches;
+                    saveTournamentState();
+                    updateUI();
+                    updateSyncIndicator('success', 'Tournoi réinitialisé avec succès');
+                    
+                    // Recharger la page après une courte pause
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                    
+                    resolve();
+                });
+                
+                socket.once('reset_error', (error) => {
+                    clearTimeout(timeoutId);
+                    updateSyncIndicator('error', `Erreur de réinitialisation: ${error.message}`);
+                    reject(error);
+                });
+            });
+        } else {
+            // Utiliser HTTP comme fallback
+            const response = await fetch('/api/tournois/reset-except-qualif', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id_tournois: 4 // ID du tournoi de volleyball hommes
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Conserver uniquement les matchs de qualification dans la structure locale
+                const qualifMatches = {};
+                for (let i = 1; i <= 3; i++) {
+                    qualifMatches[i] = tournamentState.matches[i];
+                }
+                
+                // Réinitialiser les autres matchs (4 à 11)
+                for (let i = 4; i <= 11; i++) {
+                    const matchType = i <= 7 ? 'quarterfinal' : 
+                                    i <= 9 ? 'semifinal' : 
+                                    i === 10 ? 'smallfinal' : 'final';
+                    
+                    qualifMatches[i] = {
+                        ...tournamentState.matches[i],
+                        score1: null,
+                        score2: null,
+                        status: 'à_venir',
+                        winner: null,
+                        loser: null,
+                        matchType: matchType
+                    };
+                    
+                    // Conserver les informations des équipes pour QF seulement
+                    if (i > 7) {
+                        qualifMatches[i].team1 = null;
+                        qualifMatches[i].team2 = null;
+                    }
+                }
+                
+                tournamentState.matches = qualifMatches;
+                saveTournamentState();
+                updateUI();
+                updateSyncIndicator('success', 'Tournoi réinitialisé avec succès');
+                
+                // Effacer les données du localStorage et recharger la page
+                localStorage.removeItem('lastUpdate');
+                
+                // Recharger la page après une courte pause
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                throw new Error(result.message || 'Erreur inconnue lors de la réinitialisation');
+            }
+        }
+    } catch (error) {
+        console.error('Erreur lors de la réinitialisation du tournoi:', error);
+        updateSyncIndicator('error', `Erreur: ${error.message}`);
+        alert(`Échec de la réinitialisation: ${error.message}`);
+    }
 }
 
 // ----- GESTION DES CLICS SUR LES MATCHS -----
@@ -581,12 +1462,12 @@ function addMatchClickHandlers() {
                 console.error(`Match ${matchId} non trouvé dans tournamentState`);
                 return;
             }
-
+            
             // Vérifier si le match peut être joué
             if (!canPlayMatch(matchId, matchData)) {
                 return;
             }
-
+            
             // Mode correction ou nouveau match
             if (correctionModeActive && matchData.status === 'terminé') {
                 handleCorrectionMode(matchId, matchData);
@@ -611,7 +1492,7 @@ function canPlayMatch(matchId, matchData) {
     if (matchData.matchType === 'qualification') {
         return true;
     }
-
+    
     // Quarts de finale - vérifier que les qualifications sont terminées
     if (matchData.matchType === 'quarterfinal') {
         const qualificationMatches = [1, 2, 3];
@@ -626,7 +1507,7 @@ function canPlayMatch(matchId, matchData) {
             return false;
         }
     }
-
+    
     // Demi-finales - vérifier que les quarts sont terminés
     if (matchData.matchType === 'semifinal') {
         const quarterFinals = [4, 5, 6, 7];
@@ -641,7 +1522,7 @@ function canPlayMatch(matchId, matchData) {
             return false;
         }
     }
-
+    
     // Finales - vérifier que les demi-finales sont terminées
     if (matchData.matchType === 'smallfinal' || matchData.matchType === 'final') {
         const semiFinals = [8, 9];
@@ -656,7 +1537,7 @@ function canPlayMatch(matchId, matchData) {
             return false;
         }
     }
-
+    
     return true;
 }
 
@@ -672,6 +1553,8 @@ function handleCorrectionMode(matchId, matchData) {
             score2: matchData.score2 || '0',
             correction: 'true'
         });
+        
+        console.log('Redirection vers marquage.html avec params:', Object.fromEntries(params));
         window.location.href = `marquage.html?${params.toString()}`;
     }
 }
@@ -683,15 +1566,14 @@ function handleNewMatch(matchId, matchData) {
         alert('Les équipes ne sont pas encore déterminées pour ce match.');
         return;
     }
-
-    // Rediriger vers la page de marquage
+    
     const params = new URLSearchParams({
         matchId: matchId,
         team1: matchData.team1,
         team2: matchData.team2,
         matchType: matchData.matchType
     });
-
+    
     console.log('Redirection vers marquage.html avec params:', Object.fromEntries(params));
     window.location.href = `marquage.html?${params.toString()}`;
 }
@@ -718,7 +1600,6 @@ function resetGame() {
     const team2 = document.getElementById('teamB').value;
     const score1 = parseInt(document.getElementById('teamAScore').textContent);
     const score2 = parseInt(document.getElementById('teamBScore').textContent);
-    
     const winner = score1 > score2 ? team1 : team2;
     const loser = score1 > score2 ? team2 : team1;
 
@@ -735,18 +1616,21 @@ function resetGame() {
             loser
         };
 
-        // Gérer la progression vers les demi-finales
+        // Mise à jour des matchs suivants sans changer leur statut
         if (matchId >= 4 && matchId <= 7) { // Quarts de finale
             const semifinalId = matchId <= 5 ? 8 : 9; // QF1&2 -> SF1, QF3&4 -> SF2
             const semifinal = tournamentState.matches[semifinalId];
             
-            // Si c'est le premier gagnant pour cette demi-finale
+            // Mise à jour des équipes uniquement, pas du statut
             if (!semifinal.team1) {
                 semifinal.team1 = winner;
-            } 
-            // Si c'est le deuxième gagnant pour cette demi-finale
-            else if (!semifinal.team2 && semifinal.team1 !== winner) {
+            } else if (!semifinal.team2 && semifinal.team1 !== winner) {
                 semifinal.team2 = winner;
+            }
+            
+            // S'assurer que le statut reste "à_venir" sauf s'il est déjà "terminé"
+            if (semifinal.status !== 'terminé') {
+                semifinal.status = 'à_venir';
             }
         }
 
@@ -754,18 +1638,35 @@ function resetGame() {
         if (matchId === 8 || matchId === 9) { // Demi-finales
             const final = tournamentState.matches[11];
             const smallFinal = tournamentState.matches[10];
-
+            
+            // Mise à jour des équipes uniquement, pas des statuts
             if (matchId === 8) {
-                final.team1 = winner;
-                smallFinal.team1 = loser;
+                if (!final.team1) final.team1 = winner;
+                if (!smallFinal.team1) smallFinal.team1 = loser;
             } else {
-                final.team2 = winner;
-                smallFinal.team2 = loser;
+                if (!final.team2) final.team2 = winner;
+                if (!smallFinal.team2) smallFinal.team2 = loser;
             }
+            
+            // S'assurer que les statuts restent "à_venir" sauf s'ils sont déjà "terminé"
+            if (final.status !== 'terminé') final.status = 'à_venir';
+            if (smallFinal.status !== 'terminé') smallFinal.status = 'à_venir';
         }
 
-        saveTournamentState();
-        window.location.href = 'volleyball.html#final-phase';
+        // Envoyer les résultats au serveur
+        sendMatchResultToServer(matchId, tournamentState.matches[matchId])
+            .then(() => {
+                console.log(`Match ${matchId} terminé et sauvegardé sur le serveur`);
+                saveTournamentState();
+                window.location.href = 'volleyball.html#final-phase';
+            })
+            .catch(error => {
+                console.error('Erreur lors de la sauvegarde du match:', error);
+                alert(`Erreur lors de la sauvegarde: ${error.message}`);
+                // Continuer la redirection même en cas d'erreur pour ne pas bloquer l'utilisateur
+                saveTournamentState();
+                window.location.href = 'volleyball.html#final-phase';
+            });
     } catch (error) {
         console.error('Erreur:', error);
         alert('Erreur lors de la sauvegarde du match');

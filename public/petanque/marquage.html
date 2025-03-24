@@ -68,7 +68,7 @@
       </div>
       <div class="bouton_pied_page">
         <div class="button-row1">
-          <button onclick="location.href='basketball.html'">Retour</button>
+          <button onclick="location.href='petanque.html'">Retour</button>
         </div>
         <div class="button-row2">
           <button onclick="openScoreDisplay()">Spectateurs</button>
@@ -78,58 +78,37 @@
     <div class="droite">
       <div class="scoreboard">
         <div class="score-display">
+          <div class="team-line">
+            <span id="teamAName">Team A</span> 
+            <span id="teamBName">Team B</span>
+          </div>
           <div class="score-line">
-            <span id="teamAName">Team A</span> <span id="teamAScore">0</span> - <span id="teamBScore">0</span> <span id="teamBName">Team B</span>
+            <img src="cochonnet.png" class="ball-icon" id="ballIconA">
+            <span id="teamAScore">0</span> - <span id="teamBScore">0</span>
+            <img src="cochonnet.png" class="ball-icon" id="ballIconB">
           </div>
           <div class="details-line">
             <span id="matchType">Type de Match</span>
           </div>
           <div class="points-section">
             <div class="points-control">
-              <span class="points-label">Buts :</span>
+              <span class="points-label">Points :</span>
               <button onclick="subPoint('A')" class="control-button" accesskey="e">-</button>
               <button onclick="addPoint('A')" class="control-button" accesskey="a">+</button>
             </div>
     
-            <div class="timer" id="gameChrono">00:00</div>
-
             <div class="points-control">
-              <span class="points-label">Buts :</span>
+              <span class="points-label">Points :</span>
               <button onclick="subPoint('B')" class="control-button" accesskey="r">-</button>
               <button onclick="addPoint('B')" class="control-button" accesskey="z">+</button>
             </div>
           </div>
     
-          <div class="cards-section">
-            <div class="yellow-card">
-              <div class="card-row">
-                <span>Cartons Jaunes : <span id="teamAYellowCard">0</span></span>
-                <button onclick="subYellowCard('A')" class="control-button" accesskey="u">-</button>
-                <button onclick="addYellowCard('A')" class="control-button" accesskey="t">+</button>
-              </div>
-              <div class="card-row">
-                <span>Cartons Jaunes : <span id="teamBYellowCard">0</span></span>
-                <button onclick="subYellowCard('B')" class="control-button" accesskey="i">-</button>
-                <button onclick="addYellowCard('B')" class="control-button" accesskey="y">+</button>
-              </div>
-            </div>
-            <div class="red-card"></div>
-              <div class="card-row">
-                <span>Cartons Rouges : <span id="teamARedCard">0</span></span>
-                <button onclick="subRedCard('A')" class="control-button" accesskey="o">-</button>
-                <button onclick="addRedCard('A')" class="control-button" accesskey="p">+</button>
-              </div>
-              <div class="card-row">
-                <span>Cartons Rouges : <span id="teamBRedCard">0</span></span>
-                <button onclick="subRedCard('B')" class="control-button" accesskey="o">-</button>
-                <button onclick="addRedCard('B')" class="control-button" accesskey="p">+</button>
-              </div>
-            </div>
-          </div>
-    
           <div class="bottom-controls">
-            <button onclick="startChrono()" accesskey="s">Start</button>
-            <button onclick="stopChrono()" accesskey="d">Stop</button>
+            <button id="cochonnetButton" onclick="toggleCochonnet()">
+                <span>Cochonnet: </span>
+                <span id="cochonnetTeam">Team A</span>
+            </button>
             <button onclick="resetGame()">End</button>
           </div>
             
@@ -150,11 +129,13 @@
         // Fonction pour convertir le matchType en texte affichable
         function getMatchTypeDisplay(type) {
             const matchTypes = {
-                'qualification': 'Qualification',
+                'poule': 'Poule',
+                'Poule': 'Poule',
                 'quarterfinal': 'Quart de finale',
                 'semifinal': 'Demi-finale',
                 'smallfinal': 'Petite Finale',
-                'final': 'Finale'
+                'final': 'Finale',
+                'Finale': 'Finale'
             };
             return matchTypes[type] || type;
         }
@@ -219,15 +200,16 @@
 
     // Fonction pour mettre à jour les données en direct
     function updateLiveData() {
+        const teamAScore = document.getElementById('teamAScore');
+        const teamBScore = document.getElementById('teamBScore');
+        const gameChrono = document.getElementById('gameChrono');
+
         const liveData = {
-            score1: document.getElementById('teamAScore').textContent,
-            score2: document.getElementById('teamBScore').textContent,
-            yellowCards1: document.getElementById('teamAYellowCard').textContent,
-            yellowCards2: document.getElementById('teamBYellowCard').textContent,
-            redCards1: document.getElementById('teamARedCard').textContent,
-            redCards2: document.getElementById('teamBRedCard').textContent,
-            chrono: document.getElementById('gameChrono').textContent
+            score1: teamAScore ? teamAScore.textContent : 0,
+            score2: teamBScore ? teamBScore.textContent : 0,
+            chrono: gameChrono ? gameChrono.textContent : '00:00'
         };
+
         localStorage.setItem('liveMatchData', JSON.stringify({
             ...JSON.parse(localStorage.getItem('liveMatchData') || '{}'),
             ...liveData
@@ -237,12 +219,14 @@
     // Ajouter l'observateur pour mettre à jour les données en direct
     const observer = new MutationObserver(updateLiveData);
     const scoreboard = document.querySelector('.scoreboard');
-    observer.observe(scoreboard, { 
-        subtree: true, 
-        childList: true,
-        characterData: true,
-        characterDataOldValue: true
-    });
+    if (scoreboard) {
+        observer.observe(scoreboard, { 
+            subtree: true, 
+            childList: true,
+            characterData: true,
+            characterDataOldValue: true
+        });
+    }
   </script>
 </body>
 </html>

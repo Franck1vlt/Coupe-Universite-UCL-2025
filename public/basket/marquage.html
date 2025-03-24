@@ -51,11 +51,12 @@
         <label for="matchType">Type de match :</label>
         <select id="matchTypeSelector" onchange="updateMatchType()">
           <option>Type de match</option>
-          <option value="Barrages">Barrages</option>
-          <option value="Quart de finale">Quart de finale</option>
-          <option value="Demi-finale">Demi-finale</option>
-          <option value="Petite Finale">Petite Finale</option>
-          <option value="Finale">Finale</option>
+          <option value="quarterfinal">Quart de finale</option>
+          <option value="semifinal">Demi-finale</option>
+          <option value="smallfinal">Petite Finale</option>
+          <option value="final-h">Finale</option>
+          <option value="final-f">Finale Femmes</option>
+
         </select>
         <label for="matchGround">Terrain :</label>
         <select id="matchGroundSelector">
@@ -68,7 +69,7 @@
       </div>
       <div class="bouton_pied_page">
         <div class="button-row1">
-          <button onclick="location.href='basketball.html'">Retour</button>
+          <button onclick="location.href='basketball.html#final-phase'">Retour</button>
         </div>
         <div class="button-row2">
           <button onclick="openScoreDisplay()">Spectateurs</button>
@@ -82,57 +83,52 @@
             <span id="teamAName">Team A</span> <span id="teamAScore">0</span> - <span id="teamBScore">0</span> <span id="teamBName">Team B</span>
           </div>
           <div class="details-line">
-            <span id="matchType">Type de Match</span>
+            <span id="matchType">Type de Match</span> - <span id="period">MT1</span>
           </div>
-          <div class="points-section">
-            <div class="points-control">
-              <span class="points-label">Buts :</span>
-              <button onclick="subPoint('A')" class="control-button" accesskey="e">-</button>
-              <button onclick="addPoint('A')" class="control-button" accesskey="a">+</button>
-            </div>
-    
-            <div class="timer" id="gameChrono">00:00</div>
-
-            <div class="points-control">
-              <span class="points-label">Buts :</span>
-              <button onclick="subPoint('B')" class="control-button" accesskey="r">-</button>
-              <button onclick="addPoint('B')" class="control-button" accesskey="z">+</button>
-            </div>
-          </div>
-    
-          <div class="cards-section">
-            <div class="yellow-card">
-              <div class="card-row">
-                <span>Cartons Jaunes : <span id="teamAYellowCard">0</span></span>
-                <button onclick="subYellowCard('A')" class="control-button" accesskey="u">-</button>
-                <button onclick="addYellowCard('A')" class="control-button" accesskey="t">+</button>
-              </div>
-              <div class="card-row">
-                <span>Cartons Jaunes : <span id="teamBYellowCard">0</span></span>
-                <button onclick="subYellowCard('B')" class="control-button" accesskey="i">-</button>
-                <button onclick="addYellowCard('B')" class="control-button" accesskey="y">+</button>
-              </div>
-            </div>
-            <div class="red-card"></div>
-              <div class="card-row">
-                <span>Cartons Rouges : <span id="teamARedCard">0</span></span>
-                <button onclick="subRedCard('A')" class="control-button" accesskey="o">-</button>
-                <button onclick="addRedCard('A')" class="control-button" accesskey="p">+</button>
-              </div>
-              <div class="card-row">
-                <span>Cartons Rouges : <span id="teamBRedCard">0</span></span>
-                <button onclick="subRedCard('B')" class="control-button" accesskey="o">-</button>
-                <button onclick="addRedCard('B')" class="control-button" accesskey="p">+</button>
-              </div>
-            </div>
-          </div>
-    
-          <div class="bottom-controls">
-            <button onclick="startChrono()" accesskey="s">Start</button>
-            <button onclick="stopChrono()" accesskey="d">Stop</button>
+          <div class="timers">
+            <div class="timer" id="gameTimer">09:00.0</div>
+            <div class="timer" id="shotClock">24.0</div>
+        </div>
+        <div class="controls">
+            <button onclick="startTimers()">Start (9)</button>
+            <button onclick="stopTimers()">Stop (7)</button>
+            <button onclick="resetShotClock()">24s (4)</button>
+            <button onclick="setShotClock(14)">14s (6)</button>
+            <button onclick="buzzer.play()">Buzzer (0)</button>
+            <button onclick="addSecond()">+1s (1)</button>
             <button onclick="resetGame()">End</button>
-          </div>
-            
+            <div class="period-switch">
+                <span>MT1</span>
+                <label class="switch">
+                    <input type="checkbox" id="periodToggle" onchange="togglePeriod()">
+                    <span class="slider round"></span>
+                </label>
+                <span>MT2</span>
+            </div>
+        </div>
+        <div class="plus_moins_controls">
+            <section>
+                <div class="scores">
+                    <p>Points : </p>
+                        <div class="team-controls a">
+                        <button onclick="supScore('A', 1)">-1</button>
+                        <button onclick="addScore('A', 1)">+1</button>
+                        <button onclick="addScore('A', 2)">+2</button>
+                        <button onclick="addScore('A', 3)">+3</button>
+                    </div>
+                </div>
+            </section>
+            <section>
+                <div class="scores">
+                    <p> Points :</p>
+                    <div class="team-controls b">
+                        <button onclick="supScore('B', 1)">-1</button>
+                        <button onclick="addScore('B', 1)">+1</button>
+                        <button onclick="addScore('B', 2)">+2</button>
+                        <button onclick="addScore('B', 3)">+3</button>
+                    </div>
+                </div>
+            </section>
         </div>
       </div>
     </div>
@@ -146,6 +142,36 @@
         const team2Name = urlParams.get('team2');
         const matchType = urlParams.get('matchType');
         const isCorrection = urlParams.get('correction') === 'true';
+        const currentMatchId = urlParams.get('matchId');
+
+        // NOUVEAU: Vérifier s'il y a un match déjà en cours et le marquer comme terminé
+        const currentMatchState = JSON.parse(localStorage.getItem('currentMatchState') || '{}');
+        if (currentMatchState.matchId && currentMatchState.matchId !== currentMatchId && currentMatchState.status === 'en_cours') {
+            // Un autre match était en cours, on le marque comme terminé
+            console.log(`Un match précédent (${currentMatchState.matchId}) était encore en cours, on le termine automatiquement`);
+            
+            // Obtenir l'état actuel du tournoi
+            const tournamentState = JSON.parse(localStorage.getItem('basketTournamentState') || '{}');
+            if (tournamentState.matches && tournamentState.matches[currentMatchState.matchId]) {
+                // Marquer le match précédent comme terminé
+                tournamentState.matches[currentMatchState.matchId].status = 'terminé';
+                localStorage.setItem('basketTournamentState', JSON.stringify(tournamentState));
+            }
+        }
+
+        // Fonction pour convertir le matchType en texte affichable
+        function getMatchTypeDisplay(type) {
+            const matchTypes = {
+                'poule': 'Poule',
+                'qualification': 'Qualification',
+                'quarterfinal': 'Quart de finale',
+                'semifinal': 'Demi-finale',
+                'smallfinal': 'Petite Finale',
+                'final-h': 'Finale',
+                'final-f': 'Finale Féminine'
+            };
+            return matchTypes[type] || type;
+        }
 
         // Initialiser les sélecteurs
         if (team1Name) {
@@ -161,8 +187,18 @@
 
         // Mettre à jour le type de match
         if (matchType) {
-            document.getElementById('matchTypeSelector').value = matchType;
-            document.getElementById('matchType').textContent = matchType;
+            const displayMatchType = getMatchTypeDisplay(matchType);
+            const matchTypeSelector = document.getElementById('matchTypeSelector');
+            
+            // Essayer de sélectionner la valeur dans le selector si disponible
+            try {
+                matchTypeSelector.value = matchType;
+            } catch (e) {
+                console.warn("Impossible de définir la valeur du sélecteur:", e);
+            }
+            
+            // Mettre à jour l'affichage avec le texte formaté
+            document.getElementById('matchType').textContent = displayMatchType;
         }
 
         // Initialiser le terrain par défaut
@@ -170,17 +206,59 @@
 
         if (isCorrection) {
             // Pré-remplir les scores si c'est une correction
-            matchData.teamA.score = parseInt(urlParams.get('score1')) || 0;
-            matchData.teamB.score = parseInt(urlParams.get('score2')) || 0;
-            document.getElementById('teamAScore').textContent = matchData.teamA.score;
-            document.getElementById('teamBScore').textContent = matchData.teamB.score;
+            const score1 = parseInt(urlParams.get('score1')) || 0;
+            const score2 = parseInt(urlParams.get('score2')) || 0;
+            document.getElementById('teamAScore').textContent = score1;
+            document.getElementById('teamBScore').textContent = score2;
         }
+
+        // Dès qu'on ouvre la page de marquage, mettre le statut en "en cours"
+        localStorage.setItem('currentMatchState', JSON.stringify({
+            matchId: currentMatchId,
+            status: 'en_cours',
+            timestamp: new Date().getTime()
+        }));
+
+        // Mettre à jour l'état du match en cours dans le localStorage
+        const matchId = new URLSearchParams(window.location.search).get('matchId');
+        localStorage.setItem('currentMatchId', matchId);
+        
+        // Mettre à jour le statut du match dans la base de données
+        fetch('/api/matches/basket/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                matchId: currentMatchId,
+                team1: team1Name || document.getElementById('teamAName').textContent,
+                team2: team2Name || document.getElementById('teamBName').textContent,
+                status: 'en_cours', // Utiliser toujours le même format
+                matchType: matchType || 'unknown'
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                console.error('Erreur lors de la mise à jour du statut:', response.statusText);
+            }
+            
+            // Mettre à jour localement l'état du tournoi
+            if (window.opener && window.opener.tournamentState) {
+                const match = window.opener.tournamentState.matches[currentMatchId];
+                if (match) match.status = 'en_cours';
+            }
+        })
+        .catch(error => console.error('Erreur:', error));
+
+        // Initialiser les chronomètres (utilise les fonctions de basketball.js)
+        displayGameTime();
+        displayShotClock();
     });
 
     function updateMatchType() {
         const matchTypeSelector = document.getElementById('matchTypeSelector');
-        const matchType = matchTypeSelector.options[matchTypeSelector.selectedIndex].text;
-        document.getElementById('matchType').textContent = matchType;
+        const selectedValue = matchTypeSelector.value;
+        document.getElementById('matchType').textContent = getMatchTypeDisplay(selectedValue);
     }
 
     function openScoreDisplay() {
@@ -190,45 +268,54 @@
             team2: document.getElementById('teamB').value,
             matchType: document.getElementById('matchType').textContent,
             matchId: new URLSearchParams(window.location.search).get('matchId'),
-            score1: 0,
-            score2: 0,
-            yellowCards1: 0,
-            yellowCards2: 0,
-            redCards1: 0,
-            redCards2: 0,
-            chrono: '00:00'
+            score1: document.getElementById('teamAScore').textContent,
+            score2: document.getElementById('teamBScore').textContent,
+            gameTimer: document.getElementById('gameTimer').textContent,
+            shotClock: document.getElementById('shotClock').textContent,
+            period: document.getElementById('period').textContent
         }));
 
         // Ouvrir la fenêtre d'affichage
         const displayWindow = window.open('affichage_score.html', '_blank');
     }
 
-    // Fonction pour mettre à jour les données en direct
+    // Définir la fonction updateLiveData localement
     function updateLiveData() {
-        const liveData = {
-            score1: document.getElementById('teamAScore').textContent,
-            score2: document.getElementById('teamBScore').textContent,
-            yellowCards1: document.getElementById('teamAYellowCard').textContent,
-            yellowCards2: document.getElementById('teamBYellowCard').textContent,
-            redCards1: document.getElementById('teamARedCard').textContent,
-            redCards2: document.getElementById('teamBRedCard').textContent,
-            chrono: document.getElementById('gameChrono').textContent
-        };
-        localStorage.setItem('liveMatchData', JSON.stringify({
-            ...JSON.parse(localStorage.getItem('liveMatchData') || '{}'),
-            ...liveData
-        }));
+        try {
+            const liveData = {
+                score1: document.getElementById('teamAScore')?.textContent || '0',
+                score2: document.getElementById('teamBScore')?.textContent || '0',
+                gameTimer: document.getElementById('gameTimer')?.textContent || '00:00.0',
+                shotClock: document.getElementById('shotClock')?.textContent || '24.0',
+                period: document.getElementById('period')?.textContent || 'MT1'
+            };
+            
+            // Mettre à jour le localStorage avec les données actuelles
+            const currentData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
+            localStorage.setItem('liveMatchData', JSON.stringify({
+                ...currentData,
+                ...liveData
+            }));
+        } catch (error) {
+            console.error('Erreur lors de la mise à jour des données en direct:', error);
+        }
     }
 
-    // Ajouter l'observateur pour mettre à jour les données en direct
-    const observer = new MutationObserver(updateLiveData);
-    const scoreboard = document.querySelector('.scoreboard');
-    observer.observe(scoreboard, { 
-        subtree: true, 
-        childList: true,
-        characterData: true,
-        characterDataOldValue: true
+    document.addEventListener('DOMContentLoaded', function() {
+            // Fonction pour convertir le matchType en texte affichable
+            function getMatchTypeDisplay(type) {
+            const matchTypes = {
+                'quarterfinal': 'Quart de finale',
+                'semifinal': 'Demi-finale',
+                'smallfinal': 'Petite Finale',
+                'final-h': 'Finale Hommes',
+                'final-f': 'Finale Femmes'
+            };
+            return matchTypes[type] || type;
+        }
     });
-  </script>
+
+
+</script>
 </body>
 </html>

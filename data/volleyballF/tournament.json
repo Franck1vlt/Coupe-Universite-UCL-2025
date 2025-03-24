@@ -1,0 +1,115 @@
+{
+  "tournamentType": "volleyF",
+  "tournamentState": {
+    "matches": {
+      "1": {
+        "matchType": "qualification",
+        "team1": "ESPAS-ESTICE",
+        "team2": "USCHOOL",
+        "score1": 25,
+        "score2": 15,
+        "status": "terminé",
+        "winner": "ESPAS-ESTICE",
+        "loser": "USCHOOL",
+        "time": "04/02"
+      },
+      "4": {
+        "matchType": "quarterfinal",
+        "team1": "ESPOL",
+        "team2": "FMMS",
+        "score1": null,
+        "score2": null,
+        "status": "à_venir",
+        "winner": null,
+        "loser": null,
+        "nextMatchWin": 8,
+        "time": "9:30"
+      },
+      "5": {
+        "matchType": "quarterfinal",
+        "team1": "FLSH",
+        "team2": "IKPO",
+        "score1": null,
+        "score2": null,
+        "status": "à_venir",
+        "winner": null,
+        "loser": null,
+        "nextMatchWin": 8,
+        "time": "9:30"
+      },
+      "6": {
+        "matchType": "quarterfinal",
+        "team1": "JUNIA",
+        "team2": "FLD",
+        "score1": null,
+        "score2": null,
+        "status": "à_venir",
+        "winner": null,
+        "loser": null,
+        "nextMatchWin": 9,
+        "time": "10:30"
+      },
+      "7": {
+        "matchType": "quarterfinal",
+        "team1": "ESPAS-ESTICE",
+        "team2": "FGES",
+        "score1": null,
+        "score2": null,
+        "status": "à_venir",
+        "winner": null,
+        "loser": null,
+        "nextMatchWin": 9,
+        "time": "10:30"
+      },
+      "8": {
+        "matchType": "semifinal",
+        "team1": null,
+        "team2": null,
+        "score1": null,
+        "score2": null,
+        "status": "à_venir",
+        "winner": null,
+        "loser": null,
+        "nextMatchWin": 11,
+        "nextMatchLose": 10,
+        "time": "11:30"
+      },
+      "9": {
+        "matchType": "semifinal",
+        "team1": null,
+        "team2": null,
+        "score1": null,
+        "score2": null,
+        "status": "à_venir",
+        "winner": null,
+        "loser": null,
+        "nextMatchWin": 11,
+        "nextMatchLose": 10,
+        "time": "11:30"
+      },
+      "10": {
+        "matchType": "smallfinal",
+        "team1": null,
+        "team2": null,
+        "score1": null,
+        "score2": null,
+        "status": "à_venir",
+        "winner": null,
+        "loser": null,
+        "time": "12:30"
+      },
+      "11": {
+        "matchType": "final",
+        "team1": null,
+        "team2": null,
+        "score1": null,
+        "score2": null,
+        "status": "à_venir",
+        "winner": null,
+        "loser": null,
+        "time": "12:30"
+      }
+    }
+  },
+  "lastUpdate": "2025-03-23T12:28:08.176Z"
+}

@@ -53,142 +53,168 @@ allTeams.sort().forEach((name, index) => {
 // La structure est définie par matchId avec les informations de chaque rencontre.
 // Certains matchs possèdent des références (nextMatchWin, nextMatchLose) vers le match suivant.
 let tournamentState = {
-  matches: {
-    // Qualifications (matchIds 1 à 3) : les perdants reçoivent 5 points (9ème)
-    1: {
-      matchType: 'qualification',
-      team1: 'FMMS',
-      team2: 'ESPAS-ESTICE',
-      score1: 25,
-      score2: 12,
-      status: 'terminé',
-      winner: 'FMMS',
-      loser: 'ESPAS-ESTICE'
-    },
-    2: {
-      matchType: 'qualification', 
-      team1: 'FLD',
-      team2: 'PIKTURA',
-      score1: 25,
-      score2: 20,
-      status: 'terminé',
-      winner: 'FLD',
-      loser: 'PIKTURA'
-    },
-    3: {
-      matchType: 'qualification',
-      team1: 'FLSH',
-      team2: 'IKPO',
-      score1: 25,
-      score2: 14,
-      status: 'terminé', 
-      winner: 'FLSH',
-      loser: 'IKPO'
-    },
-    // Quarts de finale (matchIds 4 à 7)
-    4: {  // QF1
-      matchType: 'quarterfinal',
-      team1: 'FMMS',
-      team2: 'FGES',
-      score1: null,
-      score2: null,
-      status: 'à_venir',
-      winner: null,
-      loser: null,
-      nextMatchWin: 8  // Le gagnant va en SF1
-    },
-    5: {  // QF2
-      matchType: 'quarterfinal', 
-      team1: 'FLD',
-      team2: 'JUNIA',
-      score1: null,
-      score2: null,
-      status: 'à_venir',
-      winner: null,
-      loser: null,
-      nextMatchWin: 8  // Le gagnant va en SF1
-    },
-    6: {  // QF3
-      matchType: 'quarterfinal',
-      team1: 'FLSH',
-      team2: 'IESEG',
-      score1: null,
-      score2: null,
-      status: 'à_venir',
-      winner: null,
-      loser: null,
-      nextMatchWin: 9  // Le gagnant va en SF2
-    },
-    7: {  // QF4
-      matchType: 'quarterfinal',
-      team1: 'ICAM',
-      team2: 'ESPOL',
-      score1: null,
-      score2: null,
-      status: 'à_venir',
-      winner: null,
-      loser: null,
-      nextMatchWin: 9  // Le gagnant va en SF2
-    },
-    // Demi-finales (matchIds 8 et 9)
-    8: {
-      matchType: 'semifinal',
-      team1: null,
-      team2: null,
-      score1: null,
-      score2: null,
-      status: 'à_venir',
-      winner: null,
-      loser: null,
-      nextMatchWin: 11,  // Gagnant va en finale
-      nextMatchLose: 10  // Perdant va en petite finale
-    },
-    9: {
-      matchType: 'semifinal',
-      team1: null,
-      team2: null,
-      score1: null,
-      score2: null,
-      status: 'à_venir',
-      winner: null,
-      loser: null,
-      nextMatchWin: 11,  // Gagnant va en finale
-      nextMatchLose: 10  // Perdant va en petite finale
-    },
-    // Petite finale (matchId 10) pour la 3ème / 4ème place
-    10: {
-      matchType: 'smallfinal',
-      team1: null,
-      team2: null,
-      score1: null,
-      score2: null,
-      status: 'à_venir',
-      winner: null,
-      loser: null
-    },
-    // Finale (matchId 11) pour la 1ère / 2ème place
-    11: {
-      matchType: 'final',
-      team1: null,
-      team2: null,
-      score1: null,
-      score2: null,
-      status: 'à_venir',
-      winner: null,
-      loser: null
+    matches: {
+        // Barrages (matchIds 1 à 4)
+        1: {
+            matchType: 'barrage',
+            team1: 'ESSLIL',
+            team2: 'USCHOOL',
+            score1: null,
+            score2: null, 
+            status: 'à_venir',
+            winner: null,
+            loser: null,
+            nextMatchWin: 5, // Gagnant va en QF1
+            time: '9:30',
+            id_terrain: 6
+        },
+        2: {
+            matchType: 'barrage',
+            team1: 'LiDD', 
+            team2: 'FLD',
+            score1: null,
+            score2: null,
+            status: 'à_venir',
+            winner: null,
+            loser: null,
+            nextMatchWin: 6, // Gagnant va en QF2
+            time: '9:30',
+            id_terrain: 7
+        },
+        3: {
+            matchType: 'barrage',
+            team1: 'ESPAS-ESTICE',
+            team2: 'ESPOL',
+            score1: null,
+            score2: null,
+            status: 'à_venir',
+            winner: null,
+            loser: null,
+            nextMatchWin: 7, // Gagnant va en QF3
+            time: '10:15',
+            id_terrain: 6
+        },
+        4: {
+            matchType: 'barrage',
+            team1: 'PIKTURA',
+            team2: 'FLSH',
+            score1: null,
+            score2: null,
+            status: 'à_venir', 
+            winner: null,
+            loser: null,
+            nextMatchWin: 8, // Gagnant va en QF4
+            time: '10:15',
+            id_terrain: 7
+        },
+
+        // Quarts de finale (matchIds 5 à 8)
+        5: {
+            matchType: 'quarterfinal',
+            team1: 'FMMS', // Vainqueur barrage 1
+            team2: null, // Qualifié direct
+            score1: null,
+            score2: null,
+            status: 'à_venir',
+            winner: null,
+            loser: null,
+            nextMatchWin: 9 // Gagnant va en SF1
+        },
+        6: {
+            matchType: 'quarterfinal',
+            team1: 'FGES', // Vainqueur barrage 2
+            team2: null, // Qualifié direct
+            score1: null,
+            score2: null,
+            status: 'à_venir',
+            winner: null,
+            loser: null, 
+            nextMatchWin: 9 // Gagnant va en SF1
+        },
+        7: {
+            matchType: 'quarterfinal',
+            team1: 'IKPO', // Vainqueur barrage 3
+            team2: null, // Qualifié direct
+            score1: null,
+            score2: null,
+            status: 'à_venir',
+            winner: null,
+            loser: null,
+            nextMatchWin: 10 // Gagnant va en SF2
+        },
+        8: {
+            matchType: 'quarterfinal',
+            team1: 'ICAM', // Vainqueur barrage 4
+            team2: null, // Qualifié direct
+            score1: null,
+            score2: null,
+            status: 'à_venir',
+            winner: null,
+            loser: null,
+            nextMatchWin: 10 // Gagnant va en SF2
+        },
+
+        // Demi-finales (matchIds 9 et 10)
+        9: {
+            matchType: 'semifinal',
+            team1: null,
+            team2: null,
+            score1: null,
+            score2: null,
+            status: 'à_venir',
+            winner: null,
+            loser: null,
+            nextMatchWin: 12, // Gagnant va en finale
+            nextMatchLose: 11 // Perdant va en petite finale
+        },
+        10: {
+            matchType: 'semifinal',
+            team1: null,
+            team2: null,
+            score1: null,
+            score2: null,
+            status: 'à_venir',
+            winner: null,
+            loser: null,
+            nextMatchWin: 12, // Gagnant va en finale
+            nextMatchLose: 11 // Perdant va en petite finale
+        },
+
+        // Petite finale (matchId 11)
+        11: {
+            matchType: 'smallfinal',
+            team1: null,
+            team2: null,
+            score1: null,
+            score2: null,
+            status: 'à_venir',
+            winner: null,
+            loser: null
+        },
+
+        // Finale (matchId 12)
+        12: {
+            matchType: 'final',
+            team1: null,
+            team2: null,
+            score1: null,
+            score2: null,
+            status: 'à_venir',
+            winner: null,
+            loser: null
+        }
     }
-  }
 };
 
 // Fonction pour sauvegarder l'état du tournoi
 function saveTournamentState() {
-    localStorage.setItem('volleyHTournamentState', JSON.stringify(tournamentState));
+    localStorage.setItem('petanqueTournamentState', JSON.stringify(tournamentState));
     localStorage.setItem('lastUpdate', new Date().toISOString());
 }
 
 // Fonction pour charger l'état du tournoi
 function loadTournamentState() {
-    const savedState = localStorage.getItem('volleyHTournamentState');
+    const savedState = localStorage.getItem('petanqueTournamentState');
     if (savedState) {
         tournamentState = JSON.parse(savedState);
         return true;
@@ -221,6 +247,15 @@ document.addEventListener('DOMContentLoaded', function() {
   updateUI();
   addMatchClickHandlers();
   initializePageState();
+
+  // S'assurer que tous les matchs ont un statut par défaut
+  Object.values(tournamentState.matches).forEach(match => {
+    if (!match.status) {
+        match.status = 'à_venir';
+    }
+  });
+  
+  updateUI();
 });
 
 // ----- LIEN ENTRE LES MATCHES (Vainqueur/Perdant vers le match suivant) -----
@@ -300,23 +335,42 @@ function linkWinnersAndLosers() {
 
 // ----- MISE À JOUR DE L'INTERFACE (affichage des scores, logos et couleurs) -----
 function updateUI() {
-    // Mettre à jour l'affichage de tous les matchs
     Object.entries(tournamentState.matches).forEach(([matchId, matchData]) => {
         const matchElement = document.querySelector(`.match[data-match-id='${matchId}']`);
         if (!matchElement) return;
+
+        // Mettre à jour le statut du match
+        const status = matchData.status || 'à_venir';
+        matchElement.setAttribute('data-status', status);
         
+        // Retirer les anciennes classes de statut
+        matchElement.classList.remove('à_venir', 'en_cours', 'terminé');
+        matchElement.classList.add(status);
+
+        // Mettre à jour le texte du statut
+        const statusElement = matchElement.querySelector('.match-status');
+        if (statusElement) {
+            statusElement.textContent = status === 'à_venir' ? 'À venir' :
+                                      status === 'en_cours' ? 'En cours' :
+                                      status === 'terminé' ? 'Terminé' : 'À venir';
+        }
+
+        // Mettre à jour les équipes et scores
         const teamDivs = matchElement.querySelectorAll('.team');
-        if (teamDivs.length < 2) return;
-        
-        fillTeamDiv(teamDivs[0], matchData.team1, matchData.score1, matchData.winner);
-        fillTeamDiv(teamDivs[1], matchData.team2, matchData.score2, matchData.winner);
-        
-        // Mettre à jour la classe CSS du statut du match
-        matchElement.classList.remove('a_venir', 'en_cours', 'termine');
-        matchElement.classList.add(matchData.status === 'terminé' ? 'termine' : 
-                                  matchData.status === 'en_cours' ? 'en_cours' : 'a_venir');
+        if (teamDivs.length === 2) {
+            fillTeamDiv(teamDivs[0], matchData.team1, matchData.score1, matchData.winner);
+            fillTeamDiv(teamDivs[1], matchData.team2, matchData.score2, matchData.winner);
+        }
+
+        // Mettre à jour l'horaire et le terrain
+        if (matchData.time && matchData.id_terrain) {
+            const matchInfo = matchElement.querySelector('.match-info');
+            if (matchInfo) {
+                matchInfo.innerHTML = `<span class="match-time">${matchData.time} - Terrain ${matchData.id_terrain}</span>`;
+            }
+        }
     });
-    
+
     // Mise à jour du classement
     updateRankingDisplay();
     
@@ -329,7 +383,7 @@ function updateUI() {
             championDiv.style.display = 'block';
             championDiv.classList.add('champion-crowned');
         } else {
-            championDiv.textContent = 'À déterminer';
+            championDiv.textContent = '-';
             championDiv.style.display = 'block';
             championDiv.classList.remove('champion-crowned');
         }
@@ -346,7 +400,7 @@ function fillTeamDiv(teamDiv, teamName, score, winnerName) {
     if (!nameDiv || !scoreDiv) return;
     
     if (!teamName) {
-        nameDiv.innerHTML = `<div class='team-logo'></div>À déterminer`;
+        nameDiv.innerHTML = `<div class='team-logo'></div>-`;
         scoreDiv.textContent = '-';
         teamDiv.classList.remove('winner', 'loser');
         return;
@@ -435,54 +489,58 @@ async function simulateTournament() {
 function calculateRankings() {
     let ranking = allTeams.map(name => ({ 
         name,
-        pointsH: 0,    // Points tournoi masculin
-        pointsF: 0,    // Points tournoi féminin
-        totalPoints: 0, // Total des points
+        pointsH: 0,    
+        pointsF: 0,    
+        totalPoints: 0,
         position: null,
         finalPhase: null
     }));
     
     // Déterminer les perdants des qualifications (9ème place)
-    for (let i = 1; i <= 3; i++) {
-        const match = tournamentState.matches[i];
-        if (match.status === 'terminé' && match.loser) {
+    // Utiliser Object.values pour éviter les problèmes d'indices
+    Object.values(tournamentState.matches).forEach(match => {
+        if (!match) return;
+        
+        // Barrages (matchType === 'barrage')
+        if (match.matchType === 'barrage' && match.status === 'terminé' && match.loser) {
             const loserTeam = ranking.find(r => r.name === match.loser);
             if (loserTeam) {
                 loserTeam.pointsH = positionPoints[9];
             }
         }
-    }
-    
-    // Déterminer les perdants des quarts de finale (5ème place)
-    for (let i = 4; i <= 7; i++) {
-        const match = tournamentState.matches[i];
-        if (match.status === 'terminé' && match.loser) {
+        
+        // Quarts de finale (matchType === 'quarterfinal')
+        if (match.matchType === 'quarterfinal' && match.status === 'terminé' && match.loser) {
             const loserTeam = ranking.find(r => r.name === match.loser);
             if (loserTeam) {
                 loserTeam.pointsH = positionPoints[5];
             }
         }
-    }
-    
-    // Déterminer les 3ème et 4ème places
-    const smallFinal = tournamentState.matches[10];
-    if (smallFinal.status === 'terminé' && smallFinal.winner && smallFinal.loser) {
-        const winnerTeam = ranking.find(r => r.name === smallFinal.winner);
-        const loserTeam = ranking.find(r => r.name === smallFinal.loser);
         
-        if (winnerTeam) winnerTeam.pointsH = positionPoints[3];
-        if (loserTeam) loserTeam.pointsH = positionPoints[4];
-    }
-    
-    // Déterminer les 1ère et 2ème places
-    const final = tournamentState.matches[11];
-    if (final.status === 'terminé' && final.winner && final.loser) {
-        const winnerTeam = ranking.find(r => r.name === final.winner);
-        const loserTeam = ranking.find(r => r.name === final.loser);
+        // Petite finale (matchType === 'smallfinal')
+        if (match.matchType === 'smallfinal' && match.status === 'terminé') {
+            if (match.winner) {
+                const winnerTeam = ranking.find(r => r.name === match.winner);
+                if (winnerTeam) winnerTeam.pointsH = positionPoints[3];
+            }
+            if (match.loser) {
+                const loserTeam = ranking.find(r => r.name === match.loser);
+                if (loserTeam) loserTeam.pointsH = positionPoints[4];
+            }
+        }
         
-        if (winnerTeam) winnerTeam.pointsH = positionPoints[1];
-        if (loserTeam) loserTeam.pointsH = positionPoints[2];
-    }
+        // Finale (matchType === 'final')
+        if (match.matchType === 'final' && match.status === 'terminé') {
+            if (match.winner) {
+                const winnerTeam = ranking.find(r => r.name === match.winner);
+                if (winnerTeam) winnerTeam.pointsH = positionPoints[1];
+            }
+            if (match.loser) {
+                const loserTeam = ranking.find(r => r.name === match.loser);
+                if (loserTeam) loserTeam.pointsH = positionPoints[2];
+            }
+        }
+    });
     
     // Calculer les points totaux
     ranking.forEach(team => {
@@ -531,9 +589,9 @@ async function updateRankingDisplay() {
 // Fonction pour envoyer les points à l'API
 async function sendPointsToServer(teamPoints) {
     try {
-        console.log('Points à envoyer:', teamPoints);
-
-        const response = await fetch('/api/rankings/volley_h/update', {
+        console.log('Points calculés:', teamPoints);
+        // Temporairement désactivé en attendant le backend
+        /*const response = await fetch('/api/rankings/petanque/update', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -549,10 +607,13 @@ async function sendPointsToServer(teamPoints) {
 
         const result = await response.json();
         console.log('Réponse du serveur:', result);
-        return result;
+        return result;*/
+        
+        return { success: true, message: 'Envoi au serveur temporairement désactivé' };
     } catch (error) {
         console.error('Erreur lors de l\'envoi des points:', error);
-        throw error;
+        // Ne pas propager l'erreur pour éviter de bloquer l'interface
+        return { success: false, error: error.message };
     }
 }
 
@@ -563,7 +624,7 @@ function resetTournament() {
     }
     
     // Effacer les données sauvegardées
-    localStorage.removeItem('volleyHTournamentState');
+    localStorage.removeItem('petanqueTournamentState');
     localStorage.removeItem('lastUpdate');
     
     // Recharger la page
@@ -627,7 +688,7 @@ function canPlayMatch(matchId, matchData) {
         }
     }
 
-    // Demi-finales - vérifier que les quarts sont terminés
+    // Demi-finales - vérifier que les quarts sont terminées
     if (matchData.matchType === 'semifinal') {
         const quarterFinals = [4, 5, 6, 7];
         if (!areMatchesCompleted(quarterFinals)) {
@@ -765,7 +826,7 @@ function resetGame() {
         }
 
         saveTournamentState();
-        window.location.href = 'volleyball.html#final-phase';
+        window.location.href = 'petanque.html';
     } catch (error) {
         console.error('Erreur:', error);
         alert('Erreur lors de la sauvegarde du match');

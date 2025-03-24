@@ -42,9 +42,32 @@
     .match.terminé:hover {
       border: 2px solid #f44336;
     }
+    
+    /* Style pour l'indicateur en direct */
+    .live-indicator {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background-color: #f44336;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      animation: pulse 1.5s infinite;
+      z-index: 1000;
+      display: none;
+      font-weight: bold;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.7; }
+      50% { opacity: 1; }
+      100% { opacity: 0.7; }
+    }
   </style>
 </head>
 <body>
+  <!-- Ajouter un indicateur pour les mises à jour en direct -->
+  <div class="live-indicator" id="liveIndicator">Match en direct</div>
   <button id="correctionMode" class="correction-button" onclick="toggleCorrectionMode()">✏️</button>
   <div class="background-lines"></div>
   <div class="container">
@@ -337,7 +360,7 @@
           <div class="ranking-table">
             <div class="ranking-row header">
               <div class="rank">Position</div>
-              <div class="team-name">Équipe</div>
+              <div class="teamname">Équipe</div>
               <div class="points">Points</div>
             </div>
             <div id="rankingList">
@@ -355,6 +378,8 @@
     </div>
   </div>
   
+  <!-- Ajouter avant les autres scripts -->
+  <script src="/socket.io/socket.io.js"></script>
   <script src="tournament.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -378,6 +403,51 @@
       
       // Affichage initial (la phase sélectionnée dans le menu est affichée)
       phaseSelect.dispatchEvent(new Event('change'));
+      
+      // Vérifiez s'il y a un match en cours
+      checkForLiveMatches();
+      
+      // Vérifier toutes les 10 secondes s'il y a un match en direct
+      setInterval(checkForLiveMatches, 10000);
+    });
+    
+    // Fonction pour vérifier s'il y a des matchs en cours
+    function checkForLiveMatches() {
+      const liveData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
+      const liveIndicator = document.getElementById('liveIndicator');
+      
+      if (liveData && liveData.matchId) {
+        const lastUpdateTime = new Date(liveData.lastUpdate || 0);
+        const currentTime = new Date();
+        const timeDiff = currentTime - lastUpdateTime;
+        
+        // Si la dernière mise à jour est récente (moins de 2 minutes)
+        if (timeDiff < 120000) {
+          liveIndicator.style.display = 'block';
+          liveIndicator.innerHTML = `
+            Match en direct: ${liveData.team1 || 'Équipe A'} ${liveData.score1 || '0'} - ${liveData.score2 || '0'} ${liveData.team2 || 'Équipe B'}
+            <span style="font-size: 0.8em; margin-left: 10px;">${liveData.chrono || '00:00'}</span>
+          `;
+          
+          // Surbriller le match en cours dans le tableau
+          const matchElement = document.querySelector(`.match[data-match-id='${liveData.matchId}']`);
+          if (matchElement) {
+            matchElement.classList.add('en-cours');
+            matchElement.style.boxShadow = '0 0 15px rgba(255, 152, 0, 0.7)';
+          }
+        } else {
+          liveIndicator.style.display = 'none';
+        }
+      } else {
+        liveIndicator.style.display = 'none';
+      }
+    }
+    
+    // Écouter les événements de stockage pour les mises à jour en direct
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'liveMatchData') {
+        checkForLiveMatches();
+      }
     });
   </script>
 </body>

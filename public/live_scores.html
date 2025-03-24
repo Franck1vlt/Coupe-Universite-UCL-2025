@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Live Scores - UCL 2025</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+
+        .matches-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .match-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .sport-type {
+            font-size: 0.8em;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .teams {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .team {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+
+        .team-logo {
+            width: 30px;
+            height: 30px;
+            object-fit: contain;
+        }
+
+        .score {
+            font-size: 1.5em;
+            font-weight: bold;
+            padding: 5px 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .match-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .status {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .ball-icon {
+            width: 20px;
+            height: 20px;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="matches-container" id="matches"></div>
+
+    <script>
+        function createMatchCard(matchData, sport) {
+            const card = document.createElement('div');
+            card.className = 'match-card';
+            
+            // Configuration des sports
+            const sportConfig = {
+                'volley-h': { name: 'Volleyball Hommes', icon: 'volley-ball.png' },
+                'volley-f': { name: 'Volleyball Femmes', icon: 'volley-ball.png' },
+                'petanque': { name: 'Pétanque', icon: 'cochonnet.png' },
+                'football': { name: 'Football', icon: 'football.png' },
+                'handball': { name: 'Handball', icon: 'handball.png' },
+                'basket': { name: 'Basketball', icon: 'basketball.png' }
+            };
+            
+            const config = sportConfig[sport] || { name: sport, icon: '' };
+            
+            card.innerHTML = `
+                <div class="sport-type">${config.name}</div>
+                <div class="teams">
+                    <div class="team">
+                        <img src="../img/${matchData.team1}.png" class="team-logo" onerror="this.src='../img/default.png'">
+                        ${matchData.team1}
+                        ${matchData.server === 'A' || matchData.cochonnet === 'A' ? 
+                          `<img src="${config.icon}" class="ball-icon">` : ''}
+                    </div>
+                    <div class="score">
+                        ${matchData.score1} - ${matchData.score2}
+                    </div>
+                    <div class="team">
+                        ${matchData.server === 'B' || matchData.cochonnet === 'B' ? 
+                          `<img src="${config.icon}" class="ball-icon">` : ''}
+                        ${matchData.team2}
+                        <img src="../img/${matchData.team2}.png" class="team-logo" onerror="this.src='../img/default.png'">
+                    </div>
+                </div>
+                <div class="match-info">
+                    <span>${matchData.matchType}</span>
+                    <span class="status">${matchData.chrono}</span>
+                </div>
+            `;
+            return card;
+        }
+
+        function updateLiveScores() {
+            const matchesContainer = document.getElementById('matches');
+            const currentMatches = new Set();
+
+            // Parcourir le localStorage pour trouver les matchs actifs
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                
+                try {
+                    // Vérifier si c'est une clé de match
+                    if (key.includes('matchData')) {
+                        const matchData = JSON.parse(localStorage.getItem(key));
+                        
+                        if (matchData && matchData.status === 'en cours') {
+                            // Créer un ID unique pour ce match
+                            const uniqueId = `match-${key}`;
+                            currentMatches.add(uniqueId);
+
+                            // Déterminer le sport
+                            let sport = 'default';
+                            if (key === 'liveMatchData') sport = 'volley-h';
+                            else if (key.includes('volley-f')) sport = 'volley-f';
+                            else if (key.includes('petanque')) sport = 'petanque';
+                            // ... autres sports ...
+
+                            // Vérifier si la tuile existe déjà
+                            let card = document.getElementById(uniqueId);
+                            
+                            if (!card) {
+                                // Créer une nouvelle tuile si elle n'existe pas
+                                card = createMatchCard(matchData, sport);
+                                card.id = uniqueId;
+                                matchesContainer.appendChild(card);
+                            } else {
+                                // Mettre à jour la tuile existante
+                                const newCard = createMatchCard(matchData, sport);
+                                card.innerHTML = newCard.innerHTML;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error(`Erreur parsing ${key}:`, e);
+                }
+            }
+
+            // Supprimer les tuiles des matchs qui ne sont plus actifs
+            const existingCards = matchesContainer.getElementsByClassName('match-card');
+            Array.from(existingCards).forEach(card => {
+                if (!currentMatches.has(card.id)) {
+                    card.remove();
+                }
+            });
+
+            // Afficher le message "Aucun match" si nécessaire
+            if (matchesContainer.children.length === 0) {
+                matchesContainer.innerHTML = `
+                    <div style="text-align: center; color: #666; padding: 20px;">
+                        Aucun match en cours actuellement
+                    </div>
+                `;
+            }
+        }
+
+        // Mise à jour initiale
+        updateLiveScores();
+
+        // Mise à jour automatique toutes les 100ms
+        setInterval(updateLiveScores, 100);
+    </script>
+</body>
+</html>

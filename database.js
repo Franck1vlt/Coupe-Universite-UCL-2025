@@ -30,24 +30,22 @@ db.serialize(() => {
     )`);
 
     // Table Match_
-    db.run(`CREATE TABLE IF NOT EXISTS Match_ (
-        id_match INTEGER PRIMARY KEY,
-        id_tournois INTEGER,
-        id_equipe1 INTEGER,
-        id_equipe2 INTEGER,
-        status TEXT,
-        score_equipe1 INTEGER,
-        score_equipe2 INTEGER,
-        winner TEXT,
-        loser TEXT,
-        match_type TEXT,
-        id_terrain INTEGER,
-        is_classement BOOLEAN DEFAULT 0,
-        chrono TEXT DEFAULT '00:00',
-        draw BOOLEAN DEFAULT 0,
-        FOREIGN KEY(id_terrain) REFERENCES Terrain(id_terrain),
-        FOREIGN KEY(id_tournois) REFERENCES Tournois(id_tournois)
-    )`);
+    db.run(`
+        CREATE TABLE IF NOT EXISTS Match_ (
+            id_match INTEGER NOT NULL,
+            id_tournois INTEGER NOT NULL,
+            id_equipe1 INTEGER,
+            id_equipe2 INTEGER,
+            score_equipe1 INTEGER,
+            score_equipe2 INTEGER,
+            status TEXT,
+            winner TEXT,
+            loser TEXT,
+            match_type TEXT,
+            id_terrain INTEGER,
+            PRIMARY KEY (id_match, id_tournois)
+        )
+    `);
 
     // Table Classement_Tournois
     db.run(`CREATE TABLE IF NOT EXISTS Classement_Tournois (
