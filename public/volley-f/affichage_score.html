@@ -3,45 +3,413 @@
 <head>
     <meta charset="UTF-8">
     <title>Affichage Score Volleyball</title>
-    <link rel="stylesheet" href="volleyball.css">
-    <script src="volleyball.js" defer></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #ffffff;
+            color: #000000;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .score-board {
+            text-align: center;
+            width: 100%;
+            padding: 1.25rem;
+        }
+
+        .teams {
+            display: flex;
+            justify-content: space-around;
+            font-size: 5rem;
+            margin: 1.25rem 0;
+            font-weight: bold;
+        }
+
+        .score-container {
+            font-size: 12rem;
+            font-weight: bold;
+            margin: 2.5rem 0;
+        }
+
+        img#ballIconA {}
+
+        .ball-icon {
+            width: 3rem;
+            height: 3rem;
+            vertical-align: middle;
+        }
+
+        .ball-icon-table {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 1.25rem;
+            margin-left: 1.25rem;
+        }
+
+        .score-divider {
+            margin: 0 2.5rem;
+            color: #000000;
+        }
+
+        .match-info {
+            font-size: 3rem;
+            margin: 1.875rem 0;
+        }
+
+        .remaining-time {
+            background-color: #000000;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.625rem;
+            margin-right: 1.25rem;
+            color: red
+        }
+
+        .match-type {
+            color: #000000;
+        }
+
+        .team-logo {
+            width: 5rem;
+            height: 5rem;
+            margin: 0 1.25rem;
+            object-fit: contain;
+        }
+
+        /* Animation pour les changements de score */
+        .score-change {
+            animation: scoreUpdate 0.5s ease-in-out;
+        }
+
+        @keyframes scoreUpdate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        #connectionStatus {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        #reconnectButton {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .connection-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 5px;
+            z-index: 1001;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .connection-toast.visible {
+            opacity: 1;
+        }
+        
+        .offline-indicator {
+            position: fixed;
+            bottom: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 5px;
+            z-index: 1001;
+            font-size: 18px;
+            display: none;
+        }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <div class="score-board">
         <div class="teams">
-            <div class="team" id="teamAName">TEAM A</div>
-            <div class="team" id="teamBName">TEAM B</div>
+            <div class="team">
+                <img src="" alt="" class="team-logo" id="logoB">
+                <div id="teamBName">TEAM B</div>
+            </div>
+            <div class="team">
+                <img src="" alt="" class="team-logo" id="logoA">
+                <div id="teamAName">TEAM A</div>
+            </div>
         </div>
         
         <div class="score-container">
-            <img src="volley-ball.png" alt="Volleyball Icon" class="ball-icon" id="ballIconA">
-            <div class="score">
-                <span id="teamAScore">0</span>
-                <span class="score-divider">-</span>
-                <span id="teamBScore">0</span>
-            </div>
-            <img src="volley-ball.png" alt="Volleyball Icon" class="ball-icon" id="ballIconB">
+            <img src="volley-ball.png" alt="Volleyball Icon" class="ball-icon" id="ballIconB" style="visibility: hidden;">
+            <span id="teamBScore">0</span>
+            <span class="score-divider">-</span>
+            <span id="teamAScore">0</span>
+            <img src="volley-ball.png" alt="Volleyball Icon" class="ball-icon" id="ballIconA" style="visibility: hidden;">
         </div>
         
         <div class="match-info">
             <span class="remaining-time" id="gameChrono">00:00</span>
-            <span class="match-type" id="matchType">Barrages</span>
-        </div>
-
-        <div class="cards">
-            <div class="team-cards a">
-                <img src="../img/carton-jaune.png" alt="Yellow Card" class="card-icon">
-                <span id="teamAYellowCard">0</span>
-                <img src="../img/carton-rouge.png" alt="Red Card" class="card-icon">
-                <span id="teamARedCard">0</span>
-            </div>
-            <div class="team-cards b">
-                <img src="../img/carton-jaune.png" alt="Yellow Card" class="card-icon">
-                <span id="teamBYellowCard">0</span>
-                <img src="../img/carton-rouge.png" alt="Red Card" class="card-icon">
-                <span id="teamBRedCard">0</span>
-            </div>
+            <span class="match-type" id="matchType"></span>
         </div>
     </div>
+    
+    <!-- Indicateurs de connexion -->
+    <div id="connectionStatus"></div>
+    <div id="connectionToast" class="connection-toast"></div>
+    <div id="offlineIndicator" class="offline-indicator">
+        MODE HORS LIGNE - Les données affichées peuvent ne pas être à jour
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Variable WebSocket
+            let socket;
+            let socketConnected = false;
+            let reconnectInterval;
+
+            // Initialisation WebSocket avec polling en priorité
+            function initWebSocket() {
+                try {
+                    // Arrêter tout intervalle de reconnexion existant
+                    if (reconnectInterval) clearInterval(reconnectInterval);
+                    
+                    socket = io({
+                        reconnectionAttempts: Infinity,
+                        reconnectionDelay: 1000,
+                        timeout: 5000,
+                        transports: ['polling', 'websocket']  // Utiliser polling en priorité
+                    });
+                    
+                    socket.on('connect', () => {
+                        console.log('Connecté au serveur WebSocket avec ID:', socket.id);
+                        socketConnected = true;
+                        showConnectionStatus(true);
+                        showConnectionToast('Connecté au serveur');
+                        
+                        // Rejoindre le canal du volley féminin
+                        socket.emit('join_sport', 'volley-f');
+                        
+                        // Demander les données actuelles
+                        requestCurrentData();
+                    });
+                    
+                    socket.on('disconnect', (reason) => {
+                        console.log('Déconnecté du serveur WebSocket. Raison:', reason);
+                        socketConnected = false;
+                        showConnectionStatus(false, reason);
+                        
+                        if (reason === 'io server disconnect') {
+                            // Le serveur a forcé la déconnexion
+                            showConnectionToast('Déconnecté par le serveur');
+                            // Reconnexion manuelle après 5s
+                            setTimeout(() => {
+                                socket.connect();
+                            }, 5000);
+                        } else if (reason === 'transport close') {
+                            // Connexion interrompue, tenter de reconnecter après 2s
+                            showConnectionToast('Connexion interrompue, reconnexion...');
+                            setTimeout(() => {
+                                socket.connect();
+                            }, 2000);
+                        } else {
+                            // Autres raisons, utiliser la reconnexion automatique
+                            showConnectionStatus('reconnecting');
+                        }
+                    });
+                    
+                    socket.on('connect_error', (error) => {
+                        console.error('Erreur de connexion WebSocket:', error);
+                        socketConnected = false;
+                        showConnectionStatus(false);
+                    });
+                    
+                    // Écouter les mises à jour de score
+                    socket.on('volley_score_update', (data) => {
+                        console.log('Réception mise à jour volley:', data);
+                        localStorage.setItem('liveMatchData', JSON.stringify(data));
+                        updateDisplay();
+                    });
+                    
+                    // Écouter les heartbeats du serveur
+                    socket.on('heartbeat', () => {
+                        console.log('Heartbeat reçu');
+                    });
+                    
+                    socket.on('reconnect_attempt', (attemptNumber) => {
+                        showConnectionStatus('reconnecting');
+                        showConnectionToast(`Tentative de reconnexion #${attemptNumber}`);
+                    });
+                    
+                    socket.on('reconnect', (attemptNumber) => {
+                        showConnectionStatus(true);
+                        showConnectionToast(`Reconnecté après ${attemptNumber} tentative(s)`);
+                    });
+                    
+                    socket.on('reconnect_error', (error) => {
+                        showConnectionToast(`Erreur de reconnexion: ${error.message}`);
+                    });
+                    
+                    socket.on('reconnect_failed', () => {
+                        showConnectionStatus(false, 'Reconnexion impossible');
+                        showConnectionToast('Impossible de se reconnecter au serveur');
+                    });
+                    
+                    // Ajouter un bouton de reconnexion pour l'utilisateur
+                    addReconnectButton();
+                } catch (error) {
+                    console.error('Erreur WebSocket:', error);
+                    showConnectionStatus(false, error.message);
+                }
+            }
+            
+            // Nouvelle fonction pour demander les données actuelles
+            function requestCurrentData() {
+                if (socketConnected) {
+                    socket.emit('request_current_data', { sport: 'volley-f' });
+                }
+            }
+            
+            // Améliorer l'affichage du statut de connexion
+            function showConnectionStatus(isConnected, message = '') {
+                let status = document.getElementById('connectionStatus');
+                if (!status) {
+                    status = document.createElement('div');
+                    status.id = 'connectionStatus';
+                    document.body.appendChild(status);
+                }
+                
+                if (isConnected === true) {
+                    status.textContent = '🟢 Connecté';
+                    status.style.backgroundColor = '#d4edda';
+                    status.style.color = '#155724';
+                    document.getElementById('offlineIndicator').style.display = 'none';
+                } else if (isConnected === 'reconnecting') {
+                    status.textContent = '🟠 Reconnexion...';
+                    status.style.backgroundColor = '#fff3cd';
+                    status.style.color = '#856404';
+                } else {
+                    status.textContent = '🔴 Hors ligne' + (message ? `: ${message}` : '');
+                    status.style.backgroundColor = '#f8d7da';
+                    status.style.color = '#721c24';
+                    document.getElementById('offlineIndicator').style.display = 'block';
+                }
+            }
+            
+            // Afficher un toast de notification
+            function showConnectionToast(message) {
+                const toast = document.getElementById('connectionToast');
+                if (toast) {
+                    toast.textContent = message;
+                    toast.classList.add('visible');
+                    setTimeout(() => toast.classList.remove('visible'), 3000);
+                }
+            }
+            
+            // Ajouter un bouton de reconnexion
+            function addReconnectButton() {
+                let btn = document.getElementById('reconnectButton');
+                if (!btn) {
+                    btn = document.createElement('button');
+                    btn.id = 'reconnectButton';
+                    btn.innerHTML = '🔄';
+                    btn.onclick = () => {
+                        showConnectionToast('Tentative de reconnexion...');
+                        if (socket) {
+                            socket.disconnect();
+                            setTimeout(() => {
+                                socket.connect();
+                                setTimeout(() => {
+                                    if (socket.connected) {
+                                        showConnectionToast('Reconnexion réussie!');
+                                    } else {
+                                        showConnectionToast('Échec de la reconnexion');
+                                    }
+                                }, 3000);
+                            }, 1000);
+                        }
+                    };
+                    document.body.appendChild(btn);
+                }
+            }
+            
+            // Initialiser WebSocket
+            initWebSocket();
+
+            function updateDisplay() {
+                const matchData = JSON.parse(localStorage.getItem('liveMatchData_volleyF') || '{}');
+                
+                // Mise à jour des équipes et du type de match
+                document.getElementById('teamAName').textContent = matchData.team1 || 'TEAM A';
+                document.getElementById('teamBName').textContent = matchData.team2 || 'TEAM B';
+                document.getElementById('matchType').textContent = matchData.matchType || 'Match en cours';
+                
+                // Correction des chemins des logos
+                const logoA = document.getElementById('logoA');
+                const logoB = document.getElementById('logoB');
+                
+                if (matchData.team1) {
+                    logoA.src = `../img/${matchData.team1}.png`;
+                    logoA.onerror = () => logoA.src = '../img/default.png';
+                }
+                
+                if (matchData.team2) {
+                    logoB.src = `../img/${matchData.team2}.png`;
+                    logoB.onerror = () => logoB.src = '../img/default.png';
+                }
+                
+                // Mise à jour des scores
+                document.getElementById('teamAScore').textContent = matchData.score1 || '0';
+                document.getElementById('teamBScore').textContent = matchData.score2 || '0';
+                
+                // Mise à jour du chronomètre
+                document.getElementById('gameChrono').textContent = matchData.chrono || '00:00';
+
+                // Mise à jour du serveur
+                const ballIconA = document.getElementById('ballIconA');
+                const ballIconB = document.getElementById('ballIconB');
+                if (matchData.server === 'A') {
+                    ballIconA.style.visibility = 'visible';
+                    ballIconB.style.visibility = 'hidden';
+                } else if (matchData.server === 'B') {
+                    ballIconA.style.visibility = 'hidden';
+                    ballIconB.style.visibility = 'visible';
+                }
+            }
+
+            // Mise à jour initiale
+            updateDisplay();
+
+            // Mise à jour toutes les 100ms
+            setInterval(updateDisplay, 100);
+        });
+    </script>
 </body>
 </html>

@@ -754,7 +754,7 @@ box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 overflow: hidden;
 }
 
-.ranking-row {display: grid;grid-template-columns: 0.5fr 2fr repeat(8, 1fr);padding: 15px;border-bottom: 1px solid #eee;align-items: center;}
+.ranking-row {display: flex;padding: 15px;border-bottom: 1px solid #eee;align-items: center;justify-content: space-around;}
 
 .ranking-row.header {background: #000000;font-weight: bold;color: #ffffff;}
 
@@ -915,4 +915,49 @@ background-color: #cd7f32;
     padding: 2px 8px;
     border-radius: 3px;
     background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Styles pour les statuts de match - tous les formats possibles */
+
+.match.en-cours, .match.en_cours {
+    animation: pulse 2s infinite;
+    border: 2px solid #ff9800;
+}
+
+.match.terminé, .match.termine, .match.terminé, .match.termine {
+    border: 2px solid #4caf50;
+}
+
+/* Styles spécifiques pour les matchs de classement */
+#classification-phase .match-info-container {
+    position: absolute;
+    top: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    z-index: 10;
+    background: transparent;
+}
+
+#classification-phase .match-status {
+    background-color: #f0f0f0;
+    color: #666;
+    font-size: 0.8em;
+    padding: 2px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+#classification-phase .match[data-status="en_cours"] .match-status {
+    background-color: #fff3cd;
+    color: #856404;
+    animation: pulse 2s infinite;
+}
+
+#classification-phase .match[data-status="terminé"] .match-status {
+    background-color: #d4edda;
+    color: #155724;
 }

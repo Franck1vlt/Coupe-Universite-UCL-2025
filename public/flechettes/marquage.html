@@ -5,7 +5,157 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Table de Marquage - Fléchettes</title>
   <link rel="stylesheet" href="flechettes.css">
-  <script src="flechettes.js" defer></script>
+  <!-- Charger Socket.IO en premier -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- Charger flechettes.js ensuite -->
+  <script src="flechettes.js"></script>
+  <script>
+    // Supprimer les variables globales en double
+    let matchData = {};
+    // Supprimer cette ligne pour éviter la double déclaration
+    // let socket;
+    // Supprimer cette ligne également pour éviter la double déclaration
+    // let socketConnected = false;
+
+    // Fonction pour initialiser WebSocket avec polling prioritaire
+    function initWebSocket() {
+        try {
+            console.log('Tentative de connexion WebSocket pour fléchettes...');
+            
+            // Utiliser window.socket au lieu de déclarer une nouvelle variable
+            window.socket = io({
+                reconnection: true,
+                reconnectionAttempts: Infinity,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000,
+                timeout: 20000,
+                transports: ['polling', 'websocket'] // Polling d'abord pour plus de stabilité
+            });
+            
+            window.socket.on('connect', () => {
+                console.log('Connecté au serveur WebSocket avec ID:', window.socket.id);
+                window.socketConnected = true; // Utiliser la variable globale
+                
+                // IMPORTANT: rejoindre explicitement le groupe 'flechettes'
+                window.socket.emit('join_sport', 'flechettes');
+                console.log("Rejoint groupe fléchettes");
+            });
+            
+            // Utiliser window.socket pour tous les événements
+            window.socket.on('disconnect', (reason) => {
+                console.log('Déconnecté du serveur. Raison:', reason);
+                window.socketConnected = false; // Utiliser la variable globale
+            });
+            
+            window.socket.on('connect_error', (error) => {
+                console.error('Erreur de connexion WebSocket:', error);
+                window.socketConnected = false; // Utiliser la variable globale
+            });
+            
+            // Écouter les mises à jour de score
+            window.socket.on('live_score_update', (data) => {
+                console.log('Réception mise à jour depuis le serveur:', data);
+                const currentMatchId = new URLSearchParams(window.location.search).get('matchId');
+                
+                if (data.matchId === currentMatchId && !window.isUpdating) { // Utiliser window.isUpdating
+                    // Mettre à jour les données locales
+                    updateFromRemoteData(data);
+                }
+            });
+        } catch (error) {
+            console.error('Erreur lors de l\'initialisation WebSocket:', error);
+        }
+    }
+    
+    // Fonction pour envoyer les mises à jour
+    function sendLiveUpdate() {
+        const matchId = new URLSearchParams(window.location.search).get('matchId');
+        if (!matchId) return;
+        
+        try {
+            // Utiliser la variable isUpdating depuis flechettes.js au lieu de la redéclarer
+            window.isUpdating = true;
+            
+            // Récupérer toutes les données importantes
+            const liveData = {
+                matchId,
+                team1: document.getElementById('teamAName').textContent,
+                team2: document.getElementById('teamBName').textContent,
+                score1: document.getElementById('teamAScore').textContent,
+                score2: document.getElementById('teamBScore').textContent,
+                currentPlayer: document.getElementById('currentPlayer').textContent,
+                throwsLeft: window.throwsLeft ? window.throwsLeft[window.currentPlayer] : 3,
+                matchType: document.getElementById('matchType').textContent
+            };
+            
+            // Sauvegarde locale
+            localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+            
+            // Envoyer au serveur
+            if (window.socket && window.socketConnected) { // Référencer window.socketConnected au lieu de socketConnected
+                console.log('Envoi des données au serveur:', liveData);
+                window.socket.emit('live_score_update', liveData);
+            }
+        } catch (error) {
+            console.error('Erreur lors de l\'envoi des données:', error);
+        } finally {
+            window.isUpdating = false;
+        }
+    }
+    
+    // Fonction pour mettre à jour depuis les données reçues
+    function updateFromRemoteData(data) {
+        try {
+            if (data.score1) document.getElementById('teamAScore').textContent = data.score1;
+            if (data.score2) document.getElementById('teamBScore').textContent = data.score2;
+            if (data.currentPlayer) document.getElementById('currentPlayer').textContent = data.currentPlayer;
+            if (data.throwsLeft !== undefined) throwsRemaining = data.throwsLeft;
+            
+            // Mettre à jour l'interface des lancers restants
+            updateThrowsUI();
+        } catch (error) {
+            console.error('Erreur lors de la mise à jour depuis les données distantes:', error);
+        }
+    }
+    
+    // Afficher visuellement le nombre de lancers restants
+    function updateThrowsUI() {
+        // Cette fonction sera implémentée pour mettre à jour visuellement les lancers restants
+        console.log(`Lancers restants: ${throwsRemaining}`);
+    }
+    
+    // Initialisation au chargement de la page
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialiser la connexion WebSocket
+        initWebSocket();
+        
+        // Paramétrer le match depuis l'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const team1 = urlParams.get('team1');
+        const team2 = urlParams.get('team2');
+        
+        if (team1) document.getElementById('teamAName').textContent = team1;
+        if (team2) document.getElementById('teamBName').textContent = team2;
+        
+        // Synchronisation périodique automatique
+        setInterval(sendLiveUpdate, 2000);
+        
+        // Attendre que flechettes.js soit complètement chargé
+        setTimeout(() => {
+            if (typeof window.selectPlayer === 'function') {
+                window.selectPlayer("1A");
+            } else {
+                console.error("La fonction selectPlayer n'est pas disponible");
+            }
+            
+            if (typeof window.updateScoreDisplay === 'function') {
+                window.updateScoreDisplay();
+            } else {
+                console.error("La fonction updateScoreDisplay n'est pas disponible");
+            }
+        }, 100);
+    });
+  </script>
 </head>
 <body>
   <header>
@@ -28,7 +178,7 @@
           <option value="IKPO">IKPO</option>
           <option value="ISTC">ISTC</option>
           <option value="JUNIA">JUNIA</option>
-          <option value="LIDD">LiDD</option>
+          <option value="LiDD">LiDD</option>
           <option value="USCHOOL">USCHOOL</option>
         </select>
         <label for="teamB">Équipe B :</label>
@@ -45,7 +195,7 @@
           <option value="IKPO">IKPO</option>
           <option value="ISTC">ISTC</option>
           <option value="JUNIA">JUNIA</option>
-          <option value="LIDD">LiDD</option>
+          <option value="LiDD">LiDD</option>
           <option value="USCHOOL">USCHOOL</option>
         </select>
         <label for="matchType">Type de match :</label>
@@ -56,6 +206,7 @@
           <option value="Demi-finale">Demi-finale</option>
           <option value="Petite Finale">Petite Finale</option>
           <option value="Finale">Finale</option>
+          <option value="poule">Poule</option>
         </select>
         <label for="matchGround">Terrain :</label>
         <select id="matchGroundSelector">
@@ -68,7 +219,7 @@
       </div>
       <div class="bouton_pied_page">
         <div class="button-row1">
-          <button onclick="location.href='handball.html'">Retour</button>
+          <button onclick="location.href='flechettes.html'">Retour</button>
         </div>
         <div class="button-row2">
           <button onclick="openScoreDisplay()">Spectateurs</button>
@@ -79,60 +230,45 @@
       <div class="scoreboard">
         <div class="score-display">
           <div class="score-line">
-            <span id="teamAName">Team A</span> <span id="teamAScore">0</span> - <span id="teamBScore">0</span> <span id="teamBName">Team B</span>
+            <span id="teamAName" class="team-name">Team A</span>
+            <span id="teamAScore" class="team-score">301</span>
+            <span class="score-divider">-</span>
+            <span id="teamBScore" class="team-score">301</span>
+            <span id="teamBName" class="team-name">Team B</span>
           </div>
           <div class="details-line">
-            <span id="matchType">Type de Match</span>
+            <span id="matchType" class="match-type">Type de Match</span>
           </div>
-          <div class="points-section">
-            <div class="points-control">
-              <span class="points-label">Buts :</span>
-              <button onclick="subPoint('A')" class="control-button" accesskey="e">-</button>
-              <button onclick="addPoint('A')" class="control-button" accesskey="a">+</button>
+          
+          <div class="points-line">
+            <div id="pointsButtons" class="points-buttons">
+                <!-- Les boutons seront générés via JavaScript -->
             </div>
-    
-            <div class="timer" id="gameChrono">00:00</div>
+          </div>
 
-            <div class="points-control">
-              <span class="points-label">Buts :</span>
-              <button onclick="subPoint('B')" class="control-button" accesskey="r">-</button>
-              <button onclick="addPoint('B')" class="control-button" accesskey="z">+</button>
+          <div class="multiple-points">
+            <button class="control-button" onclick="mulScore(1)">x1</button>
+            <button class="control-button" onclick="mulScore(2)">x2</button>
+            <button class="control-button" onclick="mulScore(3)">x3</button>
+            <button class="control-button" onclick="supScore(0)">Manqué</button>
+          </div>
+
+          <div id="currentPlayer" class="current-player">Joueur actuel: </div>
+          <div class="players">
+            <div class="team-a-players">
+              <button class="player-button" data-player="1A">1A</button>
+              <button class="player-button" data-player="2A">2A</button>
+            </div>
+            <div class="team-b-players">
+              <button class="player-button" data-player="1B">1B</button>
+              <button class="player-button" data-player="2B">2B</button>
             </div>
           </div>
-    
-          <div class="cards-section">
-            <div class="yellow-card">
-              <div class="card-row">
-                <span>Cartons Jaunes : <span id="teamAYellowCard">0</span></span>
-                <button onclick="subYellowCard('A')" class="control-button" accesskey="u">-</button>
-                <button onclick="addYellowCard('A')" class="control-button" accesskey="t">+</button>
-              </div>
-              <div class="card-row">
-                <span>Cartons Jaunes : <span id="teamBYellowCard">0</span></span>
-                <button onclick="subYellowCard('B')" class="control-button" accesskey="i">-</button>
-                <button onclick="addYellowCard('B')" class="control-button" accesskey="y">+</button>
-              </div>
-            </div>
-            <div class="red-card">
-              <div class="card-row">
-                <span>Cartons Rouges : <span id="teamARedCard">0</span></span>
-                <button onclick="subRedCard('A')" class="control-button" accesskey="o">-</button>
-                <button onclick="addRedCard('A')" class="control-button" accesskey="p">+</button>
-              </div>
-              <div class="card-row">
-                <span>Cartons Rouges : <span id="teamBRedCard">0</span></span>
-                <button onclick="subRedCard('B')" class="control-button" accesskey="o">-</button>
-                <button onclick="addRedCard('B')" class="control-button" accesskey="p">+</button>
-              </div>
-            </div>
-          </div>
-    
+
           <div class="bottom-controls">
-            <button onclick="startChrono()" accesskey="s">Start</button>
-            <button onclick="stopChrono()" accesskey="d">Stop</button>
-            <button onclick="resetGame()">End</button>
+            <button onclick="resetGame()" class="action-button" id="resetGameButton">Terminer</button>
           </div>
-            
+
         </div>
       </div>
     </div>
@@ -154,7 +290,9 @@
                 'quarterfinal': 'Quart de finale',
                 'semifinal': 'Demi-finale',
                 'smallfinal': 'Petite Finale',
-                'final': 'Finale'
+                'final': 'Finale',
+                'poule_a': 'Match de Poule',
+                'poule_b': 'Match de Poule'
             };
             return matchTypes[type] || type;
         }
@@ -173,7 +311,9 @@
 
         // Mettre à jour le type de match
         if (matchType) {
-            const displayMatchType = getMatchTypeDisplay(matchType);
+            const displayMatchType = (matchType === 'poule_a' || matchType === 'poule_b') 
+                ? 'Match de Poule' 
+                : matchType;
             const matchTypeSelector = document.getElementById('matchTypeSelector');
             matchTypeSelector.value = displayMatchType;
             document.getElementById('matchType').textContent = displayMatchType;
@@ -189,49 +329,71 @@
             document.getElementById('teamAScore').textContent = score1;
             document.getElementById('teamBScore').textContent = score2;
         }
+
+        // Initialiser le joueur actuel avec la fonction importée
+        if (window.selectPlayer) {
+            window.selectPlayer('1A');
+        }
+        
+        // Supprimer cette ligne qui cause l'erreur
+        // selectPlayer('1A');
+        
+        updateScoreDisplay();
     });
 
     function updateMatchType() {
         const matchTypeSelector = document.getElementById('matchTypeSelector');
-        const matchType = matchTypeSelector.options[matchTypeSelector.selectedIndex].text;
-        document.getElementById('matchType').textContent = matchType;
+        const matchType = matchTypeSelector.options[matchTypeSelector.selectedIndex].value;
+
+        // Correction : Afficher "Match de Poule" pour poule_a et poule_b
+        const displayMatchType = (matchType === 'poule_a' || matchType === 'poule_b' || matchType === 'poule') 
+            ? 'Match de Poule' 
+            : matchType;
+        document.getElementById('matchType').textContent = displayMatchType;
+        
+        // Mettre à jour les données en direct immédiatement
+        updateLiveData();
     }
 
     function openScoreDisplay() {
-        // Stocker les données actuelles dans le localStorage
-        localStorage.setItem('liveMatchData', JSON.stringify({
-            team1: document.getElementById('teamA').value,
-            team2: document.getElementById('teamB').value,
-            matchType: document.getElementById('matchType').textContent,
-            matchId: new URLSearchParams(window.location.search).get('matchId'),
-            score1: 0,
-            score2: 0,
-            yellowCards1: 0,
-            yellowCards2: 0,
-            redCards1: 0,
-            redCards2: 0,
-            chrono: '00:00'
-        }));
+        try {
+            // Récupérer le joueur actuel
+            const currentPlayerEl = document.getElementById('currentPlayer');
+            const currentPlayerText = currentPlayerEl ? currentPlayerEl.textContent : '';
+            
+            // Récupérer le nombre de lancers restants depuis fléchettes.js
+            const remainingThrows = window.throwsLeft ? window.throwsLeft[window.currentPlayer] || 3 : 3;
+            
+            const liveData = {
+                team1: document.getElementById('teamA').value,
+                team2: document.getElementById('teamB').value,
+                matchType: document.getElementById('matchType').textContent,
+                score1: document.getElementById('teamAScore').textContent,
+                score2: document.getElementById('teamBScore').textContent,
+                currentPlayer: currentPlayerText,
+                throwsLeft: remainingThrows
+            };
 
-        // Ouvrir la fenêtre d'affichage
-        const displayWindow = window.open('affichage_score.html', '_blank');
+            localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+            window.open('affichage_score.html');
+        } catch (error) {
+            console.error('Erreur lors de l\'ouverture de l\'affichage:', error);
+        }
     }
 
     // Fonction pour mettre à jour les données en direct
     function updateLiveData() {
         const liveData = {
+            team1: document.getElementById('teamA').value,
+            team2: document.getElementById('teamB').value,
             score1: document.getElementById('teamAScore').textContent,
             score2: document.getElementById('teamBScore').textContent,
-            yellowCards1: document.getElementById('teamAYellowCard').textContent,
-            yellowCards2: document.getElementById('teamBYellowCard').textContent,
-            redCards1: document.getElementById('teamARedCard').textContent,
-            redCards2: document.getElementById('teamBRedCard').textContent,
-            chrono: document.getElementById('gameChrono').textContent
+            currentPlayer: document.getElementById('currentPlayer').textContent,
+            // Corriger ici pour utiliser window.throwsLeft au lieu de throwsRemaining
+            throwsLeft: window.throwsLeft ? window.throwsLeft[window.currentPlayer] : 3
         };
-        localStorage.setItem('liveMatchData', JSON.stringify({
-            ...JSON.parse(localStorage.getItem('liveMatchData') || '{}'),
-            ...liveData
-        }));
+
+        localStorage.setItem('liveMatchData', JSON.stringify(liveData));
     }
 
     // Ajouter l'observateur pour mettre à jour les données en direct
@@ -244,5 +406,94 @@
         characterDataOldValue: true
     });
   </script>
+  <script>
+// Script de récupération d'urgence pour la page de marquage
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Initialisation de récupération pour la page de marquage");
+    
+    // Vérifier si les fonctions essentielles sont disponibles
+    if (typeof window.selectPlayer !== 'function') {
+        console.error("Fonction selectPlayer manquante, définition d'une version de secours");
+        window.selectPlayer = function(playerId) {
+            console.log("Sélection du joueur (version de secours):", playerId);
+            const playerElement = document.getElementById('currentPlayer');
+            if (playerElement) {
+                playerElement.textContent = `Joueur actuel: ${playerId}`;
+            }
+        };
+    }
+    
+    if (typeof window.updateScoreDisplay !== 'function') {
+        console.error("Fonction updateScoreDisplay manquante, définition d'une version de secours");
+        window.updateScoreDisplay = function() {
+            console.log("Mise à jour de l'affichage des scores (version de secours)");
+            const teamAScore = document.getElementById('teamAScore');
+            const teamBScore = document.getElementById('teamBScore');
+            
+            if (teamAScore && typeof window.scores !== 'undefined' && window.scores.teamA) {
+                teamAScore.textContent = window.scores.teamA;
+            }
+            
+            if (teamBScore && typeof window.scores !== 'undefined' && window.scores.teamB) {
+                teamBScore.textContent = window.scores.teamB;
+            }
+        };
+    }
+    
+    // Définir une version de secours de sendLiveUpdate si nécessaire
+    if (typeof sendLiveUpdate !== 'function') {
+        window.sendLiveUpdate = function(forceUpdate = false) {
+            console.log("Envoi de mise à jour en direct (version de secours)");
+            try {
+                const matchId = new URLSearchParams(window.location.search).get('matchId');
+                if (!matchId) return;
+                
+                // Récupérer les données importantes
+                const liveData = {
+                    matchId,
+                    team1: document.getElementById('teamAName')?.textContent || 'TEAM A',
+                    team2: document.getElementById('teamBName')?.textContent || 'TEAM B',
+                    score1: document.getElementById('teamAScore')?.textContent || '301',
+                    score2: document.getElementById('teamBScore')?.textContent || '301',
+                    currentPlayer: document.getElementById('currentPlayer')?.textContent || 'Joueur actuel: 1A',
+                    throwsLeft: typeof window.throwsLeft !== 'undefined' ? (window.throwsLeft[window.currentPlayer] || 3) : 3,
+                    matchType: document.getElementById('matchType')?.textContent || 'Match'
+                };
+                
+                // Sauvegarde locale de secours
+                localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+                
+                // Tentative d'envoi au serveur
+                if (typeof window.socket !== 'undefined' && window.socket && !window.isUpdating) {
+                    try {
+                        window.socket.emit('live_score_update', liveData);
+                        return true;
+                    } catch(e) {
+                        console.error("Erreur lors de l'envoi des données:", e);
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur lors de l\'envoi des données (version de secours):', error);
+            }
+            return false;
+        };
+    }
+    
+    // Initialiser le joueur actuel et les scores
+    setTimeout(() => {
+        try {
+            if (typeof window.selectPlayer === 'function') {
+                window.selectPlayer("1A");
+            }
+            
+            if (typeof window.updateScoreDisplay === 'function') {
+                window.updateScoreDisplay();
+            }
+        } catch (e) {
+            console.error("Erreur lors de l'initialisation récupération:", e);
+        }
+    }, 500);
+});
+</script>
 </body>
 </html>

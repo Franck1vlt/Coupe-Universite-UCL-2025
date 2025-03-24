@@ -3,45 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <title>Affichage Score Volleyball</title>
-    <link rel="stylesheet" href="volleyball.css">
-    <script src="volleyball.js" defer></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #ffffff;
+            color: #000000;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .score-board {
+            text-align: center;
+            width: 100%;
+            padding: 1.25rem;
+        }
+
+        .teams {
+            display: flex;
+            justify-content: space-around;
+            font-size: 5rem;
+            margin: 1.25rem 0;
+            font-weight: bold;
+        }
+
+        .score-container {
+            font-size: 12rem;
+            font-weight: bold;
+            margin: 2.5rem 0;
+        }
+
+        img#ballIconA {}
+
+        .ball-icon {
+            width: 3rem;
+            height: 3rem;
+            vertical-align: middle;
+        }
+
+        .ball-icon-table {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 1.25rem;
+            margin-left: 1.25rem;
+        }
+
+        .score-divider {
+            margin: 0 2.5rem;
+            color: #000000;
+        }
+
+        .match-info {
+            font-size: 3rem;
+            margin: 1.875rem 0;
+        }
+
+        .remaining-time {
+            background-color: #000000;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.625rem;
+            margin-right: 1.25rem;
+            color: red
+        }
+
+        .match-type {
+            color: #000000;
+        }
+
+        .team-logo {
+            width: 5rem;
+            height: 5rem;
+            margin: 0 1.25rem;
+            object-fit: contain;
+        }
+
+        /* Animation pour les changements de score */
+        .score-change {
+            animation: scoreUpdate 0.5s ease-in-out;
+        }
+
+        @keyframes scoreUpdate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+    </style>
 </head>
 <body>
     <div class="score-board">
         <div class="teams">
-            <div class="team" id="teamAName">TEAM A</div>
-            <div class="team" id="teamBName">TEAM B</div>
+            <div class="team">
+                <img src="" alt="" class="team-logo" id="logoB">
+                <div id="teamBName">TEAM B</div>
+            </div>
+            <div class="team">
+                <img src="" alt="" class="team-logo" id="logoA">
+                <div id="teamAName">TEAM A</div>
+            </div>
         </div>
         
         <div class="score-container">
-            <img src="volley-ball.png" alt="Volleyball Icon" class="ball-icon" id="ballIconA">
-            <div class="score">
-                <span id="teamAScore">0</span>
-                <span class="score-divider">-</span>
-                <span id="teamBScore">0</span>
-            </div>
-            <img src="volley-ball.png" alt="Volleyball Icon" class="ball-icon" id="ballIconB">
+            <img src="volley-ball.png" alt="Volleyball Icon" class="ball-icon" id="ballIconB" style="visibility: hidden;">
+            <span id="teamBScore">0</span>
+            <span class="score-divider">-</span>
+            <span id="teamAScore">0</span>
+            <img src="volley-ball.png" alt="Volleyball Icon" class="ball-icon" id="ballIconA" style="visibility: hidden;">
         </div>
         
         <div class="match-info">
             <span class="remaining-time" id="gameChrono">00:00</span>
-            <span class="match-type" id="matchType">Barrages</span>
-        </div>
-
-        <div class="cards">
-            <div class="team-cards a">
-                <img src="../img/carton-jaune.png" alt="Yellow Card" class="card-icon">
-                <span id="teamAYellowCard">0</span>
-                <img src="../img/carton-rouge.png" alt="Red Card" class="card-icon">
-                <span id="teamARedCard">0</span>
-            </div>
-            <div class="team-cards b">
-                <img src="../img/carton-jaune.png" alt="Yellow Card" class="card-icon">
-                <span id="teamBYellowCard">0</span>
-                <img src="../img/carton-rouge.png" alt="Red Card" class="card-icon">
-                <span id="teamBRedCard">0</span>
-            </div>
+            <span class="match-type" id="matchType"></span>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            function updateDisplay() {
+                const matchData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
+                
+                // Mise à jour des équipes et du type de match
+                document.getElementById('teamAName').textContent = matchData.team1 || 'TEAM A';
+                document.getElementById('teamBName').textContent = matchData.team2 || 'TEAM B';
+                document.getElementById('matchType').textContent = matchData.matchType || 'Match en cours';
+                
+                // Correction des chemins des logos
+                const logoA = document.getElementById('logoA');
+                const logoB = document.getElementById('logoB');
+                
+                if (matchData.team1) {
+                    logoA.src = `../img/${matchData.team1}.png`;
+                    logoA.onerror = () => logoA.src = '../img/default.png';
+                }
+                
+                if (matchData.team2) {
+                    logoB.src = `../img/${matchData.team2}.png`;
+                    logoB.onerror = () => logoB.src = '../img/default.png';
+                }
+                
+                // Mise à jour des scores
+                document.getElementById('teamAScore').textContent = matchData.score1 || '0';
+                document.getElementById('teamBScore').textContent = matchData.score2 || '0';
+                
+                // Mise à jour du chronomètre
+                document.getElementById('gameChrono').textContent = matchData.chrono || '00:00';
+
+                // Mise à jour du serveur
+                const ballIconA = document.getElementById('ballIconA');
+                const ballIconB = document.getElementById('ballIconB');
+                if (matchData.server === 'A') {
+                    ballIconA.style.visibility = 'visible';
+                    ballIconB.style.visibility = 'hidden';
+                } else {
+                    ballIconA.style.visibility = 'hidden';
+                    ballIconB.style.visibility = 'visible';
+                }
+            }
+
+            // Mise à jour initiale
+            updateDisplay();
+
+            // Mise à jour toutes les 100ms
+            setInterval(updateDisplay, 100);
+        });
+    </script>
 </body>
 </html>

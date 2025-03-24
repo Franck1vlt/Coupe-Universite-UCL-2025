@@ -218,7 +218,7 @@ h1 {
 }
 
 .team.loser .score {
-    background-color: #f44336; /* Fond rouge pour le score perdant */
+    background-color: #F44336; /* Fond rouge pour le score perdant */
     color: white;
     font-weight: bold;
     padding: 4px 8px;
@@ -862,7 +862,7 @@ background-color: #cd7f32;
 .match-time {
     font-size: 0.9em;
     color: #ffffff;
-    background-color: rgba(255, 0, 0, 0.8);
+    background-color: #3F51B5;
     padding: 2px 8px;
     border-radius: 5px;
     font-weight: bold;

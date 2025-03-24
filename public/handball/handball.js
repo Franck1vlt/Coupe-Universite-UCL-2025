@@ -8,6 +8,83 @@ let matchData = {
 
 // Ajouter une variable pour stocker le chrono
 let currentChrono = '00:00';
+// Variable pour la connexion Socket.io
+let socket = null;
+let socketConnected = false; // Indique si on utilise Socket.io ou le fallback
+
+// Fonction pour établir la connexion Socket.io
+function connectSocketIO() {
+    try {
+        console.log('Tentative de connexion Socket.io...');
+        
+        // Connexion au namespace /handball avec options
+        socket = io('/handball', {
+            forceNew: true, // Force une nouvelle connexion
+            reconnectionAttempts: 5,
+            timeout: 10000,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            auth: { clientType: 'controller', matchId: matchData.matchId }
+        });
+        
+        socket.on('connect', function() {
+            console.log('Socket.io connecté');
+            socketConnected = true;
+            // S'enregistrer comme contrôleur pour ce match
+            socket.emit('register', {
+                matchId: matchData.matchId,
+                role: 'controller'
+            });
+            
+            // Demander les données actuelles en cas de reconnexion
+            socket.emit('requestData', {
+                matchId: matchData.matchId
+            });
+        });
+        
+        socket.on('connect_error', function(error) {
+            console.error('Erreur Socket.io:', error);
+            socketConnected = false;
+            console.log('Utilisation du mode de secours avec localStorage');
+        });
+        
+        socket.on('disconnect', function() {
+            console.log('Socket.io déconnecté');
+            socketConnected = false;
+        });
+        
+        // Ajouter un gestionnaire pour les nouveaux affichages connectés
+        socket.on('displayConnected', function(data) {
+            if (data.matchId === matchData.matchId) {
+                console.log('Nouvel affichage connecté, envoi des données à jour');
+                sendUpdate('refresh');
+            }
+        });
+        
+        // Améliorer la gestion des reconnexions
+        socket.io.on('reconnect', function() {
+            console.log('Socket.io reconnecté - ré-enregistrement comme contrôleur');
+            socket.emit('register', {
+                matchId: matchData.matchId,
+                role: 'controller'
+            });
+            
+            // Forcer l'envoi des données actuelles
+            sendUpdate('reconnect');
+        });
+        
+        // Rendre le socket disponible globalement
+        window.socket = socket;
+        window.socketConnected = socketConnected;
+        
+        return socket;
+        
+    } catch (error) {
+        console.error('Erreur lors de la connexion Socket.io:', error);
+        socketConnected = false;
+        return null;
+    }
+}
 
 // Déplacer la fonction updateTeams dans le scope global
 function updateTeams() {
@@ -28,11 +105,17 @@ function startChrono() {
         matchData.chrono.running = true;
         matchData.chrono.interval = setInterval(updateChrono, 1000);
     }
+    
+    // Envoyer l'état du chronomètre
+    sendUpdate('chronoStart');
 }
 
 function stopChrono() {
     matchData.chrono.running = false;
     clearInterval(matchData.chrono.interval);
+    
+    // Envoyer l'état du chronomètre
+    sendUpdate('chronoStop');
 }
 
 // Modifier la fonction de gestion du chrono
@@ -43,42 +126,103 @@ function updateChrono() {
     document.getElementById('gameChrono').textContent = 
         `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     currentChrono = document.getElementById('gameChrono').textContent;
+    
+    // Envoyer la mise à jour du chrono
+    sendUpdate('chronoUpdate');
+}
+
+// Fonction unifiée pour envoyer les mises à jour 
+function sendUpdate(updateType) {
+    // Préparer les données à envoyer
+    const data = {
+        matchId: matchData.matchId,
+        updateType: updateType,
+        team1: document.getElementById('teamAName').textContent,
+        team2: document.getElementById('teamBName').textContent,
+        matchType: document.getElementById('matchType').textContent,
+        score1: matchData.teamA.score,
+        score2: matchData.teamB.score,
+        yellowCards1: matchData.teamA.yellowCards,
+        yellowCards2: matchData.teamB.yellowCards,
+        redCards1: matchData.teamA.redCards,
+        redCards2: matchData.teamB.redCards,
+        chrono: document.getElementById('gameChrono').textContent,
+        status: 'en_cours',
+        id_terrain: 8,
+        timestamp: new Date().getTime(), // Ajouter un timestamp pour trier les mises à jour
+        clientInfo: {
+            socketId: socket ? socket.id : null,
+            role: 'controller',
+            browserInfo: window.navigator.userAgent.substring(0, 100) // informations limitées pour le débogage
+        }
+    };
+
+    // TOUJOURS sauvegarder localement
+    try {
+        localStorage.setItem('liveMatchData', JSON.stringify(data));
+        console.log('Données enregistrées dans localStorage');
+        
+        // Aussi sauvegarder avec le matchId comme clé spécifique
+        localStorage.setItem(`liveMatchData_${data.matchId}`, JSON.stringify(data));
+    } catch (error) {
+        console.error('Erreur lors de la sauvegarde dans localStorage:', error);
+    }
+
+    // Essayer d'utiliser Socket.io même si localStorage a réussi
+    if (window.io) {
+        try {
+            const socket = io('/handball');
+            socket.emit('scoreUpdate', data);
+            console.log('Données envoyées via Socket.io');
+        } catch (error) {
+            console.error('Erreur d\'envoi Socket.io:', error);
+        }
+    }
+
+    // Pour garantir la synchronisation, on force une actualisation toutes les 3 secondes
+    window.lastUpdateTime = Date.now();
 }
 
 // Fonctions pour les points et cartons
 function addPoint(team) {
     matchData[`team${team}`].score++;
     updateDisplay();
+    sendUpdate(`addPoint${team}`);
 }
 
 function subPoint(team) {
     if (matchData[`team${team}`].score > 0) {
         matchData[`team${team}`].score--;
         updateDisplay();
+        sendUpdate(`subPoint${team}`);
     }
 }
 
 function addYellowCard(team) {
     matchData[`team${team}`].yellowCards++;
     updateDisplay();
+    sendUpdate(`addYellow${team}`);
 }
 
 function subYellowCard(team) {
     if (matchData[`team${team}`].yellowCards > 0) {
         matchData[`team${team}`].yellowCards--;
         updateDisplay();
+        sendUpdate(`subYellow${team}`);
     }
 }
 
 function addRedCard(team) {
     matchData[`team${team}`].redCards++;
     updateDisplay();
+    sendUpdate(`addRed${team}`);
 }
 
 function subRedCard(team) {
     if (matchData[`team${team}`].redCards > 0) {
         matchData[`team${team}`].redCards--;
         updateDisplay();
+        sendUpdate(`subRed${team}`);
     }
 }
 
@@ -92,8 +236,9 @@ async function resetGame() {
     const score1 = matchData.teamA.score;
     const score2 = matchData.teamB.score;
     const matchType = new URLSearchParams(window.location.search).get('matchType');
-    const winner = score1 > score2 ? team1 : team2;
-    const loser = score1 > score2 ? team2 : team1;
+    const winner = score1 > score2 ? team1 : (score1 < score2 ? team2 : null);
+    const loser = score1 > score2 ? team2 : (score1 < score2 ? team1 : null);
+    const isDraw = score1 === score2;
 
     try {
         // Récupérer l'état actuel du tournoi
@@ -110,12 +255,19 @@ async function resetGame() {
                 status: 'terminé',
                 winner: winner,
                 loser: loser,
+                draw: isDraw,
                 matchType: matchType
             };
 
             // Sauvegarder l'état mis à jour
             localStorage.setItem('handballTournamentState', JSON.stringify(tournamentState));
         }
+
+        // Envoyer le statut final
+        sendUpdate('matchEnd');
+        
+        // Indiquer au serveur que le match est terminé via HTTP
+        await updateMatchStatus('terminé');
 
         // Redirection vers la page principale
         window.location.href = 'handball.html' + (matchType === 'final' ? '#final-phase' : '#poule-phase');
@@ -134,72 +286,12 @@ function updateDisplay() {
     document.getElementById('teamBYellowCard').textContent = matchData.teamB.yellowCards;
     document.getElementById('teamARedCard').textContent = matchData.teamA.redCards;
     document.getElementById('teamBRedCard').textContent = matchData.teamB.redCards;
-
-    // Mettre à jour les données en direct
-    const liveData = {
-        matchId: new URLSearchParams(window.location.search).get('matchId'),
-        team1: document.getElementById('teamAName').textContent,
-        team2: document.getElementById('teamBName').textContent,
-        matchType: document.getElementById('matchType').textContent,
-        score1: matchData.teamA.score,
-        score2: matchData.teamB.score,
-        yellowCards1: matchData.teamA.yellowCards,
-        yellowCards2: matchData.teamB.yellowCards,
-        redCards1: matchData.teamA.redCards,
-        redCards2: matchData.teamB.redCards,
-        chrono: document.getElementById('gameChrono').textContent,
-        status: 'en cours'
-    };
-
-    localStorage.setItem('liveMatchData', JSON.stringify(liveData));
 }
 
 // Ajouter un écouteur pour le chrono
 document.getElementById('gameChrono').addEventListener('change', updateChrono);
 
-// Ajouter la fonction pour sauvegarder le match
-async function saveMatchData() {
-    try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const matchId = urlParams.get('matchId');
-        const score1 = parseInt(document.getElementById('teamAScore').textContent);
-        const score2 = parseInt(document.getElementById('teamBScore').textContent);
-        const chrono = document.getElementById('gameChrono').textContent;
-
-        // Déterminer s'il y a match nul
-        const isDraw = score1 === score2;
-        
-        const matchData = {
-            status: 'terminé',
-            score1: score1,
-            score2: score2,
-            chrono: chrono,
-            draw: isDraw,
-            winner: isDraw ? null : (score1 > score2 ? document.getElementById('teamAName').textContent : document.getElementById('teamBName').textContent),
-            loser: isDraw ? null : (score1 > score2 ? document.getElementById('teamBName').textContent : document.getElementById('teamAName').textContent)
-        };
-
-        const response = await fetch(`/api/match-status/${matchId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(matchData)
-        });
-
-        if (!response.ok) {
-            throw new Error('Erreur lors de la sauvegarde');
-        }
-
-        console.log('Match sauvegardé avec succès');
-
-    } catch (error) {
-        console.error('Erreur:', error);
-        alert('Erreur lors de la sauvegarde du match');
-    }
-}
-
-// Ajout de la vérification du statut au chargement de la page
+// Initialisation au chargement de la page
 document.addEventListener('DOMContentLoaded', () => {
     // Récupération des paramètres de l'URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -223,6 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const matchId = new URLSearchParams(window.location.search).get('matchId');
+    matchData.matchId = matchId;
     
     // Charger l'état du tournoi
     const tournamentState = JSON.parse(localStorage.getItem('handballTournamentState'));
@@ -240,18 +333,16 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDisplay();
     
     // Mettre le match en status "en cours" au chargement
-    fetch(`/api/match-status/${matchId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            status: 'en cours',
-            score1: 0,
-            score2: 0
-        })
-    });
-
-    updateTeams();
-    updateDisplay();
+    updateMatchStatus('en_cours');
+    
+    // Essayer d'établir la connexion Socket.io, mais continuer même si ça échoue
+    try {
+        connectSocketIO();
+    } catch (error) {
+        console.error('Impossible de se connecter à Socket.io:', error);
+        console.log('Utilisation du mode de secours avec localStorage');
+        socketConnected = false;
+    }
 });
 
 async function updateMatchStatus(status) {
@@ -266,7 +357,8 @@ async function updateMatchStatus(status) {
             matchId,
             status,
             score1: matchData.teamA.score,
-            score2: matchData.teamB.score
+            score2: matchData.teamB.score,
+            id_terrain: 8  // Ajout de l'id_terrain=8 pour tous les matchs de handball
         });
 
         const response = await fetch(`/api/match-status/${matchId}`, {
@@ -275,7 +367,8 @@ async function updateMatchStatus(status) {
             body: JSON.stringify({
                 status: status,
                 score1: matchData.teamA.score || 0,
-                score2: matchData.teamB.score || 0
+                score2: matchData.teamB.score || 0,
+                id_terrain: 8  // Ajout de l'id_terrain=8 pour tous les matchs de handball
             })
         });
 
@@ -290,6 +383,17 @@ async function updateMatchStatus(status) {
 
     } catch (error) {
         console.error('Erreur lors de la mise à jour:', error);
+        // Si l'API échoue, stocker quand même dans localStorage pour ne pas perdre les données
+        try {
+            localStorage.setItem('match_status_' + matchId, JSON.stringify({
+                status: status,
+                score1: matchData.teamA.score || 0,
+                score2: matchData.teamB.score || 0,
+                id_terrain: 8
+            }));
+        } catch (e) {
+            console.error('Impossible de sauvegarder dans localStorage:', e);
+        }
         throw error;
     }
 }

@@ -5,6 +5,150 @@
 
 // Variables globales
 let correctionModeActive = false;
+let socket;
+let socketConnected = false;
+let lastSyncTime = 0;
+
+// Mode hors ligne - utiliser en cas d'indisponibilité du serveur
+let offlineMode = false;
+
+// Fonction pour initialiser WebSocket avec gestion d'erreur robuste
+function initWebSocket() {
+    try {
+        // Vérifier si Socket.IO est disponible
+        if (typeof io === 'undefined') {
+            console.error('Socket.IO n\'est pas chargé - vérifiez que le script est inclus dans votre HTML');
+            setOfflineMode(true, 'Socket.IO non chargé');
+            return;
+        }
+        
+        // Essayer de se connecter avec un timeout
+        const connectionTimeout = setTimeout(() => {
+            console.error('Délai de connexion WebSocket dépassé');
+            setOfflineMode(true, 'Serveur non disponible');
+        }, 5000);
+        
+        socket = io({
+            reconnectionAttempts: 3,
+            timeout: 5000,
+            reconnectionDelay: 1000
+        });
+        
+        socket.on('connect', () => {
+            console.log('Connecté au serveur WebSocket');
+            clearTimeout(connectionTimeout);
+            socketConnected = true;
+            setOfflineMode(false);
+            // Indiquer au serveur qu'il s'agit d'un client volley féminin
+            socket.emit('join_tournament', { tournamentId: 'volleyF' });
+            updateConnectionUI('connected');
+        });
+        
+        socket.on('disconnect', () => {
+            console.log('Déconnecté du serveur WebSocket');
+            socketConnected = false;
+            setOfflineMode(true, 'Déconnecté du serveur');
+            updateConnectionUI('disconnected');
+        });
+        
+        socket.on('connect_error', (error) => {
+            console.error('Erreur de connexion WebSocket:', error);
+            socketConnected = false;
+            setOfflineMode(true, 'Erreur de connexion');
+            updateConnectionUI('error', error.message);
+            
+            // Ne pas continuer à essayer de se reconnecter après plusieurs échecs
+            if (socket.io._reconnectionAttempts >= 3) {
+                console.log('Arrêt des tentatives de reconnexion après 3 échecs');
+                socket.io.reconnection(false);
+            }
+        });
+        
+        // Écouter les mises à jour de tournoi
+        socket.on('tournament_updated', (data) => {
+            console.log('Mise à jour du tournoi reçue:', data);
+            if (data.tournamentType === 'volleyF') {
+                updateTournamentFromServer(data);
+            }
+        });
+    } catch (error) {
+        console.error('Erreur lors de l\'initialisation WebSocket:', error);
+        setOfflineMode(true, `Erreur: ${error.message}`);
+    }
+}
+
+// Fonction pour activer/désactiver le mode hors ligne
+function setOfflineMode(enabled, reason = '') {
+    offlineMode = enabled;
+    if (enabled) {
+        console.log(`Mode hors ligne activé: ${reason}`);
+        // Afficher une notification dans l'interface
+        updateConnectionUI('offline', reason);
+    } else {
+        console.log('Mode hors ligne désactivé');
+        updateConnectionUI('connected');
+    }
+}
+
+// Mettre à jour l'interface utilisateur pour refléter l'état de la connexion
+function updateConnectionUI(state, message = '') {
+    const connectionStatus = document.getElementById('connectionStatus');
+    if (!connectionStatus) return;
+    
+    connectionStatus.classList.remove('connected', 'disconnected', 'connecting', 'offline');
+    
+    switch (state) {
+        case 'connected':
+            connectionStatus.textContent = 'Connexion: ✅';
+            connectionStatus.classList.add('connected');
+            connectionStatus.style.backgroundColor = '#d4edda';
+            connectionStatus.style.color = '#155724';
+            break;
+        case 'disconnected':
+            connectionStatus.textContent = 'Connexion: ❌';
+            connectionStatus.classList.add('disconnected');
+            connectionStatus.style.backgroundColor = '#f8d7da';
+            connectionStatus.style.color = '#721c24';
+            break;
+        case 'error':
+            connectionStatus.textContent = `Erreur: ${message.substring(0, 20)}`;
+            connectionStatus.classList.add('disconnected');
+            connectionStatus.style.backgroundColor = '#f8d7da';
+            connectionStatus.style.color = '#721c24';
+            break;
+        case 'offline':
+            connectionStatus.textContent = `Mode hors ligne ${message ? '(' + message.substring(0, 20) + ')' : ''}`;
+            connectionStatus.classList.add('offline');
+            connectionStatus.style.backgroundColor = '#fff3cd';
+            connectionStatus.style.color = '#856404';
+            break;
+        default:
+            connectionStatus.textContent = 'Connexion: ⌛';
+            connectionStatus.classList.add('connecting');
+            connectionStatus.style.backgroundColor = '#e2e3e5';
+            connectionStatus.style.color = '#383d41';
+    }
+}
+
+// Fonction pour mettre à jour le tournoi depuis les données du serveur
+function updateTournamentFromServer(data) {
+    if (!data || !data.matches) return;
+    
+    // Vérifier si les données sont plus récentes que notre état local
+    const serverLastUpdate = new Date(data.lastUpdate || 0).getTime();
+    if (serverLastUpdate <= lastSyncTime) {
+        console.log('Données ignorées car pas plus récentes que notre état local');
+        return;
+    }
+    
+    console.log('Mise à jour du tournoi avec les données du serveur');
+    tournamentState = data;
+    lastSyncTime = serverLastUpdate;
+    
+    // Mettre à jour l'interface utilisateur
+    linkWinnersAndLosers();
+    updateUI();
+}
 
 function toggleCorrectionMode() {
     correctionModeActive = !correctionModeActive;
@@ -63,7 +207,8 @@ let tournamentState = {
       score2: 15,
       status: 'terminé',
       winner: 'ESPAS-ESTICE',
-      loser: 'USCHOOL'
+      loser: 'USCHOOL',
+      time: '04/02'
     },
     // Quarts de finale (matchIds 4 à 7)
     4: {  // QF1
@@ -75,7 +220,8 @@ let tournamentState = {
       status: 'à_venir',
       winner: null,
       loser: null,
-      nextMatchWin: 8  // Le gagnant va en SF1
+      nextMatchWin: 8,  // Le gagnant va en SF1
+      time: '9:30'
     },
     5: {  // QF2
       matchType: 'quarterfinal', 
@@ -86,7 +232,8 @@ let tournamentState = {
       status: 'à_venir',
       winner: null,
       loser: null,
-      nextMatchWin: 8  // Le gagnant va en SF1
+      nextMatchWin: 8,  // Le gagnant va en SF1
+      time: '9:30'
     },
     6: {  // QF3
       matchType: 'quarterfinal',
@@ -97,7 +244,8 @@ let tournamentState = {
       status: 'à_venir',
       winner: null,
       loser: null,
-      nextMatchWin: 9  // Le gagnant va en SF2
+      nextMatchWin: 9,  // Le gagnant va en SF2
+      time: '10:30'
     },
     7: {  // QF4
       matchType: 'quarterfinal',
@@ -108,7 +256,8 @@ let tournamentState = {
       status: 'à_venir',
       winner: null,
       loser: null,
-      nextMatchWin: 9  // Le gagnant va en SF2
+      nextMatchWin: 9,  // Le gagnant va en SF2
+      time: '10:30'
     },
     // Demi-finales (matchIds 8 et 9)
     8: {
@@ -121,7 +270,8 @@ let tournamentState = {
       winner: null,
       loser: null,
       nextMatchWin: 11,  // Gagnant va en finale
-      nextMatchLose: 10  // Perdant va en petite finale
+      nextMatchLose: 10,  // Perdant va en petite finale
+      time: '11:30'
     },
     9: {
       matchType: 'semifinal',
@@ -133,7 +283,8 @@ let tournamentState = {
       winner: null,
       loser: null,
       nextMatchWin: 11,  // Gagnant va en finale
-      nextMatchLose: 10  // Perdant va en petite finale
+      nextMatchLose: 10,  // Perdant va en petite finale
+      time: '11:30'
     },
     // Petite finale (matchId 10) pour la 3ème / 4ème place
     10: {
@@ -144,7 +295,8 @@ let tournamentState = {
       score2: null,
       status: 'à_venir',
       winner: null,
-      loser: null
+      loser: null,
+      time: '12:30'
     },
     // Finale (matchId 11) pour la 1ère / 2ème place
     11: {
@@ -155,7 +307,8 @@ let tournamentState = {
       score2: null,
       status: 'à_venir',
       winner: null,
-      loser: null
+      loser: null,
+      time: '12:30'
     }
   }
 };
@@ -163,7 +316,26 @@ let tournamentState = {
 // Fonction pour sauvegarder l'état du tournoi
 function saveTournamentState() {
     localStorage.setItem('volleyFTournamentState', JSON.stringify(tournamentState));
-    localStorage.setItem('lastUpdate', new Date().toISOString());
+    const updateTime = new Date().toISOString();
+    localStorage.setItem('lastUpdate', updateTime);
+    lastSyncTime = new Date(updateTime).getTime();
+    
+    // Synchroniser avec le serveur uniquement si le mode hors ligne est désactivé
+    if (!offlineMode && socket && socketConnected) {
+        console.log('Envoi de l\'état du tournoi au serveur via WebSocket');
+        socket.emit('update_tournament', {
+            tournamentType: 'volleyF',
+            tournamentId: 'volleyF',
+            ...tournamentState,
+            lastUpdate: updateTime
+        });
+    } else if (!offlineMode) {
+        console.log('WebSocket non disponible, sauvegarde locale uniquement');
+        // Planifier une synchronisation différée uniquement si pas en mode hors ligne
+        setTimeout(syncTournamentWithServer, 5000);
+    } else {
+        console.log('Mode hors ligne actif - sauvegarde locale uniquement');
+    }
 }
 
 // Fonction pour charger l'état du tournoi
@@ -174,6 +346,33 @@ function loadTournamentState() {
         return true;
     }
     return false;
+}
+
+// Nouvelle fonction pour synchroniser avec le serveur via HTTP avec meilleure gestion d'erreur
+async function syncTournamentWithServer() {
+    // Utiliser seulement WebSocket si disponible
+    if (socket && socketConnected) {
+        console.log('Synchronisation via WebSocket');
+        socket.emit('get_tournament_state', { tournamentId: 'volleyF' });
+        return true;
+    }
+    
+    console.log('Synchronisation désactivée - API non disponible');
+    return false;
+    
+    /* Code à réactiver quand l'API sera disponible
+    try {
+        const response = await fetch('/api/matches/volleyballF');
+        if (response.ok) {
+            const data = await response.json();
+            // traitement des données...
+        }
+        return true;
+    } catch (error) {
+        console.error('Erreur de synchronisation:', error);
+        return false;
+    }
+    */
 }
 
 // ----- POINTS ATTRIBUÉS SELON LA PLACE FINALE -----
@@ -189,19 +388,74 @@ const positionPoints = {
 
 // ----- INITIALISATION -----
 document.addEventListener('DOMContentLoaded', function() {
-  // Tente de charger l'état sauvegardé
-  if (loadTournamentState()) {
-      console.log('État précédent du tournoi chargé');
-  } else {
-      console.log('Nouveau tournoi initialisé');
-  }
-  
-  // Recalculer les liens entre matchs pour s'assurer de la cohérence
-  linkWinnersAndLosers();
-  updateUI();
-  addMatchClickHandlers();
-  initializePageState();
+    // Tenter d'initialiser WebSocket
+    initWebSocket();
+    
+    // Vérifier la connexion au serveur même si WebSocket échoue
+    checkServerConnection();
+    
+    // Tente de charger l'état sauvegardé
+    if (loadTournamentState()) {
+        console.log('État précédent du tournoi chargé');
+    } else {
+        console.log('Nouveau tournoi initialisé');
+    }
+    
+    // Recalculer les liens entre matchs pour s'assurer de la cohérence
+    linkWinnersAndLosers();
+    updateUI();
+    addMatchClickHandlers();
+    initializePageState();
+    
+    // Ajouter un élément pour afficher le statut de la connexion
+    const header = document.querySelector('header');
+    if (header) {
+        const connectionStatus = document.createElement('div');
+        connectionStatus.id = 'connectionStatus';
+        connectionStatus.className = 'connection-status';
+        connectionStatus.textContent = 'Connexion en cours...';
+        header.appendChild(connectionStatus);
+    }
 });
+
+// Fonction pour vérifier la connexion au serveur (alternative à WebSocket)
+function checkServerConnection() {
+    // Utiliser Socket.IO pour tester la connexion au lieu de l'API
+    if (typeof io !== 'undefined') {
+        try {
+            const testSocket = io({
+                reconnection: false,
+                timeout: 3000
+            });
+            
+            testSocket.on('connect', () => {
+                console.log('Serveur disponible via Socket.IO');
+                setOfflineMode(false);
+                setTimeout(() => testSocket.disconnect(), 500);
+            });
+            
+            testSocket.on('connect_error', (error) => {
+                console.warn('Erreur de connexion Socket.IO:', error.message);
+                setOfflineMode(true, 'Serveur non disponible');
+            });
+            
+            // Timeout de sécurité
+            setTimeout(() => {
+                if (testSocket.connected === false) {
+                    console.warn('Délai de connexion dépassé');
+                    setOfflineMode(true, 'Délai dépassé');
+                    testSocket.disconnect();
+                }
+            }, 3000);
+        } catch (error) {
+            console.error('Erreur lors du test Socket.IO:', error);
+            setOfflineMode(true, error.message);
+        }
+    } else {
+        console.warn('Socket.IO non disponible, mode hors ligne activé');
+        setOfflineMode(true, 'Socket.IO non disponible');
+    }
+}
 
 // ----- LIEN ENTRE LES MATCHES (Vainqueur/Perdant vers le match suivant) -----
 function linkWinnersAndLosers() {
@@ -280,21 +534,36 @@ function linkWinnersAndLosers() {
 
 // ----- MISE À JOUR DE L'INTERFACE (affichage des scores, logos et couleurs) -----
 function updateUI() {
-    // Mettre à jour l'affichage de tous les matchs
     Object.entries(tournamentState.matches).forEach(([matchId, matchData]) => {
         const matchElement = document.querySelector(`.match[data-match-id='${matchId}']`);
         if (!matchElement) return;
         
+        // Ajouter ou mettre à jour le conteneur d'informations
+        let infoContainer = matchElement.querySelector('.match-info-container');
+        if (!infoContainer) {
+            infoContainer = document.createElement('div');
+            infoContainer.className = 'match-info-container';
+            infoContainer.innerHTML = `
+                <div class="match-time"></div>
+                <div class="match-status"></div>
+            `;
+            matchElement.appendChild(infoContainer);
+        }
+
+        // Mettre à jour l'heure et le statut
+        infoContainer.querySelector('.match-time').textContent = matchData.time || '';
+        infoContainer.querySelector('.match-status').textContent = matchData.status.replace('_', ' ');
+        
+        // Reste de la fonction updateUI inchangé...
         const teamDivs = matchElement.querySelectorAll('.team');
         if (teamDivs.length < 2) return;
         
         fillTeamDiv(teamDivs[0], matchData.team1, matchData.score1, matchData.winner);
         fillTeamDiv(teamDivs[1], matchData.team2, matchData.score2, matchData.winner);
         
-        // Mettre à jour la classe CSS du statut du match
         matchElement.classList.remove('a_venir', 'en_cours', 'termine');
         matchElement.classList.add(matchData.status === 'terminé' ? 'termine' : 
-                                  matchData.status === 'en_cours' ? 'en_cours' : 'a_venir');
+                                 matchData.status === 'en_cours' ? 'en_cours' : 'a_venir');
     });
     
     // Mise à jour du classement
@@ -309,7 +578,7 @@ function updateUI() {
             championDiv.style.display = 'block';
             championDiv.classList.add('champion-crowned');
         } else {
-            championDiv.textContent = 'À déterminer';
+            championDiv.textContent = '-';
             championDiv.style.display = 'block';
             championDiv.classList.remove('champion-crowned');
         }
@@ -326,7 +595,7 @@ function fillTeamDiv(teamDiv, teamName, score, winnerName) {
     if (!nameDiv || !scoreDiv) return;
     
     if (!teamName) {
-        nameDiv.innerHTML = `<div class='team-logo'></div>À déterminer`;
+        nameDiv.innerHTML = `<div class='team-logo'></div>-`;
         scoreDiv.textContent = '-';
         teamDiv.classList.remove('winner', 'loser');
         return;
@@ -384,6 +653,22 @@ async function simulateMatch(matchId) {
     // Mettre à jour la progression du tournoi
     await linkWinnersAndLosers();
     await updateUI();
+    
+    // Ajouter l'envoi au serveur via WebSocket
+    if (socket && socketConnected) {
+        socket.emit('match_simulated', {
+            tournamentType: 'volleyF',
+            tournamentId: 'volleyF',  // Identifier clairement le tournoi
+            matchId: matchId,
+            result: {
+                winner: match.winner,
+                loser: match.loser,
+                score1: match.score1,
+                score2: match.score2,
+                status: 'terminé'
+            }
+        });
+    }
     
     saveTournamentState();
 }
@@ -492,7 +777,7 @@ async function updateRankingDisplay() {
             rankingList.innerHTML += `
                 <div class="ranking-row ${highlightClass}">
                     <div class="rank">${position}</div>
-                    <div class="team-name">
+                    <div class="teamname">
                         <img src="/img/${team.name}.png" alt="${team.name}" class="team-logo-mini" />
                         ${team.name}
                     </div>
@@ -501,7 +786,17 @@ async function updateRankingDisplay() {
             `;
         });
         
-        await sendPointsToServer(teamPoints);
+        // Envoyer les points via WebSocket si disponible
+        if (socket && socketConnected) {
+            console.log('Envoi des points via WebSocket');
+            socket.emit('update_points', {
+                sport: 'volley-f',
+                points: teamPoints
+            });
+        } else {
+            // Fallback HTTP
+            await sendPointsToServer(teamPoints);
+        }
     } catch (error) {
         console.error('Erreur lors de la mise à jour du classement:', error);
     }
@@ -510,28 +805,29 @@ async function updateRankingDisplay() {
 // Fonction pour envoyer les points à l'API
 async function sendPointsToServer(teamPoints) {
     try {
-        console.log('Points à envoyer:', teamPoints);
-
-        const response = await fetch('/api/rankings/volley_f/update', {
+        // Sauvegarde locale uniquement - pas d'appel API
+        console.log('Points sauvegardés localement:', teamPoints);
+        localStorage.setItem('volleyFPoints', JSON.stringify(teamPoints));
+        return true;
+        
+        /* Code à réactiver quand l'API sera disponible
+        const response = await fetch('/api/points/volley-f', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(teamPoints)
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ points: teamPoints })
         });
-
+        
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Erreur serveur:', errorText);
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-
-        const result = await response.json();
-        console.log('Réponse du serveur:', result);
-        return result;
+        
+        return await response.json();
+        */
     } catch (error) {
-        console.error('Erreur lors de l\'envoi des points:', error);
-        throw error;
+        console.log('Debug - Sauvegarde locale uniquement:', error);
+        // Sauvegarde locale en cas d'erreur
+        localStorage.setItem('volleyFPoints', JSON.stringify(teamPoints));
+        return false;
     }
 }
 
@@ -656,12 +952,17 @@ function handleNewMatch(matchId, matchData) {
         return;
     }
 
+    // Mettre à jour le statut en "en_cours" avant la redirection
+    matchData.status = 'en_cours';
+    saveTournamentState();
+
     // Rediriger vers la page de marquage
     const params = new URLSearchParams({
         matchId: matchId,
         team1: matchData.team1,
         team2: matchData.team2,
-        matchType: matchData.matchType
+        matchType: matchData.matchType,
+        status: 'en_cours'  // Ajout du statut dans les paramètres
     });
 
     console.log('Redirection vers marquage.html avec params:', Object.fromEntries(params));
@@ -750,3 +1051,4 @@ window.simulateTournament = simulateTournament;
 window.resetTournament = resetTournament;
 window.toggleCorrectionMode = toggleCorrectionMode;
 window.resetGame = resetGame;
+window.initWebSocket = initWebSocket;

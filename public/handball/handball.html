@@ -5,10 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HANDBALL</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- Dans styles.css, pensez à définir par exemple : 
-       .phase-content { display: flex; } 
-       .hidden { display: none !important; }
-  -->
+  <!-- Important: Charger Socket.io avant les scripts qui l'utilisent -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="handball-sync.js"></script>
   <style>
     .correction-button {
       position: fixed;
@@ -60,6 +59,8 @@
       <div class="subtitle">Phase à élimination directe</div>
     </header>
     
+    
+
     <div class="tournament-container">
       <!-- SECTION Matchs de Poules -->
       <div class="bracket phase-content" id="poule-phase">
@@ -393,6 +394,46 @@
       // Affichage initial (la phase sélectionnée dans le menu est affichée)
       phaseSelect.dispatchEvent(new Event('change'));
     });
+  </script>
+
+  <script>
+    // Initialiser la synchronisation des matchs
+    document.addEventListener('DOMContentLoaded', function() {
+      // Si handball-sync.js est chargé, utiliser son instance
+      if (window.handballSync) {
+        console.log("Module de synchronisation handball détecté");
+        
+        // S'abonner aux mises à jour du tournoi
+        window.handballSync.subscribe(function(tournamentState) {
+          console.log("Mise à jour du tournoi reçue via handball-sync");
+          
+          // Si le module tournament.js expose cette fonction, l'utiliser
+          if (typeof updateTournamentFromSync === 'function') {
+            updateTournamentFromSync(tournamentState);
+          }
+          
+          // Forcer le rafraîchissement de l'UI
+          if (typeof updateUI === 'function') {
+            updateUI();
+          }
+        });
+        
+        // Synchroniser maintenant
+        window.handballSync.sync();
+      } else {
+        console.warn("Module de synchronisation handball non détecté");
+      }
+
+      // Le reste du code existant...
+    });
+
+    // Ajouter cette fonction pour permettre à handball-sync.js de mettre à jour l'état
+    function updateTournamentFromSync(newState) {
+      if (window.tournamentState && newState) {
+        window.tournamentState = newState;
+        console.log("État du tournoi mis à jour depuis le module de synchronisation");
+      }
+    }
   </script>
 </body>
 </html>

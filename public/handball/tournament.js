@@ -52,20 +52,20 @@ const terrains = {
 let tournamentState = {
   matches: {
     // Matchs de poule (matchIds 1 à 12)
-    1: { matchType: 'poule', team1: 'FGES', team2: 'JUNIA', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '12:45' },
-    2: { matchType: 'poule', team1: 'FMMS', team2: 'IKPO', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '13:15' },
-    3: { matchType: 'poule', team1: 'ICAM', team2: 'FLD', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '13:45' },
-    4: { matchType: 'poule', team1: 'IKPO', team2: 'FGES', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '14:15' },
-    5: { matchType: 'poule', team1: 'JUNIA', team2: 'FLD', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '14:45' },
-    6: { matchType: 'poule', team1: 'FMMS', team2: 'ICAM', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '15:15' },
-    7: { matchType: 'poule', team1: 'FGES', team2: 'FLD', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '15:45' },
-    8: { matchType: 'poule', team1: 'IKPO', team2: 'ICAM', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '16:15' },
-    9: { matchType: 'poule', team1: 'JUNIA', team2: 'FMMS', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '16:45' },
-    10: { matchType: 'poule', team1: 'ICAM', team2: 'FGES', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '17:15' },
-    11: { matchType: 'poule', team1: 'FLD', team2: 'FMMS', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '17:45' },
-    12: { matchType: 'poule', team1: 'IKPO', team2: 'JUNIA', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '18:15' },
+    1: { matchType: 'Poule', team1: 'FGES', team2: 'JUNIA', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '12:45' },
+    2: { matchType: 'Poule', team1: 'FMMS', team2: 'IKPO', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '13:15' },
+    3: { matchType: 'Poule', team1: 'ICAM', team2: 'FLD', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '13:45' },
+    4: { matchType: 'Poule', team1: 'IKPO', team2: 'FGES', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '14:15' },
+    5: { matchType: 'Poule', team1: 'JUNIA', team2: 'FLD', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '14:45' },
+    6: { matchType: 'Poule', team1: 'FMMS', team2: 'ICAM', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '15:15' },
+    7: { matchType: 'Poule', team1: 'FGES', team2: 'FLD', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '15:45' },
+    8: { matchType: 'Poule', team1: 'IKPO', team2: 'ICAM', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '16:15' },
+    9: { matchType: 'Poule', team1: 'JUNIA', team2: 'FMMS', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '16:45' },
+    10: { matchType: 'Poule', team1: 'ICAM', team2: 'FGES', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '17:15' },
+    11: { matchType: 'Poule', team1: 'FLD', team2: 'FMMS', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '17:45' },
+    12: { matchType: 'Poule', team1: 'IKPO', team2: 'JUNIA', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '18:15' },
     // Finale (matchId 13)
-    13: { matchType: 'final', team1: null, team2: null, score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '18:45' }
+    13: { matchType: 'Finale', team1: null, team2: null, score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '18:45' }
   }
 };
 
@@ -73,6 +73,19 @@ let tournamentState = {
 function saveTournamentState() {
     localStorage.setItem('handballTournamentState', JSON.stringify(tournamentState));
     localStorage.setItem('lastUpdate', new Date().toISOString());
+    
+    // Si Socket.io est disponible, émettre la mise à jour de l'état du tournoi
+    if (window.io) {
+        try {
+            const socket = io('/handball');
+            socket.emit('tournamentUpdate', {
+                state: tournamentState,
+                timestamp: new Date().toISOString()
+            });
+        } catch (error) {
+            console.error('Erreur lors de l\'envoi de l\'état du tournoi via Socket.io:', error);
+        }
+    }
 }
 
 // Fonction pour charger l'état du tournoi
@@ -83,6 +96,115 @@ function loadTournamentState() {
         return true;
     }
     return false;
+}
+
+// Fonction pour mettre à jour l'interface utilisateur
+function updateUI() {
+  console.log("Mise à jour de l'interface utilisateur");
+  
+  try {
+    // 1. Mettre à jour les matchs
+    for (const [matchId, matchData] of Object.entries(tournamentState.matches)) {
+      const matchElement = document.querySelector(`.match[data-match-id="${matchId}"]`);
+      if (!matchElement) continue;
+      
+      // Équipe 1
+      const team1Element = matchElement.querySelector('.team:first-child .team-name');
+      if (team1Element) {
+        if (matchData.team1) {
+          // Mettre à jour le nom
+          const nameSpan = team1Element.querySelector('div:not(.team-logo)') || team1Element;
+          if (nameSpan) nameSpan.textContent = matchData.team1;
+          
+          // Mettre à jour le logo
+          const logoElement = team1Element.querySelector('.team-logo');
+          if (logoElement) {
+            logoElement.style.backgroundImage = `url('/img/${matchData.team1}.png')`;
+          }
+        }
+      }
+      
+      // Équipe 2
+      const team2Element = matchElement.querySelector('.team:last-child .team-name');
+      if (team2Element) {
+        if (matchData.team2) {
+          // Mettre à jour le nom
+          const nameSpan = team2Element.querySelector('div:not(.team-logo)') || team2Element;
+          if (nameSpan) nameSpan.textContent = matchData.team2;
+          
+          // Mettre à jour le logo
+          const logoElement = team2Element.querySelector('.team-logo');
+          if (logoElement) {
+            logoElement.style.backgroundImage = `url('/img/${matchData.team2}.png')`;
+          }
+        }
+      }
+      
+      // Scores
+      const score1Element = matchElement.querySelector('.team:first-child .score');
+      const score2Element = matchElement.querySelector('.team:last-child .score');
+      
+      if (score1Element && typeof matchData.score1 === 'number') {
+        score1Element.textContent = matchData.score1;
+      }
+      
+      if (score2Element && typeof matchData.score2 === 'number') {
+        score2Element.textContent = matchData.score2;
+      }
+      
+      // Statut du match
+      const statusElement = matchElement.querySelector('.match-status');
+      if (statusElement && matchData.status) {
+        statusElement.textContent = matchData.status.replace('_', ' ');
+        matchElement.dataset.status = matchData.status;
+      }
+      
+      // Styles pour le gagnant/perdant si terminé
+      if (matchData.status === 'terminé') {
+        const team1 = matchElement.querySelector('.team:first-child');
+        const team2 = matchElement.querySelector('.team:last-child');
+        
+        if (team1 && team2) {  // Vérification ajoutée
+          if (matchData.winner === matchData.team1) {
+            team1.classList.add('winner');
+            team2.classList.add('loser');
+          } else if (matchData.winner === matchData.team2) {
+            team1.classList.add('loser');
+            team2.classList.add('winner');
+          } else if (matchData.draw) {
+            team1.classList.add('draw');
+            team2.classList.add('draw');
+          }
+        }
+      }
+    }
+    
+    // 2. Mettre à jour le classement de la poule
+    if (typeof updateGroupStandings === 'function') {
+      updateGroupStandings();
+    }
+    
+    // 3. Si le match de finale est terminé, mettre à jour le champion
+    const finalMatch = tournamentState.matches[13];
+    if (finalMatch && finalMatch.status === 'terminé') {
+      const championElement = document.getElementById('champion');
+      if (championElement && finalMatch.winner) {
+        championElement.textContent = finalMatch.winner;
+        championElement.classList.add('champion-crowned');
+      }
+    }
+    
+    // 4. Mettre à jour le classement général
+    const phaseSelect = document.getElementById('phaseSelect');
+    if (phaseSelect && phaseSelect.value === 'ranking-phase') {
+      if (typeof updateRankingDisplay === 'function') {
+        updateRankingDisplay();
+      }
+    }
+    
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour de l\'interface:', error);
+  }
 }
 
 // ----- POINTS ATTRIBUÉS SELON LA PLACE FINALE -----
@@ -98,185 +220,202 @@ const positionPoints = {
 
 // ----- INITIALISATION -----
 document.addEventListener('DOMContentLoaded', function() {
-  // Tente de charger l'état sauvegardé
+  console.log("Initialisation du tournoi de handball");
+  
+  // Charger l'état initial
   if (loadTournamentState()) {
-      console.log('État précédent du tournoi chargé');
+    console.log('État précédent du tournoi chargé');
   } else {
-      console.log('Nouveau tournoi initialisé');
+    console.log('Nouveau tournoi initialisé');
   }
-  updateUI();
-  addMatchClickHandlers();  // Ajouter les gestionnaires de clic
+  
+  // Définir updateUI comme fonction globale mais éviter la récursion
+  window.originalUpdateUI = updateUI;
+  window.updateUI = function() {
+    // Éviter la récursion infinie
+    if (window._updatingUI) return;
+    window._updatingUI = true;
+    try {
+      window.originalUpdateUI();
+      // Mise à jour des matchs clickables après l'UI
+      if (typeof updateMatchClickability === 'function') {
+        updateMatchClickability();
+      }
+    } finally {
+      window._updatingUI = false;
+    }
+  };
+
+  // Initialiser la synchronisation Socket.io 
+  initSocketIO();
+  
+  // Synchronisation initiale avec le serveur
+  syncWithServer();
+  
+  // Synchronisations périodiques
+  setInterval(syncWithServer, 5000); // Toutes les 5 secondes
+  setInterval(refreshUI, 2000); // Rafraîchir l'UI toutes les 2 secondes
+
+  // Initialiser les handlers
+  addMatchClickHandlers();
 });
 
-// ----- MISE À JOUR DE L'INTERFACE (affichage des scores, logos et couleurs) -----
-function updateUI() {
-    Object.entries(tournamentState.matches).forEach(([matchId, matchData]) => {
-        const matchElement = document.querySelector(`.match[data-match-id='${matchId}']`);
-        if (!matchElement) return;
-        
-        matchElement.setAttribute('data-status', matchData.status);
-        
-        const teamDivs = matchElement.querySelectorAll('.team');
-        if (teamDivs.length < 2) return;
-        
-        // Passer l'objet match complet au lieu de juste le winner
-        fillTeamDiv(teamDivs[0], matchData.team1, matchData.score1, matchData);
-        fillTeamDiv(teamDivs[1], matchData.team2, matchData.score2, matchData);
-        
-        // Mettre à jour l'heure et le statut
-        const infoContainer = matchElement.querySelector('.match-info-container');
-        if (infoContainer) {
-          const timeDiv = infoContainer.querySelector('.match-time');
-          const statusDiv = infoContainer.querySelector('.match-status');
-          
-          if (timeDiv) timeDiv.textContent = matchData.time || '';
-          if (statusDiv) statusDiv.textContent = matchData.status.replace('_', ' ');
+// Fonction d'initialisation de Socket.io
+function initSocketIO() {
+  if (!window.io) {
+    console.warn("Socket.io n'est pas disponible");
+    return;
+  }
+
+  try {
+    console.log("Initialisation de la connexion Socket.io");
+    const socket = io('/handball');
+    
+    // Stocker la référence Socket.io dans une variable globale
+    window.handballSocket = socket;
+    
+    socket.on('connect', function() {
+      console.log("Connecté au serveur Socket.io (namespace /handball)");
+      
+      // S'abonner aux mises à jour du tournoi
+      socket.emit('subscribeTournament', { sport: 'handball' });
+      
+      // Demander l'état actuel
+      socket.emit('requestData', { global: true });
+      
+      socket.on('scoreUpdate', function(data) {
+        console.log("Réception d'une mise à jour de score:", data);
+        updateMatchFromServerData(data);
+        saveTournamentState();
+        updateUI();
+      });
+      
+      socket.on('tournamentState', function(data) {
+        console.log("Réception de l'état du tournoi");
+        if (data && data.state) {
+          // Ne pas écraser des données plus récentes
+          const currentTimestamp = localStorage.getItem('handballLastUpdate');
+          if (!currentTimestamp || new Date(data.timestamp) > new Date(currentTimestamp)) {
+            tournamentState = data.state;
+            localStorage.setItem('handballTournamentState', JSON.stringify(data.state));
+            localStorage.setItem('handballLastUpdate', data.timestamp);
+            updateUI();
+          }
         }
+      });
+      
+      // Demander l'état initial du tournoi
+      socket.emit('request_tournament_state', { sport: 'handball' });
     });
     
-    // Mise à jour automatique du classement après chaque changement
-    updateRankingDisplay();
-  
-    // Mise à jour du champion
-    const finalMatch = tournamentState.matches[13];
-    const championDiv = document.getElementById('champion');
-    if (championDiv) {
-      if (finalMatch && finalMatch.winner) {
-        championDiv.textContent = finalMatch.winner;
-        championDiv.style.display = 'block';
-        // Ajouter une animation pour le champion
-    } else {
-      championDiv.textContent = 'À déterminer';
-      championDiv.style.display = 'block';
-      championDiv.classList.remove('champion-crowned');
-    }
-  }
-
-  // Sauvegarde automatique de l'état
-  localStorage.setItem('handballTournamentState', JSON.stringify(tournamentState));
-
-  // Ajouter cette ligne après la mise à jour des matchs
-  updateGroupStandings();
-
-  // Vérifier si tous les matchs de poule sont terminés
-  const allPouleMatchesFinished = Object.values(tournamentState.matches)
-      .filter(m => m.matchType === 'poule')
-      .every(m => m.status === 'terminé');
-
-  if (allPouleMatchesFinished) {
-      const finalMatch = tournamentState.matches[13];
-      if (finalMatch.status === 'à_venir' && !finalMatch.team1 && !finalMatch.team2) {
-          console.log("Tous les matchs de poule sont terminés, configuration de la finale...");
-          setupFinalMatch();
-      }
+    socket.on('connect_error', function(error) {
+      console.error('Erreur de connexion Socket.io:', error);
+      // Fallback: utiliser localStorage et HTTP
+    });
+    
+    socket.on('disconnect', function() {
+      console.warn('Déconnecté du serveur Socket.io');
+    });
+    
+  } catch (error) {
+    console.error('Erreur lors de l\'initialisation Socket.io:', error);
   }
 }
 
-function fillTeamDiv(teamDiv, teamName, score, winnerName) {
-    const nameDiv = teamDiv.querySelector('.team-name');
-    const scoreDiv = teamDiv.querySelector('.score');
-    if (!nameDiv || !scoreDiv) return;
-
-    if (!teamName) {
-        nameDiv.innerHTML = `<div class='team-logo'></div>-`;
-        scoreDiv.textContent = '-';
-        teamDiv.classList.remove('winner', 'loser', 'draw');
-        return;
+// Synchronisation avec le serveur (comme dans football)
+function syncWithServer() {
+  console.log("Synchronisation avec le serveur...");
+  
+  // Vérifier si Socket.io est disponible et connecté
+  if (window.handballSocket && window.handballSocket.connected) {
+    window.handballSocket.emit('request_tournament_state', { sport: 'handball' });
+    window.handballSocket.emit('requestData', { global: true });
+    return;
+  }
+  
+  // IMPORTANT: Modification du fallback pour éviter les erreurs HTTP
+  // Ne pas essayer d'utiliser fetch() qui génère des erreurs HTML
+  try {
+    // Utiliser uniquement localStorage comme solution de secours
+    const savedState = localStorage.getItem('handballTournamentState');
+    if (savedState) {
+      tournamentState = JSON.parse(savedState);
+      console.log('État chargé depuis localStorage');
+      updateUI();
     }
-
-    const teamObj = teams[teamName];
-    const logoUrl = teamObj ? teamObj.logo : `/img/default.png`;
-    nameDiv.innerHTML = `<div class='team-logo' style="background-image:url('${logoUrl}')"></div>${teamName}`;
-
-    if (score === null || score === undefined) {
-        scoreDiv.textContent = '-';
-        teamDiv.classList.remove('winner', 'loser', 'draw');
-    } else {
-        scoreDiv.textContent = score;
-        
-        // Si les scores sont égaux, appliquer le style de match nul
-        if (winnerName === null && match.score1 === match.score2) {
-            teamDiv.classList.add('draw');
-            teamDiv.classList.remove('winner', 'loser');
-            scoreDiv.classList.add('draw');
-        } else if (winnerName) {
-            teamDiv.classList.remove('draw');
-            scoreDiv.classList.remove('draw');
-            if (teamName === winnerName) {
-                teamDiv.classList.add('winner');
-                teamDiv.classList.remove('loser');
-            } else {
-                teamDiv.classList.add('loser');
-                teamDiv.classList.remove('winner');
-            }
-        } else {
-            teamDiv.classList.remove('winner', 'loser', 'draw');
-            scoreDiv.classList.remove('draw');
-        }
-    }
+  } catch (error) {
+    console.warn('Erreur lors de la synchronisation depuis localStorage:', error);
+  }
 }
 
-function calculateTeamStats() {
-  // Initialiser les stats pour toutes les équipes de la poule
-  const teamStats = {};
+// Mise à jour d'un match à partir des données du serveur
+function updateMatchFromServerData(data) {
+  if (!data || !data.matchId) return;
+  const matchId = data.matchId;
   
-  // S'assurer que chaque équipe a ses statistiques initialisées
-  pouleTeams.forEach(team => {
-      teamStats[team] = {
-          played: 0,
-          wins: 0,
-          draws: 0,
-          losses: 0,
-          points: 0,
-          goalsFor: 0,
-          goalsAgainst: 0
-      };
+  // Si le match n'existe pas encore dans notre état, on l'ignore
+  if (!tournamentState.matches[matchId]) return;
+  
+  console.log(`Mise à jour du match ${matchId} depuis les données serveur`);
+  
+  // Mettre à jour les données du match
+  tournamentState.matches[matchId].score1 = data.score1 !== undefined ? data.score1 : tournamentState.matches[matchId].score1;
+  tournamentState.matches[matchId].score2 = data.score2 !== undefined ? data.score2 : tournamentState.matches[matchId].score2;
+  tournamentState.matches[matchId].status = data.status || tournamentState.matches[matchId].status;
+  
+  // Mettre à jour l'équipe gagnante/perdante si le match est terminé
+  if (data.status === 'terminé') {
+    const score1 = parseInt(data.score1);
+    const score2 = parseInt(data.score2);
+    
+    if (score1 > score2) {
+      tournamentState.matches[matchId].winner = data.team1;
+      tournamentState.matches[matchId].loser = data.team2;
+    } else if (score2 > score1) {
+      tournamentState.matches[matchId].winner = data.team2;
+      tournamentState.matches[matchId].loser = data.team1;
+    } else {
+      // Match nul
+      tournamentState.matches[matchId].draw = true;
+      tournamentState.matches[matchId].winner = null;
+      tournamentState.matches[matchId].loser = null;
+    }
+  }
+}
+
+// Mise à jour de plusieurs matchs à partir des données du serveur
+function updateMatchesFromServerData(matches) {
+  if (!matches || !Array.isArray(matches)) return;
+  
+  matches.forEach(match => {
+    // Convertir au format attendu par updateMatchFromServerData
+    const data = {
+      matchId: match.id_match,
+      score1: match.score_equipe1,
+      score2: match.score_equipe2,
+      status: match.status,
+      team1: match.team1,
+      team2: match.team2
+    };
+    updateMatchFromServerData(data);
   });
+}
 
-  // Parcourir uniquement les matchs de poule terminés
-  for (let i = 1; i <= 12; i++) {
-      const match = tournamentState.matches[i];
-      if (match && match.status === 'terminé' && match.team1 && match.team2) {
-          const team1Stats = teamStats[match.team1];
-          const team2Stats = teamStats[match.team2];
-
-          if (!team1Stats || !team2Stats) continue; // Ignorer si une équipe n'est pas trouvée
-
-          team1Stats.played++;
-          team2Stats.played++;
-
-          // Vérifier si c'est un match nul (scores égaux)
-          if (match.score1 === match.score2) {
-              // Match nul - incrémenter les compteurs draws
-              team1Stats.draws++;
-              team2Stats.draws++;
-              team1Stats.points += 2;
-              team2Stats.points += 2;
-          } else if (match.winner === match.team1) {
-              // Victoire team1
-              team1Stats.wins++;
-              team2Stats.losses++;
-              team1Stats.points += 3;
-              team2Stats.points += 1;
-          } else {
-              // Victoire team2
-              team2Stats.wins++;
-              team1Stats.losses++;
-              team2Stats.points += 3;
-              team1Stats.points += 1;
-          }
-
-          // Mise à jour des buts
-          if (typeof match.score1 === 'number' && typeof match.score2 === 'number') {
-              team1Stats.goalsFor += match.score1;
-              team1Stats.goalsAgainst += match.score2;
-              team2Stats.goalsFor += match.score2;
-              team2Stats.goalsAgainst += match.score1;
-          }
+// Nouveau: fonction pour rafraîchir périodiquement l'UI
+function refreshUI() {
+  // Actualiser l'UI si nous avons chargé des données depuis le serveur
+  if (localStorage.getItem('handballTournamentState')) {
+    const savedState = localStorage.getItem('handballTournamentState');
+    if (savedState) {
+      const newState = JSON.parse(savedState);
+      // Vérifier si l'état a changé avant de mettre à jour l'UI
+      if (JSON.stringify(tournamentState) !== JSON.stringify(newState)) {
+        console.log('Mise à jour de l\'UI depuis localStorage');
+        tournamentState = newState;
+        updateUI();
       }
+    }
   }
-
-  return teamStats;
 }
 
 // ----- SIMULATION D'UN MATCH -----
@@ -304,6 +443,19 @@ async function simulateMatch(matchId) {
     }
 
     match.status = 'terminé';
+    
+    // Notifier via Socket.io si disponible
+    if (window.io) {
+        try {
+            const socket = io('/handball');
+            socket.emit('matchUpdate', {
+                matchId: matchId,
+                match: match
+            });
+        } catch (error) {
+            console.error('Erreur lors de l\'envoi de mise à jour de match via Socket.io:', error);
+        }
+    }
     
     await updateUI();
     saveTournamentState();
@@ -453,7 +605,7 @@ function calculateRankings() {
 
   // Calculer les stats de la poule
   Object.values(tournamentState.matches)
-    .filter(match => match.matchType === 'poule' && match.status === 'terminé')
+    .filter(match => match.matchType === 'Poule' && match.status === 'terminé')
     .forEach(match => {
       if (match.winner && match.loser) {
         teamStats[match.winner].points += 3;
@@ -557,30 +709,36 @@ function updateRankingDisplay() {
   saveTournamentState();
 }
 
-// Ajout de la fonction pour envoyer les points à l'API
+// Modifier la fonction pour envoyer les points via Socket.io uniquement (sans HTTP)
 async function sendPointsToServer(teamPoints) {
   try {
-    const response = await fetch('/api/points/handball', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        points: teamPoints
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Erreur serveur:', errorText);
-      throw new Error(`HTTP error! status: ${response.status}`);
+    console.log('Points handball calculés:', teamPoints);
+    
+    // Sauvegarde locale uniquement (pas d'appel HTTP)
+    localStorage.setItem('handballPoints', JSON.stringify({
+      points: teamPoints,
+      timestamp: new Date().toISOString()
+    }));
+    
+    // Si Socket.io est disponible, on envoie par ce canal
+    if (window.io) {
+      try {
+        const socket = io('/handball');
+        socket.emit('handball_points', {
+          points: teamPoints,
+          timestamp: new Date().toISOString()
+        });
+        console.log('Points envoyés via Socket.io');
+      } catch (error) {
+        console.error('Erreur lors de l\'envoi des points via Socket.io:', error);
+      }
     }
-
-    const result = await response.json();
-    console.log('Points mis à jour avec succès:', result);
+    
+    console.log('Points handball sauvegardés localement');
+    return true;
   } catch (error) {
-    console.error('Erreur lors de l\'envoi des points:', error);
-    alert('Erreur lors de l\'envoi des points au serveur');
+    console.error('Erreur lors de la sauvegarde des points:', error);
+    return false;
   }
 }
 
@@ -603,11 +761,33 @@ window.resetTournament = resetTournament;
 
 // Ajouter les gestionnaires de clic
 function addMatchClickHandlers() {
-    document.querySelectorAll('.match[data-match-id]').forEach(match => {
+    const matchElements = document.querySelectorAll('.match[data-match-id]');
+    if (!matchElements || matchElements.length === 0) return;
+    
+    matchElements.forEach(match => {
         match.addEventListener('click', async function() {
+            const matchId = parseInt(this.dataset.matchId);
+            const matchData = tournamentState.matches[matchId];
+            
+            // Ajouter la gestion du mode correction
+            if (correctionModeActive && matchData.status === 'terminé') {
+                if (confirm('Voulez-vous corriger ce match ?')) {
+                    const params = new URLSearchParams({
+                        matchId: matchId,
+                        team1: matchData.team1,
+                        team2: matchData.team2,
+                        matchType: matchData.matchType,
+                        score1: matchData.score1,
+                        score2: matchData.score2,
+                        correction: 'true'
+                    });
+                    window.location.href = `marquage.html?${params.toString()}`;
+                }
+                return;
+            }
+
+            // Reste du code existant pour la gestion des matchs normaux
             try {
-                const matchId = parseInt(this.dataset.matchId);
-                
                 // Vérifier si le match précédent est terminé (sauf pour le premier match)
                 if (matchId > 1) {
                     const previousMatch = tournamentState.matches[matchId - 1];
@@ -618,7 +798,7 @@ function addMatchClickHandlers() {
                 }
 
                 const matchData = tournamentState.matches[matchId];
-                const displayType = matchData.matchType === 'poule' ? 'Poule' : 'Finale';
+                const displayType = matchData.matchType; // Utilise directement matchType qui est déjà 'Poule' ou 'Finale'
 
                 if (matchData.status === 'à_venir') {
                     matchData.status = 'en_cours';
@@ -635,6 +815,22 @@ function addMatchClickHandlers() {
                         })
                     });
 
+                    // Notification Socket.io en plus de la sauvegarde locale
+                    if (window.io) {
+                        try {
+                            const socket = io('/handball');
+                            socket.emit('statusUpdate', {
+                                matchId: matchId,
+                                status: 'en_cours',
+                                score1: 0,
+                                score2: 0,
+                                id_terrain: 8
+                            });
+                        } catch (error) {
+                            console.error('Erreur Socket.io:', error);
+                        }
+                    }
+                    
                     saveTournamentState();
 
                     const params = new URLSearchParams({
@@ -676,8 +872,8 @@ function addMatchClickHandlers() {
         }
 
         // Appeler updateMatchClickability lors de la mise à jour de l'UI
-        const originalUpdateUI = updateUI;
-        updateUI = function() {
+        const originalUpdateUI = window.updateUI; // Utiliser window.updateUI au lieu de updateUI
+        window.updateUI = function() {
             originalUpdateUI();
             updateMatchClickability();
         };
@@ -693,12 +889,18 @@ function toggleCorrectionMode() {
     correctionModeActive = !correctionModeActive;
     const button = document.getElementById('correctionMode');
     
-    if (correctionModeActive) {
-        button.style.backgroundColor = '#4CAF50';
-        button.title = 'Mode correction actif';
+    if (button) {
+        if (correctionModeActive) {
+            button.style.backgroundColor = '#4CAF50';
+            button.title = 'Mode correction actif';
+            console.log('Mode correction activé');
+        } else {
+            button.style.backgroundColor = '#f44336';
+            button.title = 'Mode correction inactif';
+            console.log('Mode correction désactivé');
+        }
     } else {
-        button.style.backgroundColor = '#f44336';
-        button.title = 'Mode correction inactif';
+        console.error("Bouton 'correctionMode' introuvable");
     }
 }
 
@@ -830,3 +1032,19 @@ async function setupFinalMatch() {
         console.error("Erreur lors de la configuration de la finale:", error);
     }
 }
+
+// ----- EXPOSITION DE LA FONCTION DE CORRECTION -----
+window.toggleCorrectionMode = toggleCorrectionMode;
+
+// Ajout d'une fonction globale pour être appelée depuis handball.html
+window.updateTournamentFromSync = function(newState) {
+  if (newState) {
+    tournamentState = newState;
+    console.log("État du tournoi mis à jour depuis le module de synchronisation");
+    
+    // Appel sécurisé à updateUI
+    if (typeof window.updateUI === 'function') {
+      window.updateUI();
+    }
+  }
+};

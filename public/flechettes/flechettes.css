@@ -4,6 +4,28 @@
     box-sizing: border-box;
 }
 
+.players {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+
+.multiple-points {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    margin: 30px;
+}
+
+.points-line {
+    margin: 30px;
+}
+
+.points-line button {
+    background-color: red;
+    width: 10px;
+}
+
 html, body {
     width: 100%;
     height: 100vh;
@@ -54,6 +76,8 @@ button {
     font-size: 0.9rem;
     transition: background-color 0.3s;
 }
+
+.player {}
 
 button:hover {
     filter: brightness(90%);
@@ -216,7 +240,6 @@ button:hover {
     color: white;
     border: none;
     border-radius: 4px;
-    width: 24px;
     height: 24px;
     cursor: pointer;
     font-size: 16px;
@@ -282,7 +305,7 @@ button:hover {
     display: flex;
     justify-content: space-around;
     gap: 10px;
-    margin-top: 60px;
+    margin-top: 20px;
 }
 
 .action-button {
@@ -391,5 +414,72 @@ button:hover {
     font-weight: 500;
     min-width: 20px;
     text-align: center;
+}
+
+.points-buttons {
+    grid-template-columns: repeat(8, 1fr);
+    gap: 5px;
+    /* margin: 20px; */
+    display: grid;
+    justify-items: center;
+}
+
+.points-button {
+    font-size: 1.2em;
+    padding: 10px;
+    min-width: 50px;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.points-button:hover {
+    background-color: #45a049;
+}
+
+.control-button {
+    font-size: 1.2em;
+    padding: 10px 20px;
+    border-radius: 5px;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.control-button:hover {
+    background-color: #1976D2;
+}
+
+.correction-button {
+    background-color: #ff9800 !important; /* Orange pour le distinguer */
+    color: white;
+}
+
+.correction-button:hover {
+    background-color: #f57c00 !important;
+}
+
+.current-player {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin: 20px 0;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.player-button {
+    transition: all 0.3s ease;
+}
+
+.player-button[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
