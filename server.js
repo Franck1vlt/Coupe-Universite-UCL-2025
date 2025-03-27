@@ -4,10 +4,8 @@ const bodyParser = require('body-parser');
 const db = require('./database');
 const app = express();
 const port = 3000;
-const http = require('http');
-const server = http.createServer(app);
-const { Server } = require("socket.io");
-const io = new Server(server);
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
 const cors = require('cors');
 
 app.use(cors());
@@ -196,6 +194,22 @@ io.on('connection', (socket) => {
             console.error('Erreur lors de la réinitialisation du tournoi:', error);
             socket.emit('reset_error', { message: error.message });
         }
+    });
+
+    socket.on('getMatches', (type) => {
+        // Logique pour récupérer les matches
+        const matches = // ... récupération des matches
+        socket.emit('matchesUpdate', matches);
+    });
+
+    socket.on('resetTournament', () => {
+        // Logique pour réinitialiser le tournoi
+        // ...
+        io.emit('matchesUpdate', updatedData);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Client déconnecté');
     });
 });
 
@@ -1283,7 +1297,7 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route non trouvée' });
 });
 
-server.listen(port, () => {
+http.listen(port, () => {
     console.log(`Serveur en cours d'exécution sur http://localhost:${port}`);
 });
 

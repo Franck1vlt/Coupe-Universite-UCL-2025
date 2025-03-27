@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Affichage Score Badminton</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #ffffff;
+            color: #000000;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .score-board {
+            text-align: center;
+            width: 100%;
+            padding: 1.25rem;
+        }
+
+        .teams {
+            display: flex;
+            justify-content: space-around;
+            font-size: 8rem;
+            margin: 1.25rem 0;
+            font-weight: bold;
+        }
+
+        .score-container {
+            font-size: 20rem;
+            font-weight: bold;
+            margin: 17.5rem 0;
+        }
+
+        img#ballIconA {}
+
+        .ball-icon {
+            width: 10rem;
+            height: 10rem;
+            vertical-align: middle;
+            display: inline-block; /* Assurez-vous que l'élément est affiché */
+            opacity: 0; /* Au lieu de visibility: hidden */
+            transition: opacity 0.3s ease; /* Ajoute une transition fluide */
+        }
+
+        .ball-icon.visible {
+            opacity: 1; /* Au lieu de visibility: visible */
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .pulsate {
+            animation: pulse 1.5s infinite;
+        }
+
+        .ball-icon-table {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 1.25rem;
+            margin-left: 1.25rem;
+        }
+
+        .score-divider {
+            margin: 0 2.5rem;
+            color: #000000;
+        }
+
+        .match-info {
+            font-size: 9rem;
+            margin: 1.875rem 0;
+        }
+
+        .remaining-time {
+            background-color: #000000;
+            padding: 2.625rem 2.25rem;
+            border-radius: 2.625rem;
+            margin-right: 1.25rem;
+            color: red
+        }
+
+        .match-type {
+            color: #000000;
+        }
+
+        .team-logo {
+            width: 30rem;
+            height: 30rem;
+            margin: 0 1.25rem;
+            object-fit: contain;
+        }
+
+        /* Animation pour les changements de score */
+        .score-change {
+            animation: scoreUpdate 0.5s ease-in-out;
+        }
+
+        @keyframes scoreUpdate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Styles pour le mode split-screen */
+        @media (max-width: 600px) {
+            .teams {
+                font-size: 3rem;
+            }
+            
+            .score-container {
+                font-size: 8rem;
+            }
+            
+            .match-info {
+                font-size: 2rem;
+            }
+            
+            .ball-icon {
+                width: 2rem;
+                height: 2rem;
+            }
+            
+            .team-logo {
+                width: 4rem;
+                height: 4rem;
+            }
+        }
+
+        /* Indicateur de statut de connexion */
+        #connectionStatus {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            font-size: 12px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border-radius: 5px;
+            z-index: 100;
+        }
+
+        #offlineIndicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 24px;
+            border-radius: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="score-board">
+        <div class="teams">
+            <div class="team">
+                <img src="" alt="" class="team-logo" id="logoB">
+                <div id="teamBName">TEAM B</div>
+            </div>
+            <div class="team">
+                <img src="" alt="" class="team-logo" id="logoA">
+                <div id="teamAName">TEAM A</div>
+            </div>
+        </div>
+        
+        <div class="score-container">
+            <img src="badminton.png" alt="Service B" class="ball-icon" id="ballIconB">
+            <span id="teamBScore">0</span> 
+            <span class="score-divider">-</span>
+            <span id="teamAScore">0</span>
+            <img src="badminton.png" alt="Service A" class="ball-icon" id="ballIconA">
+        </div>
+        
+        <div class="match-info">
+            <span class="remaining-time" id="gameChrono">00:00</span>
+            <span class="match-type" id="matchType"></span>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Initialisation de l'affichage du score...");
+            
+            // Vérifier si on est dans une iframe (pour le split screen)
+            const isInIframe = window.location !== window.parent.location;
+            
+            // Obtenir l'ID de l'iframe ou utiliser le paramètre 'match' de l'URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const matchParam = urlParams.get('match');
+            const position = urlParams.get('position');
+            const storageKeyParam = urlParams.get('storageKey');
+            
+            // Modifier les ID si on est en mode split-screen avec position
+            if (position) {
+                console.log(`Mode split-screen, position: ${position}`);
+                // Adapter les IDs pour éviter les conflits entre les iframes
+                const ballIconA = document.getElementById('ballIconA');
+                const ballIconB = document.getElementById('ballIconB');
+                
+                if (ballIconA) ballIconA.id = `ballIconA_${position}`;
+                if (ballIconB) ballIconB.id = `ballIconB_${position}`;
+            }
+            
+            // Fonction améliorée pour obtenir un élément avec gestion du mode split-screen
+            function getElement(id) {
+                if (position) {
+                    // En mode split-screen, essayer d'abord avec l'ID modifié
+                    const positionElement = document.getElementById(`${id}_${position}`);
+                    if (positionElement) return positionElement;
+                }
+                // Sinon utiliser l'ID standard
+                return document.getElementById(id);
+            }
+            
+            function updateDisplay() {
+                console.log("Mise à jour de l'affichage...");
+                
+                // Déterminer la source des données
+                let dataSource = '';
+                let matchData;
+                
+                if (storageKeyParam) {
+                    // Utiliser la clé de stockage spécifiée dans l'URL
+                    dataSource = storageKeyParam;
+                    matchData = JSON.parse(localStorage.getItem(storageKeyParam) || '{}');
+                    console.log(`Utilisation de la clé de stockage fournie: ${storageKeyParam}`);
+                } else if (matchParam) {
+                    // Utiliser les données spécifiques au match
+                    dataSource = `liveMatchData_match${matchParam}`;
+                    matchData = JSON.parse(localStorage.getItem(dataSource) || '{}');
+                    console.log(`Utilisation des données du match ${matchParam}`);
+                } else {
+                    // Mode autonome standard
+                    dataSource = 'liveMatchData';
+                    matchData = JSON.parse(localStorage.getItem(dataSource) || '{}');
+                    console.log(`Mode autonome standard: ${dataSource}`);
+                }
+                
+                console.log(`Source des données: ${dataSource}`, matchData);
+                
+                // Mise à jour des équipes et du type de match
+                const teamAName = document.getElementById('teamAName');
+                const teamBName = document.getElementById('teamBName');
+                const matchType = document.getElementById('matchType');
+                
+                if (teamAName) teamAName.textContent = matchData.team1 || 'TEAM A';
+                if (teamBName) teamBName.textContent = matchData.team2 || 'TEAM B';
+                if (matchType) matchType.textContent = matchData.matchType || 'Match en cours';
+                
+                // Correction des chemins des logos
+                const logoA = document.getElementById('logoA');
+                const logoB = document.getElementById('logoB');
+                
+                if (logoA && matchData.team1) {
+                    logoA.src = `../img/${matchData.team1}.png`;
+                    logoA.onerror = () => logoA.src = '../img/default.png';
+                }
+                
+                if (logoB && matchData.team2) {
+                    logoB.src = `../img/${matchData.team2}.png`;
+                    logoB.onerror = () => logoB.src = '../img/default.png';
+                }
+                
+                // Mise à jour des scores
+                const teamAScore = document.getElementById('teamAScore');
+                const teamBScore = document.getElementById('teamBScore');
+                
+                if (teamAScore) teamAScore.textContent = matchData.score1 || '0';
+                if (teamBScore) teamBScore.textContent = matchData.score2 || '0';
+                
+                // Mise à jour du chronomètre
+                const gameChrono = document.getElementById('gameChrono');
+                if (gameChrono) gameChrono.textContent = matchData.chrono || '00:00';
+
+                // Mise à jour du serveur (partie critique corrigée)
+                const ballIconA = getElement('ballIconA');
+                const ballIconB = getElement('ballIconB');
+                
+                if (ballIconA && ballIconB) {
+                    console.log(`État du serveur: ${matchData.server}`);
+                    
+                    // Vérifier que les images existent
+                    const ballIconASrc = ballIconA.getAttribute('src');
+                    const ballIconBSrc = ballIconB.getAttribute('src');
+                    
+                    // Log pour vérifier les chemins d'images
+                    console.log(`Image A: ${ballIconASrc}, Image B: ${ballIconBSrc}`);
+                    
+                    // Correction des chemins si nécessaire
+                    if (!ballIconASrc || ballIconASrc === '') {
+                        ballIconA.src = 'badminton.png';
+                        ballIconA.onerror = function() {
+                            this.src = 'badminton.png';
+                            this.onerror = null;
+                        };
+                    }
+                    
+                    if (!ballIconBSrc || ballIconBSrc === '') {
+                        ballIconB.src = 'badminton.png';
+                        ballIconB.onerror = function() {
+                            this.src = 'badminton.png';
+                            this.onerror = null;
+                        };
+                    }
+                    
+                    // Supprimer toutes les classes
+                    ballIconA.classList.remove('visible', 'pulsate');
+                    ballIconB.classList.remove('visible', 'pulsate');
+                    
+                    // Réinitialiser les styles
+                    ballIconA.style.opacity = '0';
+                    ballIconB.style.opacity = '0';
+                    
+                    // Appliquer les nouveaux styles selon le serveur
+                    if (matchData.server === 'A') {
+                        console.log("Serveur: A - Affichage de l'icône A");
+                        ballIconA.style.opacity = '1';
+                        ballIconA.classList.add('visible', 'pulsate');
+                    } else if (matchData.server === 'B') {
+                        console.log("Serveur: B - Affichage de l'icône B");
+                        ballIconB.style.opacity = '1';
+                        ballIconB.classList.add('visible', 'pulsate');
+                    }
+                } else {
+                    console.warn("Impossible de trouver les éléments ballIconA ou ballIconB");
+                    console.log("IDs recherchés:", 
+                        position ? [`ballIconA_${position}`, `ballIconB_${position}`] : ['ballIconA', 'ballIconB']);
+                }
+                
+                // Afficher les valeurs dans la console pour débogage
+                console.log("État après mise à jour:", {
+                    team1: teamAName ? teamAName.textContent : 'N/A',
+                    team2: teamBName ? teamBName.textContent : 'N/A',
+                    score1: teamAScore ? teamAScore.textContent : 'N/A',
+                    score2: teamBScore ? teamBScore.textContent : 'N/A',
+                    chrono: gameChrono ? gameChrono.textContent : 'N/A',
+                    server: matchData.server || 'Non défini',
+                    ballIconA: ballIconA ? ballIconA.style.opacity : 'N/A',
+                    ballIconB: ballIconB ? ballIconB.style.opacity : 'N/A'
+                });
+            }
+            
+            // Surveiller les changements dans localStorage
+            window.addEventListener('storage', function(event) {
+                if (event.storageArea === localStorage) {
+                    // Vérifier si c'est une clé qui nous intéresse
+                    if (storageKeyParam && event.key === storageKeyParam) {
+                        console.log(`Mise à jour détectée dans ${storageKeyParam}`);
+                        updateDisplay();
+                    } else if (matchParam && event.key === `liveMatchData_match${matchParam}`) {
+                        console.log(`Mise à jour détectée pour le match ${matchParam}`);
+                        updateDisplay();
+                    } else if (event.key === 'liveMatchData') {
+                        console.log('Mise à jour détectée dans liveMatchData');
+                        updateDisplay();
+                    }
+                }
+            });
+            
+            // Écouter les messages du parent pour le mode iframe
+            window.addEventListener('message', function(event) {
+                if (event.data && event.data.type === 'updateMatchData') {
+                    console.log("Message reçu du parent:", event.data);
+                    
+                    // Stocker les données dans localStorage avec la clé appropriée
+                    const storageKey = storageKeyParam || (matchParam ? `liveMatchData_match${matchParam}` : 'liveMatchData');
+                    localStorage.setItem(storageKey, JSON.stringify(event.data.data));
+                    
+                    // Mettre à jour l'affichage
+                    updateDisplay();
+                }
+            });
+            
+            // Mise à jour initiale
+            updateDisplay();
+
+            // Mise à jour périodique
+            setInterval(updateDisplay, 1000);
+        });
+    </script>
+</body>
+</html>

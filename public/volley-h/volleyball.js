@@ -15,40 +15,64 @@ function initWebSocket() {
     try {
         // Vérifier si Socket.IO est disponible
         if (typeof io === 'undefined') {
-            console.error('Socket.IO n\'est pas chargé');
+            console.warn('Socket.IO non disponible - mode hors ligne activé');
+            socketConnected = false;
+            if (document.getElementById('connectionStatus')) {
+                document.getElementById('connectionStatus').textContent = 'Mode hors ligne';
+            }
             return;
         }
         
         socket = io();
-        
+
         socket.on('connect', () => {
-            console.log('Connecté au serveur WebSocket');
+            console.log('WebSocket connecté');
             socketConnected = true;
-            // Mettre à jour un indicateur visuel si nécessaire
-        });
-        
-        socket.on('disconnect', () => {
-            console.log('Déconnecté du serveur WebSocket');
-            socketConnected = false;
-            // Mettre à jour un indicateur visuel si nécessaire
-        });
-        
-        socket.on('connect_error', (error) => {
-            console.error('Erreur de connexion WebSocket:', error);
-            socketConnected = false;
-        });
-        
-        // Écouter les mises à jour d'autres clients
-        socket.on('match_updated', (data) => {
-            // Vérifier si c'est notre match actuel
-            if (data.matchId === matchData.matchId) {
-                console.log('Mise à jour WebSocket reçue pour notre match:', data);
-                // Mettre à jour les scores si nécessaire
-                // Mais éviter les boucles de mise à jour
+            if (document.getElementById('connectionStatus')) {
+                document.getElementById('connectionStatus').textContent = 'WebSocket: ✅ Connecté';
             }
         });
+
+        socket.on('disconnect', () => {
+            console.log('WebSocket déconnecté');
+            socketConnected = false;
+            if (document.getElementById('connectionStatus')) {
+                document.getElementById('connectionStatus').textContent = 'WebSocket: ❌ Déconnecté';
+            }
+        });
+
+        socket.on('match_updated', (data) => {
+            if (data.matchId === matchData.matchId) {
+                console.log('Mise à jour reçue pour le match actuel:', data);
+                if (!data.fromSelf) {
+                    matchData.teamA.score = data.score1;
+                    matchData.teamB.score = data.score2;
+                    updateDisplay();
+                }
+            }
+        });
+
+        socket.on('match_status_updated', (data) => {
+            if (data.matchId === matchData.matchId) {
+                console.log('Statut du match mis à jour:', data);
+                updateStatusIndicator(data.status);
+            }
+        });
+
+        socket.on('update_match_success', (response) => {
+            console.log('Match mis à jour avec succès:', response);
+        });
+
+        socket.on('update_match_error', (error) => {
+            console.error('Erreur lors de la mise à jour du match:', error);
+        });
+
     } catch (error) {
-        console.error('Erreur lors de l\'initialisation WebSocket:', error);
+        console.warn('Erreur WebSocket:', error);
+        socketConnected = false;
+        if (document.getElementById('connectionStatus')) {
+            document.getElementById('connectionStatus').textContent = 'Mode hors ligne';
+        }
     }
 }
 
@@ -361,11 +385,14 @@ async function updateDisplay() {
 
     // Envoyer les données au serveur via WebSocket si disponible
     if (socket && socketConnected) {
-        socket.emit('update_match_status', {
-            matchId: liveData.matchId,
-            status: liveData.status,
-            score1: liveData.score1,
-            score2: liveData.score2
+        socket.emit('update_match', {
+            matchId: matchData.matchId,
+            status: 'en_cours',
+            score1: matchData.teamA.score,
+            score2: matchData.teamB.score,
+            id_terrain: 9, // ID terrain volleyball hommes
+            id_tournois: 4, // ID tournoi volleyball hommes
+            fromSelf: true
         });
     } else {
         // Sinon on utilise le code HTTP existant

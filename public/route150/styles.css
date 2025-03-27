@@ -91,11 +91,26 @@ header {
     margin: 0 10px;
 }
 
-
 .team-logo {
     width: 20px; /* Réduit de 24px à 20px */
     margin-right: 6px; /* Réduit de 8px à 6px */
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
+}
+
+.team-logo-mini {
+    width: 30px;
+    height: 30px;
+    margin-right: 10px;
+    vertical-align: middle;
+    object-fit: contain;
+}
+
+.team img {
+    width: 40px;  /* Augmenté de 30px à 40px */
+    height: 40px; /* Augmenté de 30px à 40px */
+    margin-right: 10px;
+    vertical-align: middle;
+    object-fit: contain;
 }

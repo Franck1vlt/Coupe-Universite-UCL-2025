@@ -820,60 +820,11 @@ function startConnectionMonitoring() {
     }, 5000);
 }
 
-// Ajouter un bouton de reconnexion dans l'interface
-function addReconnectButton() {
-    let reconnectBtn = document.getElementById('reconnectButton');
-    if (!reconnectBtn) {
-        reconnectBtn = document.createElement('button');
-        reconnectBtn.id = 'reconnectButton';
-        reconnectBtn.textContent = '🔄 Reconnecter';
-        reconnectBtn.style.position = 'fixed';
-        reconnectBtn.style.bottom = '20px';
-        reconnectBtn.style.right = '20px';
-        reconnectBtn.style.padding = '10px';
-        reconnectBtn.style.backgroundColor = '#007bff';
-        reconnectBtn.style.color = 'white';
-        reconnectBtn.style.border = 'none';
-        reconnectBtn.style.borderRadius = '5px';
-        reconnectBtn.style.cursor = 'pointer';
-        reconnectBtn.style.zIndex = '1000';
-        reconnectBtn.onclick = () => {
-            if (socket) {
-                socket.disconnect();
-                setTimeout(() => socket.connect(), 1000);
-                updateConnectionIndicator('connecting', 'Reconnexion...');
-            }
-        };
-        document.body.appendChild(reconnectBtn);
-    }
-}
-
-// Initialisation
+/// Initialisation
 document.addEventListener('DOMContentLoaded', () => {
     // Initialiser directement WebSocket
     initWebSocket();
     
-    // Ajouter un bouton de reconnexion manuelle pour l'utilisateur
-    const reconnectBtn = document.createElement('button');
-    reconnectBtn.textContent = '🔄 Reconnecter';
-    reconnectBtn.style.position = 'fixed';
-    reconnectBtn.style.bottom = '10px';
-    reconnectBtn.style.right = '10px';
-    reconnectBtn.style.zIndex = '1000';
-    reconnectBtn.style.padding = '8px';
-    reconnectBtn.style.backgroundColor = '#007bff';
-    reconnectBtn.style.color = 'white';
-    reconnectBtn.style.border = 'none';
-    reconnectBtn.style.borderRadius = '4px';
-    reconnectBtn.onclick = () => {
-        if (socket) {
-            socket.disconnect();
-            setTimeout(() => {
-                socket.connect();
-            }, 1000);
-        }
-    };
-    document.body.appendChild(reconnectBtn);
     
     // Mettre le match en status "en cours" au chargement avec un léger délai
     const matchId = new URLSearchParams(window.location.search).get('matchId');
@@ -905,3 +856,65 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// Fonction pour mettre à jour les équipes
+function updateTeams() {
+    const teamA = document.getElementById('teamA');
+    const teamB = document.getElementById('teamB');
+    const teamAName = document.getElementById('teamAName');
+    const teamBName = document.getElementById('teamBName');
+    
+    if (teamA && teamB && teamAName && teamBName) {
+        teamAName.textContent = teamA.value || 'Team A';
+        teamBName.textContent = teamB.value || 'Team B';
+    }
+}
+
+// Fonctions pour le chronomètre
+function startChrono() {
+    if (!matchData.chrono.running) {
+        matchData.chrono.running = true;
+        matchData.chrono.interval = setInterval(() => {
+            matchData.chrono.time++;
+            updateChronoDisplay();
+        }, 1000);
+    }
+}
+
+function stopChrono() {
+    matchData.chrono.running = false;
+    if (matchData.chrono.interval) {
+        clearInterval(matchData.chrono.interval);
+    }
+}
+
+function updateChronoDisplay() {
+    const minutes = Math.floor(matchData.chrono.time / 60);
+    const seconds = matchData.chrono.time % 60;
+    const chronoDisplay = document.getElementById('gameChrono');
+    if (chronoDisplay) {
+        chronoDisplay.textContent = 
+            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+}
+
+// Fonctions pour la gestion des points
+function addPoint(team) {
+    const targetTeam = `team${team}`;
+    if (matchData[targetTeam]) {
+        matchData[targetTeam].score++;
+        document.getElementById(`team${team}Score`).textContent = matchData[targetTeam].score;
+        updateDisplay();
+        sendLiveUpdate();
+    }
+}
+
+function subPoint(team) {
+    const targetTeam = `team${team}`;
+    if (matchData[targetTeam] && matchData[targetTeam].score > 0) {
+        matchData[targetTeam].score--;
+        document.getElementById(`team${team}Score`).textContent = matchData[targetTeam].score;
+        updateDisplay();
+        sendLiveUpdate();
+    }
+}

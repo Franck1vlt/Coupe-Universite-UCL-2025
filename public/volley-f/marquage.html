@@ -51,19 +51,7 @@
 <body>
   <header>
     <h1>Volleyball Femmes - Table de marquage</h1>
-    <div id="connectionStatus" class="connection-status">
-        <span class="status-icon">⚪</span>
-        <span class="status-text">Vérification de la connexion...</span>
-        <span class="latency-indicator"></span>
-    </div>
-    <div id="matchStatusIndicator" style="position: absolute; top: 10px; right: 10px; background: #fff3cd; padding: 5px 10px; border-radius: 5px; font-weight: bold;">
-      Statut: En cours...
-    </div>
   </header>
-  <!-- Indicateur de connexion -->
-  <div id="connectionIndicator"></div>
-  <!-- Toast pour les notifications de connexion -->
-  <div id="connectionToast" class="connection-toast"></div>
   <main>
     <div class="gauche">
       <div class="parametres-match">
@@ -170,8 +158,6 @@
       </div>
     </div>
   </main>
-  <!-- Bouton de reconnexion manuel -->
-  <button id="reconnectButton" onclick="manualReconnect()">🔄 Reconnecter</button>
   <script>
     // Attendre que le DOM soit chargé avant d'initialiser
     document.addEventListener('DOMContentLoaded', function() {

@@ -300,25 +300,12 @@
             // Améliorer l'affichage du statut de connexion
             function showConnectionStatus(isConnected, message = '') {
                 let status = document.getElementById('connectionStatus');
-                if (!status) {
-                    status = document.createElement('div');
-                    status.id = 'connectionStatus';
-                    document.body.appendChild(status);
-                }
+
                 
                 if (isConnected === true) {
-                    status.textContent = '🟢 Connecté';
-                    status.style.backgroundColor = '#d4edda';
-                    status.style.color = '#155724';
                     document.getElementById('offlineIndicator').style.display = 'none';
                 } else if (isConnected === 'reconnecting') {
-                    status.textContent = '🟠 Reconnexion...';
-                    status.style.backgroundColor = '#fff3cd';
-                    status.style.color = '#856404';
                 } else {
-                    status.textContent = '🔴 Hors ligne' + (message ? `: ${message}` : '');
-                    status.style.backgroundColor = '#f8d7da';
-                    status.style.color = '#721c24';
                     document.getElementById('offlineIndicator').style.display = 'block';
                 }
             }
@@ -332,33 +319,7 @@
                     setTimeout(() => toast.classList.remove('visible'), 3000);
                 }
             }
-            
-            // Ajouter un bouton de reconnexion
-            function addReconnectButton() {
-                let btn = document.getElementById('reconnectButton');
-                if (!btn) {
-                    btn = document.createElement('button');
-                    btn.id = 'reconnectButton';
-                    btn.innerHTML = '🔄';
-                    btn.onclick = () => {
-                        showConnectionToast('Tentative de reconnexion...');
-                        if (socket) {
-                            socket.disconnect();
-                            setTimeout(() => {
-                                socket.connect();
-                                setTimeout(() => {
-                                    if (socket.connected) {
-                                        showConnectionToast('Reconnexion réussie!');
-                                    } else {
-                                        showConnectionToast('Échec de la reconnexion');
-                                    }
-                                }, 3000);
-                            }, 1000);
-                        }
-                    };
-                    document.body.appendChild(btn);
-                }
-            }
+        
             
             // Initialiser WebSocket
             initWebSocket();

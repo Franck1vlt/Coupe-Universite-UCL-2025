@@ -2,7 +2,8 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Affichage Score Pétanque</title>
+    <title>Affichage Score Fléchettes</title>
+    <link rel="icon" type="image/png" href="/img/coupe.png">
     <style>
         body {
             margin: 0;
@@ -38,6 +39,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            gap: 2vw;
         }
 
         .ball-icon {
@@ -65,8 +67,20 @@
 
         .current-player {
             margin-top: 3vh;
-            font-size: 3vw;
+            font-size: 4vw;
             font-weight: bold;
+            background-color: #f0f0f0;
+            padding: 1vh 2vw;
+            border-radius: 1vw;
+            display: inline-block;
+        }
+
+        .current-player-id {
+            font-size: 4vw;
+            color: #d32f2f;
+            /* margin-left: 1vw; */
+            font-weight: 900;
+            display: inline-block;
         }
 
         .shots-remaining {
@@ -124,6 +138,28 @@
             color: #333;
             text-transform: uppercase;
         }
+
+        span#teamASets\ set, span#teamBSets\ set {
+            font-size: 5vw;
+            font-weight: bold;
+            color: #ff0000;
+            padding: 0.5vh 1vw;
+            margin: 0 1vw;
+            /* Nouvelles propriétés pour centrer */
+            min-width: 3vw;
+            /* justify-content: center; */
+            display: flex;
+        }
+
+        /* Style pour les sets */
+        #teamASets, #teamBSets {
+            font-size: 5vw;
+            font-weight: bold;
+            color: #333;
+            min-width: 3vw;
+            text-align: center;
+        }
+
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
@@ -141,11 +177,11 @@
         </div>
         
         <div class="score-container">
-            <img src="cochonnet.png" alt="Cochonnet Icon" class="ball-icon" id="ballIconB" style="visibility: hidden;">
             <span id="teamBScore">0</span>
+            <span id="teamBSets">0</span>
             <span class="score-divider">-</span>
+            <span id="teamASets">0</span>
             <span id="teamAScore">0</span>
-            <img src="cochonnet.png" alt="Cochonnet Icon" class="ball-icon" id="ballIconA" style="visibility: hidden;">
         </div>
         
         <div class="match-info">
@@ -153,7 +189,7 @@
         </div>
 
         <div class="current-player">
-            Joueur actuel: <span id="currentPlayer">-</span>
+            Joueur actuel : <span id="currentPlayer" class="current-player-id">1A</span>
         </div>
 
         <div class="shots-remaining">
@@ -217,22 +253,16 @@
                     status.style.fontSize = '12px';
                     document.body.appendChild(status);
                 }
-                
-                if (isConnected) {
-                    status.textContent = '🟢 Connecté';
-                    status.style.backgroundColor = '#d4edda';
-                    status.style.color = '#155724';
-                } else {
-                    status.textContent = '🔴 Hors ligne';
-                    status.style.backgroundColor = '#f8d7da';
-                    status.style.color = '#721c24';
-                }
             }
 
             function updateDisplay() {
                 try {
-                    const matchData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
-                    console.log("Données récupérées:", matchData); // Pour débogage
+                    const rawData = localStorage.getItem('liveMatchData') || '{}';
+                    console.log("Données brutes du localStorage:", rawData);
+                    
+                    const matchData = JSON.parse(rawData);
+                    console.log("Données récupérées:", matchData);
+                    console.log("Type de donnée currentPlayer:", typeof matchData.currentPlayer, "Valeur:", matchData.currentPlayer);
                     
                     // Mise à jour des équipes et scores
                     document.getElementById('teamAName').textContent = matchData.team1 || 'TEAM A';
@@ -241,12 +271,52 @@
                     document.getElementById('teamBScore').textContent = matchData.score2 || '301';
                     
                     // Mise à jour du joueur actuel
-                    const currentPlayerText = matchData.currentPlayer || '';
-                    document.getElementById('currentPlayer').textContent = currentPlayerText.replace("Joueur actuel: ", "");
+                    const currentPlayerElement = document.getElementById('currentPlayer');
+                    if (currentPlayerElement) {
+                        // Essayer d'abord de récupérer depuis une propriété directe (si disponible)
+                        if (matchData.currentPlayerId && /^[12][AB]$/.test(matchData.currentPlayerId)) {
+                            currentPlayerElement.textContent = matchData.currentPlayerId;
+                            console.log("ID joueur récupéré depuis currentPlayerId:", matchData.currentPlayerId);
+                        } else {
+                            // Sinon, extraire depuis le texte currentPlayer
+                            const currentPlayerText = matchData.currentPlayer || '';
+                            console.log("Données du joueur reçues:", currentPlayerText);
+                            
+                            // Fonction pour extraire l'ID du joueur de manière fiable
+                            function extractPlayerID(playerText) {
+                                if (!playerText) return "1A"; // Valeur par défaut
+                                
+                                // Si c'est déjà juste l'identifiant (comme "1A")
+                                if (/^[12][AB]$/.test(playerText.trim())) {
+                                    return playerText.trim();
+                                }
+                                
+                                // Si le format est "Joueur actuel: 1A" ou "Joueur actuel : 1A (3 lancers restants)"
+                                let match = playerText.match(/Joueur actuel\s*:\s*([12][AB])/);
+                                if (match && match[1]) {
+                                    return match[1];
+                                }
+                                
+                                // Si le format est autre et contient quelque part 1A, 1B, 2A ou 2B
+                                match = playerText.match(/([12][AB])/);
+                                if (match && match[1]) {
+                                    return match[1];
+                                }
+                                
+                                return "1A"; // Valeur par défaut si aucun format n'est reconnu
+                            }
+                            
+                            const playerID = extractPlayerID(currentPlayerText);
+                            console.log("ID du joueur extrait:", playerID);
+                            
+                            // Mettre à jour l'élément avec l'ID du joueur
+                            currentPlayerElement.textContent = playerID;
+                        }
+                    }
                     
-                    // Extraire le nombre de lancers restants du texte
+                    // Extraire le nombre de lancers restants du texte pour mettre à jour les indicateurs
                     let throwsLeft = 3; // Valeur par défaut
-                    const match = currentPlayerText.match(/\((\d+) lancers? restants?\)/);
+                    const match = matchData.currentPlayer ? matchData.currentPlayer.match(/\((\d+) lancers? restants?\)/) : null;
                     if (match && match[1]) {
                         throwsLeft = parseInt(match[1]);
                     } else if (matchData.throwsLeft) {
@@ -255,16 +325,26 @@
                     }
                     
                     // Mise à jour des indicateurs de lancers
-                    const indicators = document.querySelectorAll('.shot-indicator');
-                    for (let i = 0; i < indicators.length; i++) {
-                        indicators[i].style.opacity = i < throwsLeft ? "1" : "0.2";
+                    for (let i = 1; i <= 3; i++) {
+                        const indicator = document.getElementById(`shot${i}`);
+                        if (indicator) {
+                            indicator.style.opacity = i <= throwsLeft ? "1" : "0.2";
+                        }
                     }
                     
                     // Mise à jour du type de match
                     const matchTypeElement = document.getElementById('matchType');
                     if (matchTypeElement && matchData.matchType) {
-                        // Afficher directement la valeur reçue
                         matchTypeElement.textContent = matchData.matchType;
+                    }
+                    
+                    // Mise à jour des sets
+                    if (matchData.sets) {
+                        const teamASets = document.getElementById('teamASets');
+                        const teamBSets = document.getElementById('teamBSets');
+                        
+                        if (teamASets) teamASets.textContent = matchData.sets.teamA;
+                        if (teamBSets) teamBSets.textContent = matchData.sets.teamB;
                     }
                     
                     // Mise à jour des logos
@@ -290,6 +370,13 @@
 
             // Initialiser WebSocket
             initWebSocket();
+            
+            // Écouter les changements dans le localStorage
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'liveMatchData') {
+                    updateDisplay();
+                }
+            });
         });
     </script>
 </body>

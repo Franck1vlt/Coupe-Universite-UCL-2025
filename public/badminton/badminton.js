@@ -106,7 +106,7 @@ function initWebSocket() {
 }
 
 // Structure de données du match (exemple)
-let petanqueMatchData = {
+let badmintonMatchData = {
     matchId: new URLSearchParams(window.location.search).get('matchId'),
     teamA: { score: 0 },
     teamB: { score: 0 },
@@ -251,7 +251,7 @@ async function resetGame() {
     try {
         // Sauvegarder immédiatement tous les matchs déjà terminés pour pouvoir les restaurer plus tard
         const finishedMatches = {};
-        const savedTournamentState = JSON.parse(localStorage.getItem('petanqueTournamentState') || '{}');
+        const savedTournamentState = JSON.parse(localStorage.getItem('badmintonTournamentState') || '{}');
         
         if (savedTournamentState.matches) {
             // Identifier tous les matchs qui sont déjà terminés
@@ -264,13 +264,13 @@ async function resetGame() {
         }
         
         // Stocker cet état dans localStorage pour pouvoir restaurer ces matchs après redirection
-        localStorage.setItem('petanque_finishedMatches', JSON.stringify(finishedMatches));
+        localStorage.setItem('badminton_finishedMatches', JSON.stringify(finishedMatches));
         
         // Mettre à jour le statut en "terminé"
         updateMatchStatus('terminé');
         
         // Récupérer l'état actuel du tournoi
-        const tournamentState = JSON.parse(localStorage.getItem('petanqueTournamentState') || '{}');
+        const tournamentState = JSON.parse(localStorage.getItem('badmintonTournamentState') || '{}');
         
         // Mettre à jour le match actuel
         if (tournamentState.matches) {
@@ -312,7 +312,7 @@ async function resetGame() {
             });
 
             // Sauvegarder l'état mis à jour
-            localStorage.setItem('petanqueTournamentState', JSON.stringify(tournamentState));
+            localStorage.setItem('badmintonTournamentState', JSON.stringify(tournamentState));
             
             // IMPORTANT : nettoyer toutes les entrées localStorage qui pourraient être en conflit
             localStorage.removeItem(`liveMatchData_match${matchId}`);
@@ -323,7 +323,7 @@ async function resetGame() {
                 localStorage.removeItem('liveMatchData');
             }
             
-            // Stocker des informations sur le dernier match terminé pour que petanque.html puisse le détecter
+            // Stocker des informations sur le dernier match terminé pour que badminton.html puisse le détecter
             localStorage.setItem('lastFinishedMatch', JSON.stringify({
                 matchId: matchId,
                 timestamp: new Date().getTime(),
@@ -433,7 +433,7 @@ async function resetGame() {
 
         // Redirection vers la page principale avec les paramètres forceClear et refresh
         // Ajouter un paramètre pour forcer la préservation des états des matchs terminés
-        window.location.href = 'petanque.html?refresh=' + Date.now() + 
+        window.location.href = 'badminton.html?refresh=' + Date.now() + 
                                '&forceClear=' + matchId + 
                                '&matchStatus=termine' + 
                                '&preserveFinished=true#final-phase';
@@ -450,6 +450,15 @@ async function updateDisplay() {
     document.getElementById('teamAScore').textContent = matchData.teamA.score;
     document.getElementById('teamBScore').textContent = matchData.teamB.score;
 
+    // Vérifier l'état actuel des indicateurs de service
+    const ballIconA = document.getElementById('ballIconA');
+    const ballIconB = document.getElementById('ballIconB');
+    
+    // S'assurer que server est bien défini
+    if (!window.server) {
+        window.server = 'A'; // Valeur par défaut
+    }
+
     const liveData = {
         matchId: new URLSearchParams(window.location.search).get('matchId'),
         team1: document.getElementById('teamAName').textContent,
@@ -459,21 +468,24 @@ async function updateDisplay() {
         score2: matchData.teamB.score,
         chrono: document.getElementById('gameChrono').textContent,
         status: 'en_cours',
-        server: document.getElementById('ballIconA').style.visibility === 'visible' ? 'A' : 'B'
+        server: window.server // Utiliser la variable globale server
     };
 
+    // Log des données pour débogage
+    console.log("Mise à jour des données en direct avec server=", window.server);
+    
     // Sauvegarder en localStorage
     localStorage.setItem('liveMatchData', JSON.stringify(liveData));
 
-    // Mettre à jour l'objet petanqueMatchData
-    petanqueMatchData.teamA.score = matchData.teamA.score;
-    petanqueMatchData.teamB.score = matchData.teamB.score;
-    petanqueMatchData.chrono = document.getElementById('gameChrono').textContent;
+    // Mettre à jour l'objet badmintonMatchData
+    badmintonMatchData.teamA.score = matchData.teamA.score;
+    badmintonMatchData.teamB.score = matchData.teamB.score;
+    badmintonMatchData.chrono = document.getElementById('gameChrono').textContent;
     
     // Sauvegarder en localStorage
     localStorage.setItem(
-        `liveMatchData_petanque_${petanqueMatchData.matchId}`,
-        JSON.stringify(petanqueMatchData)
+        `liveMatchData_badminton_${badmintonMatchData.matchId}`,
+        JSON.stringify(badmintonMatchData)
     );
 
     // Notifier la fenêtre parent si nous sommes dans une iframe
@@ -598,26 +610,106 @@ function changeServer() {
 function ChangeServer() {
     // Alterner le serveur entre A et B
     server = server === 'A' ? 'B' : 'A';
+    console.log(`Nouveau serveur: ${server}`);
 
     // Mettre à jour les icônes 
     const ballIconA = document.getElementById('ballIconA');
     const ballIconB = document.getElementById('ballIconB');
+    
     if (ballIconA && ballIconB) {
-        ballIconA.style.visibility = server === 'A' ? 'visible' : 'hidden';
-        ballIconB.style.visibility = server === 'B' ? 'visible' : 'hidden'; // Correction ici
+        // Utiliser opacity au lieu de visibility pour une cohérence totale
+        ballIconA.style.opacity = server === 'A' ? '1' : '0';
+        ballIconB.style.opacity = server === 'B' ? '1' : '0';
+        
+        // Ajouter une classe active pour l'animation si définie
+        ballIconA.classList.remove('active');
+        ballIconB.classList.remove('active');
+        
+        if (server === 'A') {
+            ballIconA.classList.add('active');
+        } else {
+            ballIconB.classList.add('active');
+        }
+        
+        console.log(`Visibilité mise à jour: IconA=${ballIconA.style.opacity}, IconB=${ballIconB.style.opacity}`);
+    } else {
+        console.warn("Les icônes de service n'ont pas été trouvées dans le DOM");
     }
 
     // Mettre à jour les données en direct pour synchroniser avec affichage_score.html
-    const liveData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
-    liveData.server = server;
-    localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+    const matchId = new URLSearchParams(window.location.search).get('matchId');
+    
+    // Créer un objet de données complètes pour le match
+    const liveData = {
+        matchId: matchId,
+        team1: document.getElementById('teamAName').textContent,
+        team2: document.getElementById('teamBName').textContent,
+        matchType: document.getElementById('matchType').textContent,
+        score1: matchData.teamA.score,
+        score2: matchData.teamB.score,
+        chrono: document.getElementById('gameChrono').textContent,
+        status: 'en_cours',
+        server: server
+    };
 
-    // Mise à jour des icônes dans marquage.html
-    const ballIconAInMarquage = document.getElementById('ballIconA');
-    const ballIconBInMarquage = document.getElementById('ballIconB');
-    if (ballIconAInMarquage && ballIconBInMarquage) {
-        ballIconAInMarquage.style.visibility = server === 'A' ? 'visible' : 'hidden';
-        ballIconBInMarquage.style.visibility = server === 'B' ? 'visible' : 'hidden'; // Correction ici
+    // Sauvegarder dans la clé générique
+    localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+    
+    // Et aussi dans la clé spécifique au match pour plus de fiabilité
+    if (matchId) {
+        localStorage.setItem(`liveMatchData_match${matchId}`, JSON.stringify(liveData));
+        console.log(`Données de service enregistrées pour le match ${matchId}`);
+    }
+    
+    console.log(`Service changé à l'équipe ${server}`, liveData);
+    
+    // Force une mise à jour de l'affichage complet
+    updateDisplay();
+}
+
+// Fonction pour définir le service explicitement (utilisée par setServer dans marquage.html)
+function setService(team) {
+    console.log(`Définition du service pour l'équipe ${team}`);
+    window.server = team;
+    
+    const ballIconA = document.getElementById('ballIconA');
+    const ballIconB = document.getElementById('ballIconB');
+    
+    if (ballIconA && ballIconB) {
+        // Réinitialiser les deux icônes
+        ballIconA.style.opacity = '0';
+        ballIconB.style.opacity = '0';
+        
+        // Activer la bonne icône
+        if (team === 'A') {
+            ballIconA.style.opacity = '1';
+            ballIconA.classList.add('active');
+            ballIconB.classList.remove('active');
+        } else if (team === 'B') {
+            ballIconB.style.opacity = '1';
+            ballIconB.classList.add('active');
+            ballIconA.classList.remove('active');
+        }
+    }
+    
+    // Mettre à jour les données en direct
+    const matchId = new URLSearchParams(window.location.search).get('matchId');
+    if (matchId) {
+        const liveData = {
+            matchId: matchId,
+            score1: document.getElementById('teamAScore').textContent,
+            score2: document.getElementById('teamBScore').textContent,
+            chrono: document.getElementById('gameChrono').textContent,
+            status: 'en_cours',
+            team1: document.getElementById('teamAName').textContent,
+            team2: document.getElementById('teamBName').textContent,
+            matchType: document.getElementById('matchType').textContent,
+            server: team
+        };
+        
+        localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+        localStorage.setItem(`liveMatchData_match${matchId}`, JSON.stringify(liveData));
+        console.log("Données mises à jour avec serveur:", liveData);
     }
 }
 
@@ -626,21 +718,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialiser WebSocket
     initWebSocket();
     
-    // Mettre le match en status "en cours" au chargement avec un léger délai
+    // Récupérer explicitement l'ID du match depuis l'URL ou depuis matchData
     const matchId = new URLSearchParams(window.location.search).get('matchId');
+    console.log("ID du match détecté:", matchId);
+    
+    // Mettre le match en status "en cours" au chargement avec un léger délai
     if (matchId) {
         setTimeout(() => {
-            console.log("Initialisation du statut 'en_cours'");
-            updateMatchStatus('en_cours');
-        }, 1500); // Augmenter le délai pour s'assurer que le socket est initialisé
+            if (typeof updateMatchStatus === 'function') {
+                updateMatchStatus('en_cours');
+            }
+        }, 500);
     }
 
-    // Rendre les icônes invisibles par défaut
+    // Identifier les éléments d'icône de service
     const ballIconA = document.getElementById('ballIconA');
     const ballIconB = document.getElementById('ballIconB');
+
+    // Rendre les icônes invisibles par défaut avec opacity au lieu de visibility
     if (ballIconA && ballIconB) {
-        ballIconA.style.visibility = 'hidden';
-        ballIconB.style.visibility = 'hidden';
+        ballIconA.style.opacity = '0';
+        ballIconB.style.opacity = '0';
+        
+        // Définir le serveur initial
+        setTimeout(() => {
+            // Définir le service initial à A
+            setService('A');
+        }, 500);
     }
 
     updateTeams();
@@ -655,4 +759,49 @@ document.addEventListener('DOMContentLoaded', () => {
             clearInterval(window.syncInterval);
         }
     });
+
+    // S'assurer que le serveur est initialisé à une valeur par défaut
+    if (!window.server) {
+        window.server = 'A'; // Valeur par défaut
+    }
+    
+    // Stocker la valeur initiale dans localStorage avec le matchId récupéré ci-dessus
+    const liveData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
+    liveData.server = window.server;
+    localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+    
+    // Créer ou mettre à jour la clé de match spécifique aussi
+    if (matchId) {
+        const matchSpecificData = JSON.parse(localStorage.getItem(`liveMatchData_match${matchId}`) || '{}');
+        matchSpecificData.server = window.server;
+        matchSpecificData.matchId = matchId;
+        localStorage.setItem(`liveMatchData_match${matchId}`, JSON.stringify(matchSpecificData));
+    }
+    
+    console.log("Serveur initialisé à:", window.server);
+    
+    // S'assurer que le serveur est initialisé et que les icônes sont correctement configurées
+    if (!window.server) {
+        window.server = 'A'; // Valeur par défaut
+    }
+    
+    
+    if (ballIconA && ballIconB) {
+        // S'assurer que les chemins d'images sont corrects
+        if (!ballIconA.src || ballIconA.src === '') {
+            ballIconA.src = '../img/badminton.png';
+            ballIconA.onerror = function() { this.src = 'badminton.png'; };
+        }
+        
+        if (!ballIconB.src || ballIconB.src === '') {
+            ballIconB.src = '../img/badminton.png';
+            ballIconB.onerror = function() { this.src = 'badminton.png'; };
+        }
+        
+        // Initialiser la visibilité en fonction du serveur
+        ballIconA.style.opacity = window.server === 'A' ? '1' : '0';
+        ballIconB.style.opacity = window.server === 'B' ? '1' : '0';
+        
+        console.log(`Icônes initialisées avec serveur=${window.server}`);
+    }
 });

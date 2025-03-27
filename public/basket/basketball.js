@@ -537,3 +537,168 @@ function resetGame() {
     });
 }
 
+// Code à ajouter à votre fichier basketball.js existant ou à inclure dans un nouveau script
+
+// Configuration de la connexion WebSocket
+function setupWebSocket() {
+    // Remplacez par l'URL de votre serveur WebSocket BODET
+    const socket = new WebSocket('ws://votre-serveur-websocket');
+    
+    socket.onopen = function(e) {
+        console.log('Connexion WebSocket BODET établie');
+    };
+    
+    socket.onmessage = function(event) {
+        console.log('Données reçues du BODET:', event.data);
+        processBodetData(event.data);
+    };
+    
+    socket.onclose = function(event) {
+        if (event.wasClean) {
+            console.log(`Connexion fermée proprement, code=${event.code} raison=${event.reason}`);
+        } else {
+            console.log('Connexion BODET interrompue');
+        }
+        // Tentative de reconnexion après 3 secondes
+        setTimeout(setupWebSocket, 3000);
+    };
+    
+    socket.onerror = function(error) {
+        console.log(`Erreur WebSocket BODET: ${error.message}`);
+    };
+    
+    return socket;
+}
+
+// Traitement des données reçues du BODET
+function processBodetData(data) {
+    try {
+        // Analyser les données JSON
+        let parsedData;
+        
+        // Si les données sont une chaîne de caractères, les parser
+        if (typeof data === 'string') {
+            parsedData = JSON.parse(data);
+        } else {
+            parsedData = data;
+        }
+        
+        // Mise à jour des scores
+        if (parsedData.HomeScore !== undefined) {
+            document.getElementById('teamAScore').textContent = parsedData.HomeScore;
+        }
+        
+        if (parsedData.AwayScore !== undefined) {
+            document.getElementById('teamBScore').textContent = parsedData.AwayScore;
+        }
+        
+        // Mise à jour du chronomètre de jeu
+        if (parsedData.Time) {
+            // Le format attendu est "MM:SS.ms" pour votre interface
+            // Le BODET envoie probablement "MM:SS"
+            const timeStr = parsedData.Time;
+            // Ajouter .0 si nécessaire pour correspondre au format de votre interface
+            const formattedTime = timeStr.includes('.') ? timeStr : timeStr + '.0';
+            document.getElementById('gameTimer').textContent = formattedTime;
+        }
+        
+        // Mise à jour du chronomètre des 24 secondes
+        if (parsedData.ShotclockTime !== undefined) {
+            // Le format attendu est "SS.ms" pour votre interface
+            const shotClockValue = parsedData.ShotclockTime;
+            // Ajouter .0 si nécessaire
+            const formattedShotClock = String(shotClockValue).includes('.') ? 
+                String(shotClockValue) : 
+                String(shotClockValue) + '.0';
+            document.getElementById('shotClock').textContent = formattedShotClock;
+        }
+        
+        // Mise à jour de la période
+        if (parsedData.Period !== undefined) {
+            // Dans votre interface, la période est affichée comme "MT1" ou "MT2"
+            const period = parseInt(parsedData.Period);
+            
+            // Basculer le toggle si nécessaire
+            const periodToggle = document.getElementById('periodToggle');
+            if (period === 1 && periodToggle.checked) {
+                periodToggle.checked = false;
+                // Déclencher l'événement change pour appeler togglePeriod() si nécessaire
+                periodToggle.dispatchEvent(new Event('change'));
+            } else if (period === 2 && !periodToggle.checked) {
+                periodToggle.checked = true;
+                // Déclencher l'événement change pour appeler togglePeriod() si nécessaire
+                periodToggle.dispatchEvent(new Event('change'));
+            }
+            
+            // Alternativement, mettre à jour directement le texte
+            document.getElementById('period').textContent = `MT${period}`;
+        }
+        
+        // Mettre à jour les données en temps réel pour l'affichage public
+        updateLiveData();
+        
+    } catch (error) {
+        console.error('Erreur lors du traitement des données BODET:', error);
+    }
+}
+
+// Mettre à jour les données du match en direct
+function updateLiveDataWithBodet() {
+    try {
+        const liveData = {
+            score1: document.getElementById('teamAScore')?.textContent || '0',
+            score2: document.getElementById('teamBScore')?.textContent || '0',
+            gameTimer: document.getElementById('gameTimer')?.textContent || '00:00.0',
+            shotClock: document.getElementById('shotClock')?.textContent || '24.0',
+            period: document.getElementById('period')?.textContent || 'MT1'
+        };
+        
+        // Mettre à jour le localStorage avec les données actuelles
+        const currentData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
+        localStorage.setItem('liveMatchData', JSON.stringify({
+            ...currentData,
+            ...liveData
+        }));
+    } catch (error) {
+        console.error('Erreur lors de la mise à jour des données en direct:', error);
+    }
+}
+
+// Fonction de test pour simuler la réception de données du BODET
+function testBodetData() {
+    // Exemple de données basé sur l'image que vous avez partagée
+    const testData = `{
+        "ClockType": 0,
+        "IsClockRunning": true,
+        "MatchStatus": 0,
+        "IsKlaxonRunning": false,
+        "Time": "8:59",
+        "Period": 1,
+        "HomeTimeout": 0,
+        "AwayTimeout": 0,
+        "Id": "Bodet18",
+        "HomeScore": 0,
+        "AwayScore": 2,
+        "Id": "Bodet30",
+        "Id": "Bodet50",
+        "ShotclockTime": 24,
+        "IsShotclockRunning": true,
+        "IsShotclockKlaxon": false,
+        "IsShotclockHidden": false,
+        "IsTenth": false
+    }`;
+    
+    processBodetData(testData);
+}
+
+// Initialiser la connexion WebSocket quand le DOM est chargé
+document.addEventListener('DOMContentLoaded', function() {
+    // Connexion WebSocket au BODET
+    const socket = setupWebSocket();
+    
+    // Pour tester sans connexion WebSocket réelle, décommentez la ligne suivante
+    // testBodetData();
+    
+    // Mettre à jour les données toutes les secondes au cas où
+    setInterval(updateLiveDataWithBodet, 1000);
+});

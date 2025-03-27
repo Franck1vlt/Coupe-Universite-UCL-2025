@@ -471,7 +471,6 @@ const allTeams = [
           }
       } catch (e) {
           console.error("Erreur critique lors de l'initialisation du tournoi:", e);
-          alert("Une erreur s'est produite lors de l'initialisation. Essayez de rafraîchir la page.");
       }
   });
   
@@ -1140,15 +1139,24 @@ const allTeams = [
           return;
       }
   
+      // Assurer que les deux premiers de chaque poule sont en demi-finales
       // 1er Poule A vs 2e Poule B (match 21)
       tournamentState.matches[21].team1 = sortedPouleA[0][0]; // 1er Poule A
       tournamentState.matches[21].team2 = sortedPouleB[1][0]; // 2e Poule B
       tournamentState.matches[21].status = 'à_venir';
+      tournamentState.matches[21].score1 = null;
+      tournamentState.matches[21].score2 = null;
+      tournamentState.matches[21].winner = null;
+      tournamentState.matches[21].loser = null;
       
       // 1er Poule B vs 2e Poule A (match 22)
       tournamentState.matches[22].team1 = sortedPouleB[0][0]; // 1er Poule B
       tournamentState.matches[22].team2 = sortedPouleA[1][0]; // 2e Poule A
       tournamentState.matches[22].status = 'à_venir';
+      tournamentState.matches[22].score1 = null;
+      tournamentState.matches[22].score2 = null;
+      tournamentState.matches[22].winner = null;
+      tournamentState.matches[22].loser = null;
       
       console.log("Demi-finales configurées:", tournamentState.matches[21], tournamentState.matches[22]);
       
@@ -1163,9 +1171,19 @@ const allTeams = [
       const sortedPouleA = Object.entries(stats.pouleA).sort(sortTeams);
       const sortedPouleB = Object.entries(stats.pouleB).sort(sortTeams);
       
-      if (sortedPouleA.length < 4 || sortedPouleB.length < 4) {
-          console.warn("Pas assez d'équipes pour configurer tous les matchs de classement");
-          // Essayer de configurer avec les équipes disponibles
+      console.log("Configuration des matchs de classement");
+      console.log("Poule A:", sortedPouleA);
+      console.log("Poule B:", sortedPouleB);
+      
+      // Vérifier si nous avons suffisamment d'équipes
+      if (sortedPouleA.length < 3) {
+          console.warn("Pas assez d'équipes dans la poule A pour les matchs de classement");
+          return;
+      }
+      
+      if (sortedPouleB.length < 3) {
+          console.warn("Pas assez d'équipes dans la poule B pour les matchs de classement");
+          return;
       }
       
       // 3e Poule A vs 4e Poule B (match 17)
@@ -1173,6 +1191,10 @@ const allTeams = [
           tournamentState.matches[17].team1 = sortedPouleA[2][0]; // 3e Poule A
           tournamentState.matches[17].team2 = sortedPouleB[3][0]; // 4e Poule B
           tournamentState.matches[17].status = 'à_venir';
+          tournamentState.matches[17].score1 = null;
+          tournamentState.matches[17].score2 = null;
+          tournamentState.matches[17].winner = null;
+          tournamentState.matches[17].loser = null;
       }
       
       // 3e Poule B vs 4e Poule A (match 18)
@@ -1180,171 +1202,118 @@ const allTeams = [
           tournamentState.matches[18].team1 = sortedPouleB[2][0]; // 3e Poule B
           tournamentState.matches[18].team2 = sortedPouleA[3][0]; // 4e Poule A
           tournamentState.matches[18].status = 'à_venir';
+          tournamentState.matches[18].score1 = null;
+          tournamentState.matches[18].score2 = null;
+          tournamentState.matches[18].winner = null;
+          tournamentState.matches[18].loser = null;
       }
       
-      console.log("Matchs de classement configurés:", tournamentState.matches[17], tournamentState.matches[18]);
+      // Attribuer 3 points d'office pour le 5e de la poule B s'il existe
+      if (sortedPouleB.length >= 5) {
+          const fifthTeam = sortedPouleB[4][0];
+          console.log(`Attribuer 3 points au 5e de la poule B: ${fifthTeam}`);
+          
+          // Sauvegarder les points
+          const savedPoints = JSON.parse(localStorage.getItem('flechettesPoints') || '{}');
+          savedPoints[fifthTeam] = 3; // 3 points pour le 5e de la poule B
+          localStorage.setItem('flechettesPoints', JSON.stringify(savedPoints));
+      }
+      
+      console.log("Matchs de classement configurés:", 
+                  tournamentState.matches[17], 
+                  tournamentState.matches[18]);
       
       saveTournamentState();
   }
   
-  // Configuration des finales (principale et de classement)
-  function setupFinals() {
-      // Finale principale (match 24)
-      const sf1 = tournamentState.matches[21];
-      const sf2 = tournamentState.matches[22];
+  // Fonction pour vérifier si les poules sont terminées et configurer les phases finales
+  function checkAndSetupNextPhase() {
+      const pouleAFinished = checkPouleMatchesFinished('A');
+      const pouleBFinished = checkPouleMatchesFinished('B');
       
-      if (sf1.winner && sf2.winner) {
-          tournamentState.matches[24].team1 = sf1.winner;
-          tournamentState.matches[24].team2 = sf2.winner;
-          tournamentState.matches[24].status = 'à_venir';
-      }
+      console.log(`Vérification des poules: A=${pouleAFinished}, B=${pouleBFinished}`);
       
-      // Petite finale / Match pour la 3ème place (match 23)
-      if (sf1.loser && sf2.loser) {
-          tournamentState.matches[23].team1 = sf1.loser;
-          tournamentState.matches[23].team2 = sf2.loser;
-          tournamentState.matches[23].status = 'à_venir';
-      }
-      
-      // Finale 5-6ème place (match 19)
-      const csf1 = tournamentState.matches[17];
-      const csf2 = tournamentState.matches[18];
-      
-      if (csf1.winner && csf2.winner) {
-          tournamentState.matches[19].team1 = csf1.winner;
-          tournamentState.matches[19].team2 = csf2.winner;
-          tournamentState.matches[19].status = 'à_venir';
-      }
-      
-      // Finale 7-8ème place (match 20)
-      if (csf1.loser && csf2.loser) {
-          tournamentState.matches[20].team1 = csf1.loser;
-          tournamentState.matches[20].team2 = csf2.loser;
-          tournamentState.matches[20].status = 'à_venir';
-      }
-      
-      console.log("Finales configurées");
-      
-      saveTournamentState();
-  }
-  
-  // Ajout d'une fonction pour vérifier périodiquement la cohérence des données
-  function setupPeriodicStateCheck() {
-      // Vérifier toutes les 20 secondes
-      setInterval(() => {
-          if (socket && socketConnected) {
-              // Demander l'état actuel de tous les matchs
-              socket.emit('request_tournament_state', { sport: 'flechettes' });
-              console.log("Demande de vérification de l'état du tournoi envoyée");
-          }
-      }, 20000);
-  }
-  
-  // Ajoutons une fonction de récupération d'urgence et corrigeons les problèmes
-  
-  // Fonction pour vérifier et restaurer les données du tournoi en cas de problème
-  function recoverTournamentState() {
-      try {
-          console.log("Tentative de récupération de l'état du tournoi...");
+      if (pouleAFinished && pouleBFinished) {
+          console.log("Les deux poules sont terminées, configuration des phases finales");
           
-          // Vérifier si l'état actuel est valide
-          let isStateValid = false;
-          try {
-              if (tournamentState && tournamentState.matches && Object.keys(tournamentState.matches).length > 0) {
-                  isStateValid = true;
-              }
-          } catch (e) {
-              console.error("État du tournoi invalide:", e);
-          }
+          // Configuration des demi-finales principales
+          setupSemiFinals();
           
-          // Si l'état n'est pas valide, essayer de le charger depuis localStorage
-          if (!isStateValid) {
-              console.log("État du tournoi invalide, tentative de restauration depuis localStorage");
-              const savedState = localStorage.getItem('flechettesTournamentState');
-              
-              if (savedState) {
-                  try {
-                      tournamentState = JSON.parse(savedState);
-                      console.log("État du tournoi restauré depuis localStorage");
-                      isStateValid = true;
-                  } catch (e) {
-                      console.error("Échec de la restauration depuis localStorage:", e);
-                  }
-              }
-          }
+          // Configuration des matchs de classement
+          setupClassificationMatches();
           
-          // Si toujours pas valide, réinitialiser à l'état par défaut
-          if (!isStateValid) {
-              console.log("Réinitialisation à l'état par défaut");
-              tournamentState = {
-                  matches: {
-                      // Poule A (matchIds 1 à 6)
-                      1: { matchType: 'poule_a', team1: 'ESPAS-ESTICE', team2: 'FLSH', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '9:30', terrain: 'Cible 3', terrainId: 4 },
-                      2: { matchType: 'poule_a', team1: 'FGES', team2: 'FMMS', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '9:30', terrain: 'Cible 4', terrainId: 5 },
-                      3: { matchType: 'poule_a', team1: 'FLSH', team2: 'FGES', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '10:15', terrain: 'Cible 1', terrainId: 2 },
-                      4: { matchType: 'poule_a', team1: 'ESPAS-ESTICE', team2: 'FMMS', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '10:15', terrain: 'Cible 2', terrainId: 3 },
-                      5: { matchType: 'poule_a', team1: 'FMMS', team2: 'FLSH', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '11:00', terrain: 'Cible 1', terrainId: 2 },
-                      6: { matchType: 'poule_a', team1: 'FGES', team2: 'ESPAS-ESTICE', score1: null, score2: null, status: 'à_venir', winner: null, loser: null, time: '11:00', terrain: 'Cible 2', terrainId: 3 },
-                      // Autres matchs...
-                  }
-              };
-              
-              // Enregistrer cet état par défaut
-              localStorage.setItem('flechettesTournamentState', JSON.stringify(tournamentState));
-              console.log("État par défaut enregistré dans localStorage");
-          }
+          // Sauvegarder et mettre à jour
+          saveTournamentState();
+          updateUI();
           
           return true;
-      } catch (e) {
-          console.error("Erreur critique lors de la récupération du tournoi:", e);
-          return false;
+      }
+      
+      return false;
+  }
+  
+  // Amélioration de la fonction checkPouleMatchesFinished pour être plus robuste
+  function checkPouleMatchesFinished(poule) {
+      const matchRange = poule === 'A' ? {start: 1, end: 6} : {start: 7, end: 16};
+      let totalMatches = 0;
+      let completedMatches = 0;
+      
+      for (let i = matchRange.start; i <= matchRange.end; i++) {
+          if (tournamentState.matches[i] && tournamentState.matches[i].team1 && tournamentState.matches[i].team2) {
+              totalMatches++;
+              if (tournamentState.matches[i].status === 'terminé') {
+                  completedMatches++;
+              }
+          }
+      }
+      
+      // Pour considérer la poule comme terminée, on vérifie que tous les matchs prévus sont terminés
+      const isCompleted = totalMatches > 0 && completedMatches === totalMatches;
+      console.log(`Poule ${poule}: ${completedMatches}/${totalMatches} matchs terminés => ${isCompleted ? "TERMINÉE" : "EN COURS"}`);
+      
+      return isCompleted;
+  }
+  
+  // Remplacer la vérification dans updateUI
+  function updateUI() {
+      // ...existing code...
+  
+      // Vérifier si tous les matchs de poule sont terminés
+      const pouleAMatchesFinished = checkPouleMatchesFinished('A'); // Matchs 1-6
+      const pouleBMatchesFinished = checkPouleMatchesFinished('B'); // Matchs 7-16
+    
+      if (pouleAMatchesFinished && pouleBMatchesFinished) {
+          console.log("Tous les matchs de poule sont terminés, configuration des phases finales...");
+          setupSemiFinals();
+          setupClassificationMatches();
       }
   }
   
-  // Fonction améliorée pour tenter de gérer les erreurs WebSocket
-  function initWebSocket() {
-      try {
-          // Vérifier si Socket.IO est disponible
-          if (typeof io === 'undefined') {
-              console.log('Socket.IO n\'est pas chargé, utilisation du mode local');
-              updateConnectionStatus(false);
-              return;
-          }
-          
-          // Essayer de créer une connexion avec des options robustes
-          socket = io({
-              reconnection: true,
-              reconnectionAttempts: Infinity,
-              reconnectionDelay: 1000,
-              timeout: 5000,
-              transports: ['websocket', 'polling']
-          });
-          
-          // Événements de base
-          socket.on('connect', () => {
-              console.log('Connecté au serveur WebSocket:', socket.id);
-              socketConnected = true;
-              updateConnectionStatus(true);
-          });
-          
-          socket.on('disconnect', () => {
-              console.log('Déconnecté du serveur WebSocket');
-              socketConnected = false;
-              updateConnectionStatus(false);
-          });
-          
-          socket.on('connect_error', (error) => {
-              console.error('Erreur de connexion WebSocket:', error);
-              socketConnected = false;
-              updateConnectionStatus(false);
-          });
-          
-          // Autres événements...
-      } catch (error) {
-          console.error('Erreur fatale lors de l\'initialisation WebSocket:', error);
-          updateConnectionStatus(false);
+  // Ajouter un nouveau gestionnaire d'événement pour mettre à jour les phases finales
+  document.addEventListener('DOMContentLoaded', function() {
+      // ...existing code...
+      
+      // Vérifier si les poules sont terminées et configurer les phases finales
+      setTimeout(() => {
+          checkAndSetupNextPhase();
+      }, 1000); // Laisser un peu de temps pour que l'UI se charge d'abord
+  });
+  
+  // Ajouter un bouton pour forcer la configuration des phases finales (utile pour les admins)
+  function forceSetupNextPhase() {
+      if (confirm("Voulez-vous vraiment forcer la configuration des phases finales ? Cette action est irréversible.")) {
+          console.log("Configuration forcée des phases finales...");
+          setupSemiFinals();
+          setupClassificationMatches();
+          saveTournamentState();
+          updateUI();
+          alert("Phases finales configurées!");
       }
   }
+  
+  // Exposer la fonction au scope global pour pouvoir l'appeler depuis l'UI
+  window.forceSetupNextPhase = forceSetupNextPhase;
+  // ...existing code...
   
   // Fonction pour initialiser les boutons de sélection des poules
   function initializePouleButtons() {
@@ -1362,3 +1331,283 @@ const allTeams = [
         });
     });
 }
+
+// Amélioration de la fonction checkPouleMatchesFinished pour être plus robuste
+function checkPouleMatchesFinished(poule) {
+    const matchRange = poule === 'A' ? {start: 1, end: 6} : {start: 7, end: 16};
+    let totalMatches = 0;
+    let completedMatches = 0;
+    
+    for (let i = matchRange.start; i <= matchRange.end; i++) {
+        if (tournamentState.matches[i]) {
+            totalMatches++;
+            if (tournamentState.matches[i].status === 'terminé') {
+                completedMatches++;
+            }
+        }
+    }
+    
+    // Afficher pour le debug
+    console.log(`Vérification poule ${poule}: ${completedMatches}/${totalMatches} matchs terminés`);
+    
+    // Pour considérer la poule comme terminée, tous les matchs doivent être terminés
+    return totalMatches > 0 && completedMatches === totalMatches;
+}
+
+// Fonction pour vérifier l'état des phases finales et les configurer si nécessaire
+function checkTournamentProgress() {
+    console.log("Vérification de l'état du tournoi...");
+    
+    // Compter manuellement les matchs terminés dans chaque poule
+    let pouleACompleted = 0;
+    let pouleATotal = 0;
+    let pouleBCompleted = 0;
+    let pouleBTotal = 0;
+    
+    // Poule A
+    for (let i = 1; i <= 6; i++) {
+        if (tournamentState.matches[i]) {
+            pouleATotal++;
+            if (tournamentState.matches[i].status === 'terminé') {
+                pouleACompleted++;
+            }
+        }
+    }
+    
+    // Poule B
+    for (let i = 7; i <= 16; i++) {
+        if (tournamentState.matches[i]) {
+            pouleBTotal++;
+            if (tournamentState.matches[i].status === 'terminé') {
+                pouleBCompleted++;
+            }
+        }
+    }
+    
+    console.log(`État des poules: A=${pouleACompleted}/${pouleATotal}, B=${pouleBCompleted}/${pouleBTotal}`);
+    
+    const pouleAFinished = pouleACompleted === pouleATotal && pouleATotal > 0;
+    const pouleBFinished = pouleBCompleted === pouleBTotal && pouleBTotal > 0;
+    
+    // Si les deux poules sont terminées, configurer les phases finales
+    if (pouleAFinished && pouleBFinished) {
+        console.log("ATTENTION: Toutes les poules sont terminées, configuration des phases finales");
+        
+        // Vérifier si les demi-finales sont déjà configurées
+        const semifinalsConfigured = 
+            tournamentState.matches[21].team1 !== null && 
+            tournamentState.matches[21].team2 !== null &&
+            tournamentState.matches[22].team1 !== null && 
+            tournamentState.matches[22].team2 !== null;
+            
+        if (!semifinalsConfigured) {
+            console.log("Configuration des demi-finales principales");
+            setupSemiFinals();
+            
+            console.log("Configuration des matchs de classement");
+            setupClassificationMatches();
+            
+            // Sauvegarder et mettre à jour
+            saveTournamentState();
+            updateUI();
+            
+            // Afficher une notification à l'utilisateur
+            showNotification('Les phases finales ont été configurées !');
+            
+            return true;
+        } else {
+            console.log("Les phases finales sont déjà configurées");
+        }
+    } else {
+        console.log("Certains matchs de poule ne sont pas encore terminés");
+    }
+    
+    return false;
+}
+
+// Fonction pour afficher une notification
+function showNotification(message) {
+    const notif = document.createElement('div');
+    notif.style.position = 'fixed';
+    notif.style.top = '20px';
+    notif.style.left = '50%';
+    notif.style.transform = 'translateX(-50%)';
+    notif.style.backgroundColor = '#4CAF50';
+    notif.style.color = 'white';
+    notif.style.padding = '15px 20px';
+    notif.style.borderRadius = '5px';
+    notif.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+    notif.style.zIndex = '1000';
+    notif.style.fontSize = '16px';
+    notif.style.fontWeight = 'bold';
+    notif.textContent = message;
+    
+    document.body.appendChild(notif);
+    
+    // Faire disparaître la notification après 5 secondes
+    setTimeout(() => {
+        notif.style.opacity = '0';
+        notif.style.transition = 'opacity 1s';
+        setTimeout(() => {
+            document.body.removeChild(notif);
+        }, 1000);
+    }, 5000);
+}
+
+// Remplacer la méthode handleStatusUpdate pour déclencher la vérification
+function handleStatusUpdate(data) {
+    if (!data || !data.matchId) return;
+    
+    console.log('Mise à jour de statut reçue:', data);
+    
+    // Vérifier si la mise à jour est plus récente que notre état actuel
+    const currentMatch = tournamentState.matches[data.matchId];
+    
+    // Si le match est déjà marqué comme terminé dans notre état local,
+    // mais qu'on reçoit une mise à jour qui le marque comme "en cours",
+    // ignorer cette mise à jour pour éviter de revenir en arrière
+    if (currentMatch.status === 'terminé' && data.status === 'en_cours') {
+        console.log(`Match ${data.matchId} déjà terminé localement, mise à jour ignorée`);
+        
+        // Renvoyer immédiatement notre état à tous pour forcer la cohérence
+        if (socket && socketConnected) {
+            socket.emit('force_match_status', {
+                matchId: data.matchId,
+                status: 'terminé',
+                score1: currentMatch.score1,
+                score2: currentMatch.score2,
+                winner: currentMatch.winner,
+                loser: currentMatch.loser,
+                timestamp: Date.now()
+            });
+        }
+        return;
+    }
+    
+    // Appliquer normalement la mise à jour
+    if (currentMatch) {
+        if (data.status) currentMatch.status = data.status;
+        if (data.score1 !== undefined) currentMatch.score1 = data.score1;
+        if (data.score2 !== undefined) currentMatch.score2 = data.score2;
+        if (data.winner) currentMatch.winner = data.winner;
+        if (data.loser) currentMatch.loser = data.loser;
+        
+        // Sauvegarder les changements immédiatement
+        saveTournamentState();
+        
+        // Mettre à jour l'interface utilisateur
+        updateUI();
+        
+        // Si match terminé, vérifier l'état du tournoi
+        if (data.status === 'terminé') {
+            console.log(`Match ${data.matchId} terminé, vérification de l'état du tournoi`);
+            // Attendre un peu pour être sûr que l'UI est à jour
+            setTimeout(checkTournamentProgress, 500);
+        }
+    }
+}
+
+// Modification de la méthode updateUI pour vérifier l'état du tournoi
+function updateUI() {
+    // ...existing code...
+    
+    // Vérification de l'état du tournoi
+    setTimeout(checkTournamentProgress, 500);
+}
+
+// Ajouter un nouveau gestionnaire d'événement pour les changements de DOM
+document.addEventListener('DOMContentLoaded', function() {
+    // ...existing code...
+    
+    // Exécuter une vérification de l'état du tournoi
+    setTimeout(checkTournamentProgress, 1500);
+    
+    // Ajouter un bouton pour forcer la vérification
+    const adminTools = document.getElementById('adminTools');
+    if (adminTools) {
+        const checkButton = document.createElement('button');
+        checkButton.textContent = 'Vérifier phases finales';
+        checkButton.className = 'admin-button';
+        checkButton.style.marginLeft = '10px';
+        checkButton.onclick = function() {
+            checkTournamentProgress();
+        };
+        adminTools.appendChild(checkButton);
+    }
+});
+
+// Exposer la fonction globalement pour pouvoir l'appeler depuis la console ou un bouton
+window.checkTournamentProgress = checkTournamentProgress;
+
+// Modification de la fonction setupSemiFinals pour être plus robuste
+function setupSemiFinals() {
+    const stats = calculateTeamStats();
+    
+    // Trier les équipes de chaque poule
+    const sortedPouleA = Object.entries(stats.pouleA).sort(sortTeams);
+    const sortedPouleB = Object.entries(stats.pouleB).sort(sortTeams);
+    
+    console.log("Poule A classement:", sortedPouleA);
+    console.log("Poule B classement:", sortedPouleB);
+
+    if (sortedPouleA.length < 2 || sortedPouleB.length < 2) {
+        console.error("Pas assez d'équipes pour configurer les demi-finales");
+        return;
+    }
+
+    // Assurer que les deux premiers de chaque poule sont en demi-finales
+    // 1er Poule A vs 2e Poule B (match 21)
+    tournamentState.matches[21].team1 = sortedPouleA[0][0]; // 1er Poule A
+    tournamentState.matches[21].team2 = sortedPouleB[1][0]; // 2e Poule B
+    tournamentState.matches[21].status = 'à_venir';
+    tournamentState.matches[21].score1 = null;
+    tournamentState.matches[21].score2 = null;
+    tournamentState.matches[21].winner = null;
+    tournamentState.matches[21].loser = null;
+    
+    // 1er Poule B vs 2e Poule A (match 22)
+    tournamentState.matches[22].team1 = sortedPouleB[0][0]; // 1er Poule B
+    tournamentState.matches[22].team2 = sortedPouleA[1][0]; // 2e Poule A
+    tournamentState.matches[22].status = 'à_venir';
+    tournamentState.matches[22].score1 = null;
+    tournamentState.matches[22].score2 = null;
+    tournamentState.matches[22].winner = null;
+    tournamentState.matches[22].loser = null;
+    
+    console.log("Demi-finales configurées:", tournamentState.matches[21], tournamentState.matches[22]);
+    
+    // Forcer la sauvegarde et l'affichage d'une notification
+    saveTournamentState();
+    showNotification("Demi-finales configurées : 1er A vs 2e B et 1er B vs 2e A");
+}
+
+// ...existing code...
+
+// Ajoutez un bouton spécifique dans l'interface pour forcer la configuration des phases finales
+document.addEventListener('DOMContentLoaded', function() {
+    // Trouver l'élément où ajouter le bouton (probablement un conteneur d'administration)
+    const adminContainer = document.querySelector('.admin-controls') || document.querySelector('.controls');
+    
+    if (adminContainer) {
+        const setupButton = document.createElement('button');
+        setupButton.textContent = '⚠️ Configurer phases finales';
+        setupButton.className = 'action-button setup-finals';
+        setupButton.style.backgroundColor = '#ff9800';
+        setupButton.style.color = 'white';
+        setupButton.style.fontWeight = 'bold';
+        setupButton.style.margin = '10px';
+        setupButton.style.padding = '10px 15px';
+        
+        setupButton.addEventListener('click', function() {
+            if (confirm('Voulez-vous configurer manuellement les phases finales? Ceci remplacera toute configuration existante.')) {
+                checkTournamentProgress();
+                setupSemiFinals();
+                setupClassificationMatches();
+                saveTournamentState();
+                updateUI();
+            }
+        });
+        
+        adminContainer.appendChild(setupButton);
+    }
+});

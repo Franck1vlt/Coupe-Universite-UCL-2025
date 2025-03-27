@@ -135,12 +135,6 @@
         background-color: #6c757d;
         animation: pulse 1s infinite;
     }
-    
-    @keyframes pulse {
-        0% { opacity: 0.6; }
-        50% { opacity: 1; }
-        100% { opacity: 0.6; }
-    }
   </style>
 </head>
 <body>
@@ -410,6 +404,8 @@
       </div>
     </div>
     
+    <!-- Ajouter Socket.IO avant tournament.js -->
+    <script src="/socket.io/socket.io.js"></script>
     <script src="tournament.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -466,35 +462,18 @@
                 }
             }
             
-            // Vérifier l'état de la connexion avec un timeout pour éviter les attentes trop longues
-            function checkConnection() {
+            // Remplacer la vérification HTTP par WebSocket
+            if (socket && socket.connected) {
+                updateConnectionStatus('connected');
+            } else {
                 updateConnectionStatus('connecting');
-                
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 3000);
-                
-                fetch('/api/matches/volleyballH', { 
-                    method: 'HEAD',
-                    cache: 'no-store',
-                    signal: controller.signal
-                })
-                .then(response => {
-                    clearTimeout(timeout);
-                    if (response.ok) {
-                        updateConnectionStatus('connected');
-                    } else {
-                        updateConnectionStatus('disconnected');
-                    }
-                })
-                .catch(() => {
-                    clearTimeout(timeout);
+                socket.once('connect', () => {
+                    updateConnectionStatus('connected');
+                });
+                socket.once('connect_error', () => {
                     updateConnectionStatus('offline');
                 });
             }
-            
-            // Vérifier la connexion immédiatement puis toutes les 30 secondes (réduit pour économiser les ressources)
-            checkConnection();
-            setInterval(checkConnection, 30000);
         });
     </script>
     <script>
@@ -541,15 +520,6 @@
 
         // Initialisation des statuts des matchs
         updateMatchStatus('à_venir');
-
-        // Exemple : mise à jour dynamique d'un match spécifique
-        setTimeout(() => {
-            const match = document.querySelector('.match[data-match-id="4"]');
-            if (match) {
-                match.querySelector('.match-status').textContent = 'En cours';
-                match.setAttribute('data-status', 'en_cours');
-            }
-        }, 2000);
     });
     </script>
 </body>

@@ -55,24 +55,11 @@ allTeams.sort().forEach((name, index) => {
 
 let tournamentState = {
     matches: {
-      // Barrages (matchIds 1 à 2, 15 à 16)
+      // Barrages (matchIds 1 à 2)
       1: {
         matchType: 'barrage',
-        team1: 'ESSLIL',
-        team2: 'USCHOOL',
-        score1: null,
-        score2: null,
-        status: 'à_venir',
-        winner: null,
-        loser: null,
-        nextMatchWin: 3,  // Le gagnant va en QF1
-        nextMatchLose: null,
-        time: '9:30'
-      },
-      2: {
-        matchType: 'barrage',
-        team1: 'LiDD',
-        team2: 'FLD',
+        team1: 'FMMS',  // Corrigé: inverser avec match 2
+        team2: 'IESEG', // Corrigé: inverser avec match 2
         score1: null,
         score2: null,
         status: 'à_venir',
@@ -80,88 +67,102 @@ let tournamentState = {
         loser: null,
         nextMatchWin: 4,  // Le gagnant va en QF2
         nextMatchLose: null,
-        time: '9:30'
+        time: '9:00'
       },
-      15: {
+      2: {
         matchType: 'barrage',
-        team1: 'ESPAS-ESTICE',
-        team2: 'ESPOL',
+        team1: 'FGES',  // Corrigé: inverser avec match 1
+        team2: 'FLSH',  // Corrigé: inverser avec match 1
         score1: null,
         score2: null,
         status: 'à_venir',
         winner: null,
         loser: null,
-        nextMatchWin: 5,  // Le gagnant va en QF3
+        nextMatchWin: 6,  // Le gagnant va en QF4 - CORRIGÉ: Était 7, maintenant 6
         nextMatchLose: null,
-        time: '10:15'
-      },
-      16: {
-        matchType: 'barrage',
-        team1: 'PIKTURA',
-        team2: 'FLSH',
-        score1: null,
-        score2: null,
-        status: 'à_venir',
-        winner: null,
-        loser: null,
-        nextMatchWin: 6,  // Le gagnant va en QF4
-        nextMatchLose: null,
-        time: '10:15'
+        time: '9:00'
       },
       // Quarts de finale (matchIds 3 à 6)
       3: {  // QF1
         matchType: 'quarterfinal',
-        team1: 'FMMS',
+        team1: 'ESPAS-ESTICE',
+        team2: 'FLD',
+        score1: null,
+        score2: null,
+        status: 'à_venir',
+        winner: null,
+        loser: null,
+        nextMatchWin: 9,  // Le gagnant va en DF1 - CORRIGÉ: Était 8, maintenant 9
+        nextMatchLose: 7, // Le perdant va en DC1 - CORRIGÉ: Était 10, maintenant 7
+        time: '9:30'
+      },
+      4: {  // QF2
+        matchType: 'quarterfinal', 
+        team1: 'ICAM',
         team2: null, // Gagnant Barrage 1
         score1: null,
         score2: null,
         status: 'à_venir',
         winner: null,
         loser: null,
-        nextMatchWin: 9,  // Le gagnant va en DF1
-        nextMatchLose: null,
-        time: '11:15'
+        nextMatchWin: 9,  // Le gagnant va en DF1 - CORRIGÉ: Était 8, maintenant 9
+        nextMatchLose: 7, // Le perdant va en DC1 - CORRIGÉ: Était 10, maintenant 7
+        time: '9:30'
       },
-      4: {  // QF2
-        matchType: 'quarterfinal', 
-        team1: 'FGES',
+      5: {  // QF3
+        matchType: 'quarterfinal',
+        team1: 'IKPO',
+        team2: 'USCHOOL',
+        score1: null,
+        score2: null,
+        status: 'à_venir',
+        winner: null,
+        loser: null,
+        nextMatchWin: 10,  // Le gagnant va en DF2 - CORRIGÉ: Était 9, maintenant 10
+        nextMatchLose: 8, // Le perdant va en DC2 - CORRIGÉ: Était 11, maintenant 8
+        time: '10:00'
+      },
+      6: {  // QF4
+        matchType: 'quarterfinal',
+        team1: 'PIKTURA',
         team2: null, // Gagnant Barrage 2
         score1: null,
         score2: null,
         status: 'à_venir',
         winner: null,
         loser: null,
-        nextMatchWin: 9,  // Le gagnant va en DF1
-        nextMatchLose: null,
-        time: '11:30'
+        nextMatchWin: 10,  // Le gagnant va en DF2 - CORRIGÉ: Était 9, maintenant 10
+        nextMatchLose: 8, // Le perdant va en DC2 - CORRIGÉ: Était 11, maintenant 8
+        time: '10:00'
       },
-      5: {  // QF3
-        matchType: 'quarterfinal',
-        team1: null, // Gagnant Barrage 3
-        team2: 'IKPO',
+      // Matchs de classement (entre perdants des quarts) - CORRIGÉS: Nouveaux IDs 7 et 8
+      7: {
+        matchType: 'classification_semifinal',
+        team1: null, // Perdant QF1
+        team2: null, // Perdant QF2
         score1: null,
         score2: null,
         status: 'à_venir',
         winner: null,
         loser: null,
-        nextMatchWin: 10,  // Le gagnant va en DF2
-        nextMatchLose: null,
-        time: '12:15'
+        nextMatchWin: 12,  // Gagnant va en match 5ème place
+        nextMatchLose: 11,  // Perdant va en match 7ème place
+        time: '10:30'
       },
-      6: {  // QF4
-        matchType: 'quarterfinal',
-        team1: 'ICAM',
-        team2: null, // Gagnant Barrage 4
+      8: {
+        matchType: 'classification_semifinal',
+        team1: null, // Perdant QF3
+        team2: null, // Perdant QF4
         score1: null,
         score2: null,
         status: 'à_venir',
         winner: null,
         loser: null,
-        nextMatchWin: 10,  // Le gagnant va en DF2
-        nextMatchLose: null,
-        time: '12:30'
+        nextMatchWin: 12,  // Gagnant va en match 5ème place
+        nextMatchLose: 11,  // Perdant va en match 7ème place
+        time: '11:00'
       },
-      // Demi-finales principales
+      // Demi-finales principales - CORRIGÉS: Nouveaux IDs 9 et 10
       9: {
         matchType: 'semifinal',
         team1: null, // Gagnant QF1
@@ -173,7 +174,7 @@ let tournamentState = {
         loser: null,
         nextMatchWin: 14,  // Gagnant va en finale
         nextMatchLose: 13,  // Perdant va en petite finale
-        time: '13:45'
+        time: '10:30'
       },
       10: {
         matchType: 'semifinal',
@@ -186,10 +187,33 @@ let tournamentState = {
         loser: null,
         nextMatchWin: 14,  // Gagnant va en finale
         nextMatchLose: 13,  // Perdant va en petite finale
-        time: '14:15'
+        time: '11:00'
+      },
+      // Matchs de classement finaux
+      11: { // Match 7ème place - CORRIGÉ: ID changé de 14 à 11
+        matchType: 'classification_smallfinal',
+        team1: null, // Perdant SF Classement 1
+        team2: null, // Perdant SF Classement 2
+        score1: null,
+        score2: null,
+        status: 'à_venir',
+        winner: null,
+        loser: null,
+        time: '11:30'
+      },
+      12: { // Match 5ème place - CORRIGÉ: ID changé de 13 à 12
+        matchType: 'classification_final',
+        team1: null, // Gagnant SF Classement 1
+        team2: null, // Gagnant SF Classement 2
+        score1: null,
+        score2: null,
+        status: 'à_venir',
+        winner: null,
+        loser: null,
+        time: '11:30'
       },
       // Matchs pour les médailles
-      13: { // Petite finale 3ème place
+      13: { // Petite finale 3ème place - CORRIGÉ: ID changé de 12 à 13
         matchType: 'smallfinal',
         team1: null, // Perdant SF 1
         team2: null, // Perdant SF 2
@@ -198,9 +222,9 @@ let tournamentState = {
         status: 'à_venir',
         winner: null,
         loser: null,
-        time: '15:15'
+        time: '12:00'
       },
-      14: { // Finale 1ère place
+      14: { // Finale 1ère place - CORRIGÉ: ID changé de 11 à 14
         matchType: 'final',
         team1: null, // Gagnant SF 1
         team2: null, // Gagnant SF 2
@@ -209,20 +233,20 @@ let tournamentState = {
         status: 'à_venir',
         winner: null,
         loser: null,
-        time: '16:00'
+        time: '12:00'
       }
     }
   };
 
 // Fonction pour sauvegarder l'état du tournoi
 function saveTournamentState() {
-    localStorage.setItem('petanqueTournamentState', JSON.stringify(tournamentState));
-    localStorage.setItem('lastUpdate', new Date().toISOString());
+    localStorage.setItem('badmintonTournamentState', JSON.stringify(tournamentState));
+    localStorage.setItem('lastUpdateBadminton', new Date().toISOString());
 }
 
 // Fonction pour charger l'état du tournoi
 function loadTournamentState() {
-    const savedState = localStorage.getItem('petanqueTournamentState');
+    const savedState = localStorage.getItem('badmintonTournamentState');
     if (savedState) {
         try {
             const newState = JSON.parse(savedState);
@@ -240,7 +264,7 @@ function loadTournamentState() {
                 });
                 
                 // Vérifier si nous avons des matchs terminés sauvegardés séparément
-                const savedFinishedMatches = localStorage.getItem('petanque_finishedMatches');
+                const savedFinishedMatches = localStorage.getItem('badminton_finishedMatches');
                 if (savedFinishedMatches) {
                     const additionalMatches = JSON.parse(savedFinishedMatches);
                     Object.keys(additionalMatches).forEach(matchId => {
@@ -261,14 +285,10 @@ function loadTournamentState() {
                 }
             }
             
-            // Appliquer le nouvel état avec les statuts préservés
+            // Remplacer l'état complet
             tournamentState = newState;
             
-            setTimeout(() => {
-                linkWinnersAndLosers();
-                updateUI();
-                updateMatchClickability();
-            }, 100);
+            // ...existing code...
             return true;
         } catch (error) {
             console.error('Erreur lors du chargement de l\'état du tournoi:', error);
@@ -280,12 +300,15 @@ function loadTournamentState() {
 
 // ----- POINTS ATTRIBUÉS SELON LA PLACE FINALE -----
 const positionPoints = {
-  1: 25,  // Champion
-  2: 20,  // Finaliste
-  3: 18,  // 3ème place (gagnant Place de 3e)
-  4: 15,  // 4ème place (perdant Place de 3e)
-  5: 10,  // 5ème place (4 perdants des Quarts) 
-  9: 5,    // 9ème place (les 4 perdants des barrages)
+  1: 50,  // Champion
+  2: 40,  // Finaliste
+  3: 35,  // 3ème place (gagnant Place de 3e)
+  4: 30,  // 4ème place (perdant Place de 3e)
+  5: 25,  // 5ème place (gagnant Place de 5e)
+  6: 20,  // 6ème place (perdant Place de 5e)
+  7: 15,   // 7ème place (gagnant Place de 7e)
+  8: 10,    // 8ème place (perdant Place de 7e)
+  9: 5,    // 9ème place (les deux perdants des barrages)
 };
 
 // ----- INITIALISATION -----
@@ -296,10 +319,19 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialiser la connexion WebSocket
   initWebSocket();
   
+  // Ajouter vérification de cohérence entre HTML et tournamentState
+  checkMatchConsistency();
+  
   // Charger d'abord depuis le serveur, puis utiliser le local storage comme fallback
   initFromServer().then(success => {
-    if (!success && loadTournamentState()) {
-      console.log('État précédent du tournoi chargé depuis le localStorage');
+    if (!success) {
+      if (loadTournamentState()) {
+        console.log('État précédent du tournoi chargé depuis le localStorage');
+      } else {
+        console.warn('Aucun état valide trouvé, réinitialisation du tournoi');
+        // Réinitialiser avec l'état par défaut si aucun état valide n'est trouvé
+        resetTournamentToDefault();
+      }
     }
     
     // Recalculer les liens entre matchs pour s'assurer de la cohérence
@@ -370,7 +402,7 @@ async function initFromServer() {
         // Utiliser WebSocket au lieu de l'API HTTP
         if (socket && socketConnected) {
             return new Promise((resolve, reject) => {
-                socket.emit('get_tournament_data', { id_tournois: 3 }); // ID pour volleyball
+                socket.emit('get_tournament_data', { id_tournois: 5 }); // ID pour badminton
                 
                 const timeout = setTimeout(() => {
                     socket.off('tournament_data');
@@ -406,7 +438,7 @@ async function initFromServer() {
             });
         } else {
             // Fallback au localStorage si WebSocket n'est pas disponible
-            const localData = localStorage.getItem('petanqueTournamentState');
+            const localData = localStorage.getItem('badmintonTournamentState');
             if (localData) {
                 tournamentState = JSON.parse(localData);
                 updateSyncIndicator('success', 'Données locales chargées (mode hors-ligne)');
@@ -438,7 +470,34 @@ function setupServerSynchronization(interval = 3000) {
 async function syncWithServer(forceFullSync = false) {
     try {
         updateSyncIndicator('syncing', '');
-        const response = await fetch('/api/matches/petanque');
+        
+        // Vérifier d'abord les statuts des matchs dans localStorage
+        const activeMatchIds = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('liveMatchData_match')) {
+                try {
+                    const matchId = key.replace('liveMatchData_match', '');
+                    const data = JSON.parse(localStorage.getItem(key));
+                    if (data && data.status === 'en_cours') {
+                        activeMatchIds.push(matchId);
+                        
+                        // Mettre à jour le statut dans tournamentState
+                        if (tournamentState.matches[matchId]) {
+                            tournamentState.matches[matchId].status = 'en_cours';
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`Erreur lors de la lecture des données pour ${key}:`, e);
+                }
+            }
+        }
+        
+        if (activeMatchIds.length > 0) {
+            console.log("Matchs actifs détectés dans localStorage:", activeMatchIds);
+        }
+        
+        const response = await fetch('/api/matches/badminton');
         if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
         const data = await response.json();
         if (data.matches && Array.isArray(data.matches)) {
@@ -506,6 +565,9 @@ async function syncWithServer(forceFullSync = false) {
         } else {
             updateSyncIndicator('success', 'Aucun changement');
         }
+        
+        // Mettre à jour l'UI après la synchronisation
+        updateUI();
     } catch (error) {
         console.error('Erreur lors de la synchronisation avec le serveur:', error);
         updateSyncIndicator('error', 'Erreur de synchronisation');
@@ -597,7 +659,7 @@ function initWebSocket() {
 
     socket.on('tournament_reset', (data) => {
         console.log('Notification de réinitialisation du tournoi reçue:', data);
-        if (data.id_tournois === 3) { // Pour le tournoi de volleyball
+        if (data.id_tournois === 5) { // Pour le tournoi de volleyball
             // Recharger les données depuis le serveur
             initFromServer().then(() => {
                 // Recalculer les liens et mettre à jour l'interface
@@ -755,7 +817,7 @@ async function sendMatchResultToServer(matchId, matchData) {
                 socket.emit('update_match', {
                     matchId,
                     ...matchData,
-                    id_tournois: 3 // ID pour volleyball
+                    id_tournois: 5 // ID pour volleyball
                 });
                 
                 socket.once('update_match_success', () => {
@@ -776,22 +838,22 @@ async function sendMatchResultToServer(matchId, matchData) {
     
     // Fallback HTTP ou si WebSocket a échoué
     const response = await fetch('/api/match-result', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        matchId,
-        team1: matchData.team1,
-        team2: matchData.team2,
-        score1: matchData.score1,
-        score2: matchData.score2,
-        status: matchData.status,
-        winner: matchData.winner,
-        loser: matchData.loser,
-        matchType: matchData.matchType,
-        id_tournois: 3 // ID du tournoi de pétanque  
-      })
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            matchId,
+            team1: matchData.team1,
+            team2: matchData.team2,
+            score1: matchData.score1,
+            score2: matchData.score2,
+            status: matchData.status,
+            winner: matchData.winner,
+            loser: matchData.loser,
+            matchType: matchData.matchType,
+            id_tournois: 5 // ID du tournoi de volleyball
+        })
     });
 
     if (!response.ok) {
@@ -803,42 +865,8 @@ async function sendMatchResultToServer(matchId, matchData) {
 }
 
 // Fonction pour recalculer et mettre à jour les relations entre les matchs
-// Fonction pour recalculer et mettre à jour les relations entre les matchs
 function linkWinnersAndLosers() {
   console.log("Recalcul des liens entre les matchs");
-  
-  // D'abord, réinitialiser tous les matchs dépendants pour éviter les problèmes
-  Object.entries(tournamentState.matches).forEach(([matchId, match]) => {
-    // Ne pas toucher aux matchs de barrage et équipes prédéfinies
-    if (matchId !== '1' && matchId !== '2' && matchId !== '15' && matchId !== '16' &&
-        !(matchId === '3' && match.team1 === 'FMMS') && 
-        !(matchId === '4' && match.team1 === 'FGES') && 
-        !(matchId === '5' && match.team2 === 'IKPO') && 
-        !(matchId === '6' && match.team1 === 'ICAM')) {
-      // Réinitialiser les équipes des matchs suivants si leurs matches précédents ne sont pas terminés
-      if (match.team1 && !isWinnerFromCompletedMatch(match.team1, matchId)) {
-        match.team1 = null;
-      }
-      if (match.team2 && !isWinnerFromCompletedMatch(match.team2, matchId)) {
-        match.team2 = null;
-      }
-    }
-  });
-  
-  // Fonction pour vérifier si une équipe est le vainqueur d'un match terminé
-  function isWinnerFromCompletedMatch(teamName, currentMatchId) {
-    // Vérifier tous les matchs précédents
-    for (const [mId, m] of Object.entries(tournamentState.matches)) {
-      // Ne pas considérer le match actuel ou les matchs suivants
-      if (mId === currentMatchId || parseInt(mId) >= parseInt(currentMatchId)) continue;
-      
-      // Si l'équipe est gagnante d'un match terminé
-      if (m.status === 'terminé' && m.winner === teamName) {
-        return true;
-      }
-    }
-    return false;
-  }
   
   // Parcourir tous les matchs
   Object.entries(tournamentState.matches).forEach(([matchId, match]) => {
@@ -850,24 +878,16 @@ function linkWinnersAndLosers() {
         const nextMatch = tournamentState.matches[match.nextMatchWin];
         
         // Déterminer si le gagnant doit aller à team1 ou team2
-        // Pour les matchs de barrage, on sait exactement où ils vont
+        // Pour les matchs de barrage (1 et 2), on sait exactement où ils vont
         if (matchId === '1') {
-          // Gagnant du barrage 1 va dans QF1 (match 3) en team2
-          console.log(`Propagation: Gagnant du barrage 1 (${match.winner}) → QF1 (team2)`);
+          // Gagnant du barrage 1 va dans QF2 (match 4) en team2
+          console.log(`Propagation: Gagnant du barrage 1 (${match.winner}) → QF2 (team2)`);
           nextMatch.team2 = match.winner;
         } else if (matchId === '2') {
-          // Gagnant du barrage 2 va dans QF2 (match 4) en team2
-          console.log(`Propagation: Gagnant du barrage 2 (${match.winner}) → QF2 (team2)`);
+          // Gagnant du barrage 2 va dans QF4 (match 6) en team2
+          console.log(`Propagation: Gagnant du barrage 2 (${match.winner}) → QF4 (team2)`);
           nextMatch.team2 = match.winner;
-        } else if (matchId === '15') {
-          // Gagnant du barrage 15 va dans QF3 (match 5) en team1
-          console.log(`Propagation: Gagnant du barrage 15 (${match.winner}) → QF3 (team1)`);
-          nextMatch.team1 = match.winner;
-        } else if (matchId === '16') {
-          // Gagnant du barrage 16 va dans QF4 (match 6) en team2
-          console.log(`Propagation: Gagnant du barrage 16 (${match.winner}) → QF4 (team2)`);
-          nextMatch.team2 = match.winner;
-        }
+        } 
         // Pour les quarts de finale
         else if (matchId === '3' || matchId === '4') {
           // Gagnants des QF1 et QF2 vont en demi-finale 1
@@ -891,13 +911,24 @@ function linkWinnersAndLosers() {
           }
         }
         // Pour les demi-finales principales
-        else if (matchId === '9' || matchId === '10') {
+        else if (matchId === '7' || matchId === '8') {
           // Gagnants des demi-finales vont en finale
-          if (matchId === '9') {
+          if (matchId === '7') {
             console.log(`Propagation: Gagnant du SF1 (${match.winner}) → Finale (team1)`);
             nextMatch.team1 = match.winner;
           } else {
             console.log(`Propagation: Gagnant du SF2 (${match.winner}) → Finale (team2)`);
+            nextMatch.team2 = match.winner;
+          }
+        }
+        // Pour les demi-finales de classement
+        else if (matchId === '9' || matchId === '10') {
+          // Gagnants des demi-finales de classement vont au match pour la 5ème place
+          if (matchId === '9') {
+            console.log(`Propagation: Gagnant du SF Class 1 (${match.winner}) → Match 5ème place (team1)`);
+            nextMatch.team1 = match.winner;
+          } else {
+            console.log(`Propagation: Gagnant du SF Class 2 (${match.winner}) → Match 5ème place (team2)`);
             nextMatch.team2 = match.winner;
           }
         }
@@ -907,13 +938,43 @@ function linkWinnersAndLosers() {
       if (match.nextMatchLose && match.loser && tournamentState.matches[match.nextMatchLose]) {
         const nextMatch = tournamentState.matches[match.nextMatchLose];
         
+        // Pour les quarts de finale - perdants vont en demi-finales de classement
+        if (matchId === '3' || matchId === '4') {
+          // Perdants des QF1 et QF2 vont en demi-finale de classement 1
+          if (matchId === '3') {
+            console.log(`Propagation: Perdant du QF1 (${match.loser}) → SF Class 1 (team1)`);
+            nextMatch.team1 = match.loser;
+          } else {
+            console.log(`Propagation: Perdant du QF2 (${match.loser}) → SF Class 1 (team2)`);
+            nextMatch.team2 = match.loser;
+          }
+        } else if (matchId === '5' || matchId === '6') {
+          // Perdants des QF3 et QF4 vont en demi-finale de classement 2
+          if (matchId === '5') {
+            console.log(`Propagation: Perdant du QF3 (${match.loser}) → SF Class 2 (team1)`);
+            nextMatch.team1 = match.loser;
+          } else {
+            console.log(`Propagation: Perdant du QF4 (${match.loser}) → SF Class 2 (team2)`);
+            nextMatch.team2 = match.loser;
+          }
+        }
         // Pour les demi-finales principales - perdants vont au match pour la 3ème place
-        if (matchId === '9' || matchId === '10') {
-          if (matchId === '9') {
+        else if (matchId === '7' || matchId === '8') {
+          if (matchId === '7') {
             console.log(`Propagation: Perdant du SF1 (${match.loser}) → Match 3ème place (team1)`);
             nextMatch.team1 = match.loser;
           } else {
             console.log(`Propagation: Perdant du SF2 (${match.loser}) → Match 3ème place (team2)`);
+            nextMatch.team2 = match.loser;
+          }
+        }
+        // Pour les demi-finales de classement - perdants vont au match pour la 7ème place
+        else if (matchId === '9' || matchId === '10') {
+          if (matchId === '9') {
+            console.log(`Propagation: Perdant du SF Class 1 (${match.loser}) → Match 7ème place (team1)`);
+            nextMatch.team1 = match.loser;
+          } else {
+            console.log(`Propagation: Perdant du SF Class 2 (${match.loser}) → Match 7ème place (team2)`);
             nextMatch.team2 = match.loser;
           }
         }
@@ -953,7 +1014,7 @@ function calculateRankings() {
   const rankings = [];
   
   // 1. Ajouter les 1er et 2e places (finale)
-  const finalMatch = tournamentState.matches[14]; // Match final
+  const finalMatch = tournamentState.matches[11];
   if (finalMatch && finalMatch.status === 'terminé') {
     if (finalMatch.winner) {
       rankings.push({ name: finalMatch.winner, points: positionPoints[1], position: 1 });
@@ -964,7 +1025,7 @@ function calculateRankings() {
   }
 
   // 2. Ajouter les 3e et 4e places (petite finale)
-  const thirdPlaceMatch = tournamentState.matches[13]; // Match pour la 3ème place
+  const thirdPlaceMatch = tournamentState.matches[12];
   if (thirdPlaceMatch && thirdPlaceMatch.status === 'terminé') {
     if (thirdPlaceMatch.winner) {
       rankings.push({ name: thirdPlaceMatch.winner, points: positionPoints[3], position: 3 });
@@ -974,33 +1035,27 @@ function calculateRankings() {
     }
   }
 
-  // 3. Ajouter les perdants des quarts de finale (positions 5-8)
-  const quarterFinals = [3, 4, 5, 6];
-  
-  // Tous les perdants des quarts de finale sont classés à la 5ème position avec les mêmes points
-  quarterFinals.forEach(matchId => {
-    const match = tournamentState.matches[matchId];
-    if (match && match.status === 'terminé' && match.loser) {
-      rankings.push({ 
-        name: match.loser, 
-        points: positionPoints[5] || 0, // Utiliser toujours les points de la 5ème place 
-        position: 5  // Tous les perdants des quarts sont en 5ème position ex-aequo
-      });
+  // 3. Ajouter les 5e et 6e places
+  const fifthPlaceMatch = tournamentState.matches[13];
+  if (fifthPlaceMatch && fifthPlaceMatch.status === 'terminé') {
+    if (fifthPlaceMatch.winner) {
+      rankings.push({ name: fifthPlaceMatch.winner, points: positionPoints[5], position: 5 });
     }
-  });
+    if (fifthPlaceMatch.loser) {
+      rankings.push({ name: fifthPlaceMatch.loser, points: positionPoints[6], position: 6 });
+    }
+  }
 
-  // 4. Ajouter les perdants des barrages (positions 9-12)
-  const barrageLosers = [1, 2, 15, 16];
-  barrageLosers.forEach(matchId => {
-    const match = tournamentState.matches[matchId];
-    if (match && match.status === 'terminé' && match.loser) {
-      rankings.push({ 
-        name: match.loser, 
-        points: positionPoints[9] || 0, // Tous les perdants de barrage ont les mêmes points 
-        position: 9 // Position partagée
-      });
+  // 4. Ajouter les 7e et 8e places
+  const seventhPlaceMatch = tournamentState.matches[14];
+  if (seventhPlaceMatch && seventhPlaceMatch.status === 'terminé') {
+    if (seventhPlaceMatch.winner) {
+      rankings.push({ name: seventhPlaceMatch.winner, points: positionPoints[7], position: 7 });
     }
-  });
+    if (seventhPlaceMatch.loser) {
+      rankings.push({ name: seventhPlaceMatch.loser, points: positionPoints[8], position: 8 });
+    }
+  }
 
   // 5. Ajouter les autres équipes avec 0 point
   allTeams.forEach(team => {
@@ -1061,14 +1116,14 @@ function updateRankingDisplay() {
     
     // Envoyer les points au serveur si disponible
     if (socket && socketConnected) {
-      socket.emit('petanque_points', {
+      socket.emit('badminton_points', {
         points: teamPoints,
         timestamp: new Date().toISOString()
       });
       console.log('Points envoyés au serveur via WebSocket');
     } else {
       // Sauvegarde locale si le serveur n'est pas disponible
-      localStorage.setItem('petanquePoints', JSON.stringify({
+      localStorage.setItem('badmintonPoints', JSON.stringify({
         points: teamPoints,
         timestamp: new Date().toISOString()
       }));
@@ -1085,35 +1140,35 @@ function resetTournament() {
       return;
     }
     
-    console.log("Réinitialisation du tournoi de pétanque");
+    console.log("Réinitialisation du tournoi de badminton");
     
     // Supprimer les données locales
-    // Supprimer les données locales
-    localStorage.removeItem('petanqueTournamentState');
-    localStorage.removeItem('petanquePoints');
-    localStorage.removeItem('lastUpdate');
+    localStorage.removeItem('badmintonTournamentState');
+    localStorage.removeItem('badmintonPoints');
+    localStorage.removeItem('lastUpdateBadminton');
     
-    // Réinitialiser l'état en mémoire à l'état initial
+    // AJOUT: Supprimer toutes les données des matchs en cours qui pourraient persister
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('liveMatchData_match') || 
+                    key.startsWith('liveMatchData_badminton_') ||
+                    key === 'liveMatchData' ||
+                    key === 'badminton_finishedMatches')) {
+            localStorage.removeItem(key);
+            console.log(`Suppression de la clé: ${key}`);
+            // Comme on modifie localStorage pendant l'itération, on doit ajuster l'index
+            i--;
+        }
+    }
+    
+    // Réinitialiser l'état en mémoire à l'état initial avec statut explicitement à 'à_venir'
     tournamentState = {
       matches: {
-        // Barrages
+        // Barrages (matchIds 1 à 2)
         1: {
           matchType: 'barrage',
-          team1: 'ESSLIL',
-          team2: 'USCHOOL',
-          score1: null,
-          score2: null,
-          status: 'à_venir',
-          winner: null,
-          loser: null,
-          nextMatchWin: 3,
-          nextMatchLose: null,
-          time: '9:30'
-        },
-        2: {
-          matchType: 'barrage',
-          team1: 'LiDD',
-          team2: 'FLD',
+          team1: 'FMMS',
+          team2: 'IESEG',
           score1: null,
           score2: null,
           status: 'à_venir',
@@ -1121,24 +1176,11 @@ function resetTournament() {
           loser: null,
           nextMatchWin: 4,
           nextMatchLose: null,
-          time: '9:30'
+          time: '9:00'
         },
-        15: {
+        2: {
           matchType: 'barrage',
-          team1: 'ESPAS-ESTICE',
-          team2: 'ESPOL',
-          score1: null,
-          score2: null,
-          status: 'à_venir',
-          winner: null,
-          loser: null,
-          nextMatchWin: 5,
-          nextMatchLose: null,
-          time: '10:15'
-        },
-        16: {
-          matchType: 'barrage',
-          team1: 'PIKTURA',
+          team1: 'FGES',
           team2: 'FLSH',
           score1: null,
           score2: null,
@@ -1147,66 +1189,93 @@ function resetTournament() {
           loser: null,
           nextMatchWin: 6,
           nextMatchLose: null,
-          time: '10:15'
+          time: '9:00'
         },
-        // Quarts de finale
-        3: {
+        // Quarts de finale (matchIds 3 à 6)
+        3: {  // QF1
           matchType: 'quarterfinal',
-          team1: 'FMMS',
-          team2: null,
+          team1: 'ESPAS-ESTICE',
+          team2: 'FLD',
           score1: null,
           score2: null,
           status: 'à_venir',
           winner: null,
           loser: null,
           nextMatchWin: 9,
-          nextMatchLose: null,
-          time: '11:15'
+          nextMatchLose: 7,
+          time: '9:30'
         },
-        4: {
+        4: {  // QF2
           matchType: 'quarterfinal', 
-          team1: 'FGES',
-          team2: null,
+          team1: 'ICAM',
+          team2: null, // Gagnant Barrage 1
           score1: null,
           score2: null,
           status: 'à_venir',
           winner: null,
           loser: null,
           nextMatchWin: 9,
-          nextMatchLose: null,
-          time: '11:30'
+          nextMatchLose: 7,
+          time: '9:30'
         },
-        5: {
+        5: {  // QF3
           matchType: 'quarterfinal',
-          team1: null,
-          team2: 'IKPO',
+          team1: 'IKPO',
+          team2: 'USCHOOL',
           score1: null,
           score2: null,
           status: 'à_venir',
           winner: null,
           loser: null,
           nextMatchWin: 10,
-          nextMatchLose: null,
-          time: '12:15'
+          nextMatchLose: 8,
+          time: '10:00'
         },
-        6: {
+        6: {  // QF4
           matchType: 'quarterfinal',
-          team1: 'ICAM',
-          team2: null,
+          team1: 'PIKTURA',
+          team2: null, // Gagnant Barrage 2
           score1: null,
           score2: null,
           status: 'à_venir',
           winner: null,
           loser: null,
           nextMatchWin: 10,
-          nextMatchLose: null,
-          time: '12:30'
+          nextMatchLose: 8,
+          time: '10:00'
         },
-        // Demi-finales
+        // Matchs de classement (entre perdants des quarts) - CORRIGÉS: Nouveaux IDs 7 et 8
+        7: {
+          matchType: 'classification_semifinal',
+          team1: null, // Perdant QF1
+          team2: null, // Perdant QF2
+          score1: null,
+          score2: null,
+          status: 'à_venir',
+          winner: null,
+          loser: null,
+          nextMatchWin: 12,
+          nextMatchLose: 11,
+          time: '10:30'
+        },
+        8: {
+          matchType: 'classification_semifinal',
+          team1: null, // Perdant QF3
+          team2: null, // Perdant QF4
+          score1: null,
+          score2: null,
+          status: 'à_venir',
+          winner: null,
+          loser: null,
+          nextMatchWin: 12,
+          nextMatchLose: 11,
+          time: '11:00'
+        },
+        // Demi-finales principales - CORRIGÉS: Nouveaux IDs 9 et 10
         9: {
           matchType: 'semifinal',
-          team1: null,
-          team2: null,
+          team1: null, // Gagnant QF1
+          team2: null, // Gagnant QF2
           score1: null,
           score2: null,
           status: 'à_venir',
@@ -1214,12 +1283,12 @@ function resetTournament() {
           loser: null,
           nextMatchWin: 14,
           nextMatchLose: 13,
-          time: '13:45'
+          time: '10:30'
         },
         10: {
           matchType: 'semifinal',
-          team1: null,
-          team2: null,
+          team1: null, // Gagnant QF3
+          team2: null, // Gagnant QF4
           score1: null,
           score2: null,
           status: 'à_venir',
@@ -1227,55 +1296,84 @@ function resetTournament() {
           loser: null,
           nextMatchWin: 14,
           nextMatchLose: 13,
-          time: '14:15'
+          time: '11:00'
         },
-        // Matchs finaux
-        13: {
+        // Matchs de classement finaux
+        11: { // Match 7ème place - CORRIGÉ: ID changé de 14 à 11
+          matchType: 'classification_smallfinal',
+          team1: null, // Perdant SF Classement 1
+          team2: null, // Perdant SF Classement 2
+          score1: null,
+          score2: null,
+          status: 'à_venir',
+          winner: null,
+          loser: null,
+          time: '11:30'
+        },
+        12: { // Match 5ème place - CORRIGÉ: ID changé de 13 à 12
+          matchType: 'classification_final',
+          team1: null, // Gagnant SF Classement 1
+          team2: null, // Gagnant SF Classement 2
+          score1: null,
+          score2: null,
+          status: 'à_venir',
+          winner: null,
+          loser: null,
+          time: '11:30'
+        },
+        // Matchs pour les médailles
+        13: { // Petite finale 3ème place - CORRIGÉ: ID changé de 12 à 13
           matchType: 'smallfinal',
-          team1: null,
-          team2: null,
+          team1: null, // Perdant SF 1
+          team2: null, // Perdant SF 2
           score1: null,
           score2: null,
           status: 'à_venir',
           winner: null,
           loser: null,
-          time: '15:15'
+          time: '12:00'
         },
-        14: {
+        14: { // Finale 1ère place - CORRIGÉ: ID changé de 11 à 14
           matchType: 'final',
-          team1: null,
-          team2: null,
+          team1: null, // Gagnant SF 1
+          team2: null, // Gagnant SF 2
           score1: null,
           score2: null,
           status: 'à_venir',
           winner: null,
           loser: null,
-          time: '16:00'
+          time: '12:00'
         }
       }
     };
-  
-  // Notifier le serveur si disponible
-  if (socket && socketConnected) {
-    socket.emit('reset_tournament', {
-      sport: 'petanque',
-      state: tournamentState,
-      timestamp: new Date().toISOString()
-    });
-    console.log('Notification de réinitialisation envoyée au serveur');
-  }
-  
-  // Mettre à jour l'UI
-  updateUI();
-  
-  // Revenir à l'onglet de qualification
-  const phaseSelect = document.getElementById('phaseSelect');
-  if (phaseSelect) {
-    phaseSelect.value = 'qualification-phase';
-    phaseSelect.dispatchEvent(new Event('change'));
-  }
-  
-  alert('Tournoi réinitialisé avec succès');
+    
+    // Sauvegarder explicitement l'état réinitialisé
+    localStorage.setItem('badmintonTournamentState', JSON.stringify(tournamentState));
+    
+    // Notifier le serveur si disponible
+    if (socket && socketConnected) {
+      socket.emit('reset_tournament', {
+        sport: 'badminton',
+        state: tournamentState,
+        timestamp: new Date().toISOString()
+      });
+      console.log('Notification de réinitialisation envoyée au serveur');
+    }
+    
+    // MODIFICATION: Forcer l'actualisation complète de la page pour éviter les problèmes d'état
+    if (confirm('Tournoi réinitialisé avec succès. La page va être rechargée pour appliquer les changements.')) {
+      window.location.reload();
+    } else {
+      // Si l'utilisateur annule le rechargement, mettre quand même à jour l'UI
+      updateUI();
+      
+      // Revenir à l'onglet de qualification
+      const phaseSelect = document.getElementById('phaseSelect');
+      if (phaseSelect) {
+        phaseSelect.value = 'qualification-phase';
+        phaseSelect.dispatchEvent(new Event('change'));
+      }
+    }
 }
 
 // Exposer les fonctions globales
@@ -1295,17 +1393,90 @@ function updateUI() {
     const preserveFinished = urlParams.has('preserveFinished');
     
     // Vérifier aussi les matchs terminés sauvegardés
-    const savedFinishedMatches = localStorage.getItem('petanque_finishedMatches');
-    const finishedMatchIds = savedFinishedMatches ? Object.keys(JSON.parse(savedFinishedMatches)) : [];
+    const savedFinishedMatches = localStorage.getItem('badminton_finishedMatches');
+    let finishedMatchIds = [];
+    
+    try {
+      if (savedFinishedMatches) {
+        finishedMatchIds = Object.keys(JSON.parse(savedFinishedMatches));
+        console.log("Matchs terminés à préserver:", finishedMatchIds);
+      }
+    } catch (e) {
+      console.error("Erreur lors de l'analyse des matchs terminés sauvegardés:", e);
+    }
     
     // Vérifier s'il y a un match spécifique à forcer comme terminé
     const matchIdToForce = urlParams.get('forceClear');
     const forcedStatus = urlParams.get('matchStatus');
     
+    // Créer un ensemble de tous les matchs qui sont marqués comme terminés
+    // pour les préserver pendant cette mise à jour d'interface
+    const preserveTermineStatus = new Set();
+    const preserveEnCoursStatus = new Set();
+    
+    // Ajouter tous les matchs qui sont déjà terminés à l'ensemble
+    Object.entries(tournamentState.matches).forEach(([id, matchData]) => {
+      if (matchData.status === 'terminé') {
+        preserveTermineStatus.add(id);
+      } else if (matchData.status === 'en_cours') {
+        preserveEnCoursStatus.add(id);
+      }
+    });
+    
+    // Ajouter les matchs terminés sauvegardés
+    if (finishedMatchIds.length > 0) {
+      finishedMatchIds.forEach(id => preserveTermineStatus.add(id));
+    }
+    
+    // Ajouter le match forcé
+    if (matchIdToForce && forcedStatus === 'termine') {
+      preserveTermineStatus.add(matchIdToForce);
+    }
+    
+    console.log("Matchs dont le statut 'terminé' est préservé:", Array.from(preserveTermineStatus));
+    console.log("Matchs dont le statut 'en_cours' est préservé:", Array.from(preserveEnCoursStatus));
+    
+    // MODIFICATION: Ne vérifier les matchs actifs que si nous ne sommes pas dans un état de réinitialisation
+    const isResetting = window.isResettingTournament || false;
+    
+    // Vérifier s'il y a des matchs actifs dans le localStorage
+    const activeMatches = new Set();
+    if (!isResetting) {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('liveMatchData_match')) {
+          try {
+            const matchId = key.replace('liveMatchData_match', '');
+            const data = JSON.parse(localStorage.getItem(key));
+            // Vérifier que les données sont valides et que le statut est bien 'en_cours'
+            // Ne pas ajouter comme actif si le match est déjà marqué comme terminé
+            if (data && data.status === 'en_cours' && !preserveTermineStatus.has(matchId)) {
+              activeMatches.add(matchId);
+              console.log(`Match actif détecté dans localStorage: ${matchId}`);
+            }
+          } catch (e) {
+            console.warn(`Erreur lors de la lecture des données pour ${key}:`, e);
+          }
+        }
+      }
+    }
+    
     // Mettre à jour les matchs dans l'interface
     Object.entries(tournamentState.matches).forEach(([matchId, matchData]) => {
       const matchElement = document.querySelector(`.match[data-match-id="${matchId}"]`);
       if (!matchElement) return;
+      
+      // Préserver explicitement le statut 'terminé' pour les matchs concernés
+      if (preserveTermineStatus.has(matchId)) {
+        matchData.status = 'terminé';
+        // Supprimer toute entrée liveMatchData pour ce match pour éviter des conflits
+        localStorage.removeItem(`liveMatchData_match${matchId}`);
+      } 
+      // Ou préserver le statut 'en_cours' si applicable et non terminé
+      else if (!isResetting && !preserveTermineStatus.has(matchId) && 
+              (preserveEnCoursStatus.has(matchId) || activeMatches.has(matchId))) {
+        matchData.status = 'en_cours';
+      }
       
       // Mettre à jour les équipes
       const teams = matchElement.querySelectorAll('.team');
@@ -1360,6 +1531,8 @@ function updateUI() {
         
         statusElement.textContent = statusText;
         matchElement.setAttribute('data-status', matchData.status);
+        matchElement.classList.remove('à_venir', 'en_cours', 'terminé');
+        matchElement.classList.add(matchData.status);
         
         // Appliquer les styles de statut appropriés
         statusElement.style.backgroundColor = '#f0f0f0';
@@ -1373,25 +1546,25 @@ function updateUI() {
           statusElement.style.color = '#155724';
         }
       }
-    });
-
-    // Vérifier si des matchs sont marqués comme terminés dans l'URL
-    if (urlParams.has('forceClear')) {
-      const matchIdToUpdate = urlParams.get('forceClear');
       
-      // Forcer la mise à jour visuelle du statut terminé
-      const matchElement = document.querySelector(`.match[data-match-id="${matchIdToUpdate}"]`);
-      if (matchElement) {
-        const statusElement = matchElement.querySelector('.match-status');
-        if (statusElement) {
-          statusElement.textContent = 'Terminé';
-          statusElement.style.backgroundColor = '#d4edda';
-          statusElement.style.color = '#155724';
-          matchElement.setAttribute('data-status', 'terminé');
-          console.log(`Match ${matchIdToUpdate} marqué comme terminé (forcé par URL)`);
-        }
+      // Mettre à jour également le type de match affiché si nécessaire
+      const matchTypeElement = matchElement.querySelector('.match-type');
+      if (matchTypeElement && matchData.matchType) {
+        let displayMatchType = matchData.matchType;
+        
+        // Convertir les types de match en textes plus lisibles
+        if (displayMatchType === 'barrage') displayMatchType = 'Barrage';
+        else if (displayMatchType === 'quarterfinal') displayMatchType = 'Quart de finale';
+        else if (displayMatchType === 'semifinal') displayMatchType = 'Demi-finale';
+        else if (displayMatchType === 'smallfinal') displayMatchType = 'Place de 3ème';
+        else if (displayMatchType === 'final') displayMatchType = 'Finale';
+        else if (displayMatchType === 'classification_semifinal') displayMatchType = 'Demi-finale de classement';
+        else if (displayMatchType === 'classification_final') displayMatchType = 'Place de 5ème';
+        else if (displayMatchType === 'classification_smallfinal') displayMatchType = 'Place de 7ème';
+        
+        matchTypeElement.textContent = displayMatchType;
       }
-    }
+    });
 
     // Mettre à jour le champion si disponible
     const championElement = document.getElementById('champion');
@@ -1408,45 +1581,73 @@ function updateUI() {
 
     // Mettre à jour la cliquabilité des matchs
     updateMatchClickability();
+    
+    // Sauvegarder les modifications d'état
+    saveTournamentState();
   } catch (error) {
     console.error('Erreur lors de la mise à jour de l\'interface:', error);
+  } finally {
+    // Réinitialiser le flag de réinitialisation si présent
+    window.isResettingTournament = false;
   }
 }
 
-// Fonction mise à jour pour la cliquabilité des matchs
+// Fonction mise à jour pour gérer la cliquabilité des matchs
 function updateMatchClickability() {
     console.log("Mise à jour de la cliquabilité des matchs");
     
-    // Configuration des dépendances entre matchs
+    // Configuration des dépendances entre matchs (IDs mis à jour)
     const matchDependencies = {
       // Quarts de finale dépendent des barrages
-      '3': ['1'],  // QF1 dépend du barrage 1 (correction de '15' à '1')
-      '4': ['2'],   // QF2 dépend du barrage 2
-      '5': ['15'],  // QF3 dépend du barrage 15 (correction)
-      '6': ['16'],  // QF4 dépend du barrage 16
+      '4': ['1'],  // QF2 dépend du barrage 1
+      '6': ['2'],  // QF4 dépend du barrage 2
       
       // Demi-finales dépendent des quarts
-      '9': ['3', '4'],   // SF1 dépend de QF1 et QF2
+      '9': ['3', '4'],  // SF1 dépend de QF1 et QF2
       '10': ['5', '6'],  // SF2 dépend de QF3 et QF4
       
-      // Matchs finaux dépendent des demi-finales
+      // Match de classement dépendent des quarts
+      '7': ['3', '4'],  // Match classement 1 dépend des perdants de QF1 et QF2
+      '8': ['5', '6'], // Match classement 2 dépend des perdants de QF3 et QF4
+      
+      // Finale dépend des demi-finales
       '14': ['9', '10'], // Finale dépend des deux demi-finales
-      '13': ['9', '10']  // Match 3ème place dépend des deux demi-finales
+      
+      // Match 3ème place dépend des demi-finales
+      '13': ['9', '10'], // Match 3ème place dépend des deux demi-finales
+      
+      // Matchs de classement 5-8
+      '12': ['7', '8'], // Match 5ème place
+      '11': ['7', '8']  // Match 7ème place
     };
   
     document.querySelectorAll('.match[data-match-id]').forEach(matchElement => {
       const matchId = matchElement.getAttribute('data-match-id');
+      const matchData = tournamentState.matches[matchId];
       
-      // Vérification pour s'assurer que matchId existe dans tournamentState
-      if (!tournamentState.matches[matchId]) {
-        console.log(`Match ${matchId} non trouvé dans tournamentState - Vérifiez la structure du tournoi`);
+      if (!matchData) {
+        console.log(`Match ${matchId} introuvable dans la structure du tournoi`);
         return;
       }
       
-      const matchData = tournamentState.matches[matchId];
+      // En mode correction, tous les matchs sont cliquables
+      if (correctionModeActive) {
+        matchElement.style.cursor = 'pointer';
+        matchElement.style.opacity = '1';
+        matchElement.classList.remove('disabled');
+        return;
+      }
       
-      // Matchs de barrage sont toujours cliquables
-      if (matchId === '1' || matchId === '2' || matchId === '15' || matchId === '16') {
+      // Si le match est déjà terminé, le rendre cliquable pour consultation/modification en mode correction
+      if (matchData.status === 'terminé') {
+        matchElement.style.cursor = 'pointer';
+        matchElement.style.opacity = '1';
+        matchElement.classList.remove('disabled');
+        return;
+      }
+      
+      // QF1 et QF3 sont toujours cliquables car ils ont des équipes pré-assignées
+      if (matchId === '3' || matchId === '5') {
         matchElement.style.cursor = 'pointer';
         matchElement.style.opacity = '1';
         matchElement.classList.remove('disabled');
@@ -1456,11 +1657,6 @@ function updateMatchClickability() {
       // Pour les autres matchs, vérifier les dépendances
       const dependencies = matchDependencies[matchId] || [];
       const allDependenciesResolved = dependencies.every(depId => {
-        // Vérifier si le match dépendant existe
-        if (!tournamentState.matches[depId]) {
-          console.log(`Dépendance ${depId} pour le match ${matchId} n'existe pas dans tournamentState`);
-          return false;
-        }
         const depMatch = tournamentState.matches[depId];
         return depMatch && depMatch.status === 'terminé';
       });
@@ -1473,6 +1669,7 @@ function updateMatchClickability() {
         matchElement.style.opacity = '1';
         matchElement.classList.remove('disabled');
       } else {
+        // Même si les dépendances ne sont pas résolues, on peut rendre le match consultable mais avec une apparence différente
         matchElement.style.cursor = 'not-allowed';
         matchElement.style.opacity = '0.6';
         matchElement.classList.add('disabled');
@@ -1487,24 +1684,42 @@ function addMatchClickHandlers() {
   matches.forEach(match => {
     match.addEventListener('click', function() {
       const matchId = this.getAttribute('data-match-id');
-      const matchData = tournamentState.matches[matchId];
-      
-      // Vérifier si le match est activé (non désactivé)
-      if (this.classList.contains('disabled') && !correctionModeActive) {
-        alert('Ce match n\'est pas encore disponible. Terminez d\'abord les matchs précédents.');
-        return;
-      }
+      console.log(`Clic sur le match ${matchId}, vérification de l'existence...`);
+      console.log(`Matchs disponibles:`, Object.keys(tournamentState.matches));
       
       // Vérifier que matchData existe avant d'accéder à ses propriétés
+      const matchData = tournamentState.matches[matchId];
       if (!matchData) {
         console.error(`Match ${matchId} non trouvé dans tournamentState`);
-        alert(`Erreur: Le match ${matchId} n'existe pas dans la structure du tournoi.`);
+        
+        // Réinitialiser le tournoi si des données sont manquantes
+        if (confirm(`Erreur: Le match ${matchId} est manquant dans la structure du tournoi. Voulez-vous réinitialiser le tournoi?`)) {
+          resetTournament();
+        }
         return;
       }
       
-      if (correctionModeActive || matchData.status === 'à_venir') {
+      // Les matchs désactivés peuvent quand même être cliqués en mode correction
+      if (this.classList.contains('disabled') && !correctionModeActive) {
+        // Afficher un message plus informatif
+        if (!matchData.team1 || !matchData.team2) {
+          alert('Ce match n\'est pas encore disponible car les équipes n\'ont pas encore été déterminées.');
+        } else {
+          alert('Ce match n\'est pas encore disponible. Terminez d\'abord les matchs précédents.');
+        }
+        return;
+      }
+      
+      // En mode correction ou si le match est à venir, on peut aller à la page de marquage
+      if (correctionModeActive || matchData.status !== 'terminé') {
         // Naviguer vers la page de marquage pour saisir les scores
         navigateToScoring(matchId);
+      } else {
+        // Pour les matchs terminés, on affiche un dialogue avec les résultats
+        const resultMessage = `${matchData.team1} ${matchData.score1} - ${matchData.score2} ${matchData.team2}\n\nVainqueur: ${matchData.winner}\n\nVoulez-vous modifier ce résultat?`;
+        if (confirm(resultMessage)) {
+          navigateToScoring(matchId);
+        }
       }
     });
   });
@@ -1513,20 +1728,30 @@ function addMatchClickHandlers() {
 // Fonction de navigation vers la page de marquage des scores
 function navigateToScoring(matchId) {
   try {
-    const matchData = tournamentState.matches[matchId];
-    if (!matchData) {
-      console.error(`Match ${matchId} non trouvé`);
+    // Vérifier explicitement l'existence du match
+    if (!tournamentState.matches[matchId]) {
+      console.error(`Match ${matchId} non trouvé dans tournamentState lors de la navigation`);
+      alert(`Erreur: Le match ${matchId} n'existe pas. Réinitialisez le tournoi depuis la page principale.`);
       return;
     }
+    
+    const matchData = tournamentState.matches[matchId];
     
     // Construire les paramètres URL
     const params = new URLSearchParams();
     params.append('matchId', matchId);
     params.append('team1', matchData.team1 || '');
     params.append('team2', matchData.team2 || '');
-    params.append('matchType', matchData.matchType);
+    
+    // Convertir le type de match pour un affichage plus lisible dans la table de marquage
+    let displayMatchType = matchData.matchType || 'inconnu';
+    
+    // Laisser le type de match tel quel pour que la logique dans marquage.html puisse le convertir
+    params.append('matchType', displayMatchType);
+    
     params.append('score1', matchData.score1 !== null ? matchData.score1 : '');
     params.append('score2', matchData.score2 !== null ? matchData.score2 : '');
+    params.append('correction', correctionModeActive ? 'true' : 'false');
     
     // Rediriger vers la page de marquage
     window.location.href = `marquage.html?${params.toString()}`;
@@ -1557,7 +1782,7 @@ function simulateMatch(matchId) {
     }
   }
   
-  // S'assurer qu'il y a au moins 2 points d'écart dans le pétanque
+  // S'assurer qu'il y a au moins 2 points d'écart dans le badminton
   if (Math.abs(score1 - score2) < 2) {
     if (score1 > score2) {
       score1 = score2 + 2;
@@ -1615,25 +1840,18 @@ function simulateMatch(matchId) {
 // Fonction pour simuler l'ensemble du tournoi
 async function simulateTournament() {
   try {
-    console.log("Début de la simulation du tournoi de pétanque");
+    console.log("Début de la simulation du tournoi de badminton");
     
     // 1. Simuler les barrages
     await simulateMatch('1');
     await simulateMatch('2');
-    await simulateMatch('15');
-    await simulateMatch('16');
     
-    // Mettre à jour les quarts de finale avec les gagnants des barrages (correction des affectations)
+    // Mettre à jour les quarts de finale avec les gagnants des barrages
     const gagnantBarrage1 = tournamentState.matches['1'].winner;
     const gagnantBarrage2 = tournamentState.matches['2'].winner;
-    const gagnantBarrage15 = tournamentState.matches['15'].winner;
-    const gagnantBarrage16 = tournamentState.matches['16'].winner;
     
-    // Corriger l'affectation des gagnants des barrages aux quarts de finale
-    tournamentState.matches['3'].team2 = gagnantBarrage1;  // QF1
-    tournamentState.matches['4'].team2 = gagnantBarrage2;  // QF2
-    tournamentState.matches['5'].team1 = gagnantBarrage15; // QF3
-    tournamentState.matches['6'].team2 = gagnantBarrage16; // QF4
+    tournamentState.matches['4'].team2 = gagnantBarrage1;
+    tournamentState.matches['6'].team2 = gagnantBarrage2;
     
     // Mettre à jour l'interface
     updateUI();
@@ -1650,7 +1868,9 @@ async function simulateTournament() {
     updateUI();
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // 3. Simuler les demi-finales
+    // 3. Simuler les demi-finales et de classement
+    await simulateMatch('7');
+    await simulateMatch('8');
     await simulateMatch('9');
     await simulateMatch('10');
     
@@ -1659,7 +1879,9 @@ async function simulateTournament() {
     updateUI();
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // 4. Simuler les finales
+    // 4. Simuler les finales et matchs de classement
+    await simulateMatch('11');
+    await simulateMatch('12');
     await simulateMatch('13');
     await simulateMatch('14');
     
@@ -1687,4 +1909,70 @@ async function simulateTournament() {
     alert('Une erreur est survenue lors de la simulation du tournoi.');
     return false;
   }
+}
+
+// Nouvelle fonction pour vérifier la cohérence entre HTML et tournamentState
+function checkMatchConsistency() {
+  console.log('Vérification de la cohérence des matchs...');
+  const matchElements = document.querySelectorAll('.match[data-match-id]');
+  const htmlMatchIds = Array.from(matchElements).map(el => el.getAttribute('data-match-id'));
+  const stateMatchIds = Object.keys(tournamentState.matches);
+  
+  console.log('Matchs HTML:', htmlMatchIds);
+  console.log('Matchs État:', stateMatchIds);
+  
+  htmlMatchIds.forEach(id => {
+    if (!stateMatchIds.includes(id)) {
+      console.warn(`Match ID ${id} présent dans le HTML mais pas dans l'état`);
+    }
+  });
+}
+
+// Nouvelle fonction pour réinitialiser avec l'état par défaut
+function resetTournamentToDefault() {
+  console.log("Réinitialisation du tournoi avec l'état par défaut");
+  
+  // Indiquer que nous sommes en train de réinitialiser pour empêcher la détection de matchs actifs
+  window.isResettingTournament = true;
+  
+  // Supprimer les données locales
+  localStorage.removeItem('badmintonTournamentState');
+  localStorage.removeItem('badmintonPoints');
+  localStorage.removeItem('lastUpdateBadminton');
+  
+  // Supprimer toutes les données de matchs en cours
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key.startsWith('liveMatchData_match') || 
+                key.startsWith('liveMatchData_badminton_') ||
+                key === 'liveMatchData' ||
+                key === 'badminton_finishedMatches')) {
+      localStorage.removeItem(key);
+      i--;
+    }
+  }
+  
+  // S'assurer que tous les matchs sont correctement définis
+  saveTournamentState();
+  
+  console.log("Tournoi réinitialisé avec succès");
+}
+
+// Ajouter une fonction pour identifier explicitement un match comme terminé
+function markMatchAsFinished(matchId) {
+  if (tournamentState.matches[matchId]) {
+    tournamentState.matches[matchId].status = 'terminé';
+    console.log(`Match ${matchId} marqué explicitement comme terminé`);
+    
+    // Ajouter à la liste des matchs terminés pour sauvegarde
+    const finishedMatches = JSON.parse(localStorage.getItem('badminton_finishedMatches') || '{}');
+    finishedMatches[matchId] = true;
+    localStorage.setItem('badminton_finishedMatches', JSON.stringify(finishedMatches));
+    
+    // Enregistrer immédiatement l'état mis à jour
+    saveTournamentState();
+    
+    return true;
+  }
+  return false;
 }
