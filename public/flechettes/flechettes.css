@@ -14,7 +14,7 @@
     display: flex;
     align-items: center;
     justify-content: space-around;
-    margin: 30px;
+    margin: 10px;
 }
 
 .points-line {
@@ -207,6 +207,8 @@ button:hover {
     font-size: 2rem;
     font-weight: bold;
     margin-bottom: 10px;
+    display: flex;
+    justify-content: space-evenly;
 }
 
 .score-row {
@@ -417,16 +419,14 @@ button:hover {
 }
 
 .points-buttons {
-    grid-template-columns: repeat(8, 1fr);
-    gap: 5px;
+    grid-template-columns: repeat(12, 1fr);
+    /* gap: 5px; */
     /* margin: 20px; */
     display: grid;
     justify-items: center;
 }
 
 .points-button {
-    font-size: 1.2em;
-    padding: 10px;
     min-width: 50px;
     border-radius: 5px;
     background-color: #4CAF50;
@@ -465,7 +465,7 @@ button:hover {
 }
 
 .current-player {
-    font-size: 1.5em;
+    font-size: 1rem;
     font-weight: bold;
     margin: 20px 0;
     padding: 10px;

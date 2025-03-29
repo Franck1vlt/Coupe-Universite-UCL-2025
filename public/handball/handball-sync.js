@@ -1,230 +1,124 @@
 /**
- * handball-sync.js - Module de synchronisation pour le tournoi de handball
- * Assure que tous les clients voient les mêmes scores et statuts de match
+ * handball-sync.js
+ * Module de synchronisation pour le tournoi de handball
  */
 
-// Assurons-nous que le module est chargé correctement
-console.log("Chargement du module de synchronisation handball...");
-
-// Classe principale pour la synchronisation
-class HandballSync {
-  constructor() {
-    this.socket = null;
-    this.connected = false;
-    this.tournamentState = null;
-    this.lastUpdateTimestamp = null;
-    this.updateCallback = null;
-    this.useFallback = false;
-
-    // Charger l'état depuis localStorage au démarrage
-    this.loadFromLocalStorage();
-    
-    // Initialiser Socket.io si disponible
-    this.initSocketIO();
-    
-    // Démarrer la synchronisation périodique
-    this.startPeriodicSync();
+document.addEventListener('DOMContentLoaded', function() {
+  if (!window.io) {
+    console.warn("Socket.io n'est pas disponible - synchronisation désactivée");
+    return;
   }
-  
-  // Initialisation de Socket.io - améliorer la gestion des erreurs
-  initSocketIO() {
-    if (!window.io) {
-      console.warn("Socket.io n'est pas disponible, utilisation du mode hors-ligne");
-      this.useFallback = true;
-      return;
-    }
-    
-    try {
-      console.log("Initialisation de la connexion Socket.io pour le handball");
-      // S'assurer qu'on utilise la bonne syntaxe pour le namespace
-      this.socket = io('/handball', {
-        forceNew: false,
-        reconnection: true,
-        reconnectionAttempts: 5
+
+  try {
+    console.log("Initialisation du module de synchronisation handball");
+    const socket = io('/handball');
+
+    socket.on('connect', function() {
+      console.log("Module de synchronisation connecté");
+      
+      // S'abonner aux mises à jour du tournoi - format corrigé
+      socket.emit('subscribeTournament', { 
+        sport: 'handball',
+        state: {} // Ajout d'un état vide pour éviter l'erreur
       });
       
-      this.socket.on('connect', () => {
-        console.log("Connecté au serveur Socket.io");
-        this.connected = true;
-        this.useFallback = false;
-        
-        // S'abonner aux mises à jour du tournoi
-        this.socket.emit('subscribeTournament', { sport: 'handball' });
-        
-        // Demander l'état initial
-        this.socket.emit('request_tournament_state');
-        this.socket.emit('requestData', { global: true });
+      // Demander l'état initial du tournoi - format corrigé
+      socket.emit('request_tournament_state', { 
+        sport: 'handball',
+        state: {} // Ajout d'un état vide pour éviter l'erreur
       });
+    });
+
+    // Écouter les mises à jour du tournoi
+    socket.on('tournamentState', function(data) {
+      console.log("Réception d'un état du tournoi via Socket.io");
       
-      this.socket.on('scoreUpdate', (data) => {
-        console.log("Mise à jour de score reçue:", data);
-        this.updateMatchData(data);
-      });
-      
-      this.socket.on('tournamentState', (data) => {
-        console.log("État du tournoi reçu");
-        if (data && data.state) {
-          this.updateTournamentState(data.state, data.timestamp);
-        }
-      });
-      
-      this.socket.on('connect_error', (error) => {
-        console.error("Erreur de connexion Socket.io:", error.message);
-        this.connected = false;
-        this.useFallback = true;
-      });
-      
-      this.socket.on('disconnect', () => {
-        console.warn("Déconnecté du serveur Socket.io");
-        this.connected = false;
-      });
-    } catch (error) {
-      console.error("Erreur lors de l'initialisation de Socket.io:", error);
-      this.useFallback = true;
-    }
-  }
-  
-  // Charger l'état depuis localStorage
-  loadFromLocalStorage() {
-    try {
-      const savedState = localStorage.getItem('handballTournamentState');
-      const timestamp = localStorage.getItem('handballLastUpdate');
-      
-      if (savedState) {
-        this.tournamentState = JSON.parse(savedState);
-        this.lastUpdateTimestamp = timestamp;
-        console.log("État du tournoi chargé depuis localStorage");
+      if (!data) {
+        console.error("Données d'état invalides reçues");
+        return;
       }
-    } catch (error) {
-      console.error("Erreur lors du chargement depuis localStorage:", error);
-    }
-  }
-  
-  // Sauvegarder l'état dans localStorage
-  saveToLocalStorage() {
-    if (!this.tournamentState) return;
-    
-    try {
-      localStorage.setItem('handballTournamentState', JSON.stringify(this.tournamentState));
+      
+      // S'assurer que les données sont correctement formatées
+      const formattedData = formatTournamentData(data);
+      
+      // Sauvegarder les données dans localStorage pour backup
+      localStorage.setItem('handballTournamentState', JSON.stringify(formattedData));
       localStorage.setItem('handballLastUpdate', new Date().toISOString());
-      console.log("État du tournoi sauvegardé dans localStorage");
-    } catch (error) {
-      console.error("Erreur lors de la sauvegarde dans localStorage:", error);
-    }
-  }
-  
-  // Mettre à jour l'état du tournoi
-  updateTournamentState(newState, timestamp) {
-    // Ne pas écraser des données plus récentes
-    if (this.lastUpdateTimestamp && timestamp < this.lastUpdateTimestamp) {
-      console.log("Ignorer mise à jour plus ancienne");
-      return;
-    }
+      
+      // Propager les données vers le module principal de tournoi
+      if (window.updateTournamentFromSync) {
+        window.updateTournamentFromSync(formattedData);
+      }
+    });
+
+    // Envoyer des données au serveur avec le format correct
+    window.sendToServer = function(eventName, data) {
+      try {
+        // S'assurer que l'objet data existe
+        const dataObj = data || {};
+        
+        // Assurer une structure cohérente pour toutes les données envoyées
+        const formattedData = {
+          sport: 'handball',
+          timestamp: new Date().toISOString(),
+          state: dataObj // Utiliser les données fournies comme état
+        };
+        
+        console.log(`Envoi de données au serveur (${eventName}):`, formattedData);
+        socket.emit(eventName, formattedData);
+        return true;
+      } catch (error) {
+        console.error(`Erreur lors de l'envoi de données (${eventName}):`, error);
+        return false;
+      }
+    };
+
+    // Exposer le socket pour une utilisation externe
+    window.handballSyncSocket = socket;
     
-    this.tournamentState = newState;
-    this.lastUpdateTimestamp = timestamp || new Date().toISOString();
-    this.saveToLocalStorage();
-    
-    // Notifier les composants abonnés
-    if (this.updateCallback) {
-      this.updateCallback(this.tournamentState);
-    }
-  }
-  
-  // Mettre à jour les données d'un match spécifique
-  updateMatchData(data) {
-    if (!data || !data.matchId || !this.tournamentState || !this.tournamentState.matches) {
-      return;
-    }
-    
-    const matchId = data.matchId;
-    
-    // Vérifier si le match existe dans notre état
-    if (!this.tournamentState.matches[matchId]) {
-      return;
-    }
-    
-    // Mettre à jour le match
-    this.tournamentState.matches[matchId] = {
-      ...this.tournamentState.matches[matchId],
-      score1: data.score1 !== undefined ? data.score1 : this.tournamentState.matches[matchId].score1,
-      score2: data.score2 !== undefined ? data.score2 : this.tournamentState.matches[matchId].score2,
-      status: data.status || this.tournamentState.matches[matchId].status
+    // Interception et redirection des émissions socket directes
+    const originalEmit = socket.emit;
+    socket.emit = function(eventName, data) {
+      // Liste d'événements système à ne pas modifier
+      const systemEvents = ['connect', 'disconnect', 'error', 'connect_error'];
+      
+      if (systemEvents.includes(eventName)) {
+        return originalEmit.call(this, eventName, data);
+      }
+      
+      // Pour les autres événements, s'assurer que la structure est correcte
+      if (data && !data.state) {
+        const formattedData = {
+          sport: 'handball',
+          timestamp: new Date().toISOString(),
+          state: data
+        };
+        console.log(`[Socket Interceptor] Formatage de l'événement ${eventName}:`, formattedData);
+        return originalEmit.call(this, eventName, formattedData);
+      }
+      
+      return originalEmit.call(this, eventName, data);
     };
     
-    // Mettre à jour le gagnant/perdant si le match est terminé
-    if (data.status === 'terminé') {
-      const score1 = parseInt(data.score1);
-      const score2 = parseInt(data.score2);
-      
-      if (score1 > score2) {
-        this.tournamentState.matches[matchId].winner = data.team1;
-        this.tournamentState.matches[matchId].loser = data.team2;
-      } else if (score2 > score1) {
-        this.tournamentState.matches[matchId].winner = data.team2;
-        this.tournamentState.matches[matchId].loser = data.team1;
-      } else {
-        this.tournamentState.matches[matchId].draw = true;
-      }
-    }
-    
-    this.saveToLocalStorage();
-    
-    // Notifier les composants abonnés
-    if (this.updateCallback) {
-      this.updateCallback(this.tournamentState);
-    }
+  } catch (error) {
+    console.error("Erreur d'initialisation du module de synchronisation:", error);
   }
-  
-  // S'abonner aux mises à jour
-  subscribe(callback) {
-    this.updateCallback = callback;
-    
-    // Envoyer immédiatement l'état actuel au nouveau souscripteur
-    if (this.tournamentState && callback) {
-      callback(this.tournamentState);
-    }
-  }
-  
-  // Synchronisation périodique avec le serveur
-  startPeriodicSync() {
-    setInterval(() => {
-      this.sync();
-    }, 5000); // Toutes les 5 secondes
-  }
-  
-  // Synchroniser avec le serveur
-  sync() {
-    if (this.connected && this.socket) {
-      console.log("Synchronisation avec le serveur via Socket.io");
-      this.socket.emit('request_tournament_state');
-      this.socket.emit('requestData', { global: true });
-    } else if (this.useFallback) {
-      console.log("Mode hors-ligne actif, utilisation de localStorage");
-      this.loadFromLocalStorage();
-      
-      // Notifier les composants abonnés
-      if (this.updateCallback && this.tournamentState) {
-        this.updateCallback(this.tournamentState);
-      }
-    }
-  }
-}
+});
 
-// S'assurer que l'instance globale est correctement créée
-try {
-  console.log("Création de l'instance HandballSync globale");
-  window.handballSync = new HandballSync();
-  console.log("Instance HandballSync créée avec succès");
-} catch (error) {
-  console.error("Erreur lors de la création de l'instance HandballSync:", error);
-}
-
-// Export pour les modules ES6 - mais rendre compatible avec les navigateurs
-try {
-  if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
-    module.exports = window.handballSync;
+// Formatage des données du tournoi pour assurer un format cohérent
+function formatTournamentData(data) {
+  // Si les données ont déjà la bonne structure, les utiliser
+  if (data && data.state && typeof data.state === 'object' && data.state.matches) {
+    return data.state;
   }
-} catch (e) {
-  // Ignorer les erreurs d'export dans un environnement navigateur
+  
+  // Si les données sont directement l'état du tournoi
+  if (data && data.matches) {
+    return data;
+  }
+  
+  // Structure de secours minimale
+  return {
+    matches: {}
+  };
 }

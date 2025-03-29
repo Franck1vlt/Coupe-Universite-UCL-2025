@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Page Home - Coupe de l'Université de la Catho de Lille</title>
+    <link rel="icon" type="image/png" href="/img/coupe.png">
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
@@ -25,12 +26,110 @@
             <button class="route150-button bonus" onclick="location.href='route150/route.html'">Route 150</button>
         </div>
         <div class="ranking-livescore">
-            <button class="general-ranking-button" onclick="location.href='general/classement.html'">Classement</button>
+            <!--<button class="general-ranking-button" onclick="location.href='general/classement.html'">Classement</button>-->
             <button class="live-scores-button" onclick="location.href='live_scores.html'">Scores en Direct</button>
         </div>
     </main>
     <footer>
         Copyright &copy; Fédé UCL 2025 - Franck VALMONT
     </footer>
+    <script>
+        document.getElementById('resetMatches').addEventListener('click', function() {
+            // Code pour réinitialiser les matchs
+            if (confirm('ATTENTION: Cette action va supprimer TOUS les matchs de la base de données. Cette action est irréversible. Êtes-vous sûr de vouloir continuer?')) {
+                const statusEl = document.getElementById('resetStatus');
+                statusEl.textContent = 'Réinitialisation en cours...';
+                
+                fetch('/api/matches/reset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        statusEl.textContent = 'Réinitialisation réussie!';
+                        statusEl.style.color = 'green';
+                        setTimeout(() => {
+                            statusEl.textContent = '';
+                        }, 5000);
+                    } else {
+                        statusEl.textContent = 'Erreur: ' + (data.error || 'Problème lors de la réinitialisation');
+                        statusEl.style.color = 'red';
+                    }
+                })
+                .catch(error => {
+                    statusEl.textContent = 'Erreur: ' + error.message;
+                    statusEl.style.color = 'red';
+                    console.error('Erreur:', error);
+                });
+            }
+        });
+        
+        // Ajouter des gestionnaires pour les boutons de diagnostic
+        document.getElementById('debugMatches').addEventListener('click', function() {
+            window.open('/api/matches/all', '_blank');
+        });
+        
+        document.getElementById('checkDb').addEventListener('click', function() {
+            fetch('/api/football/check-db')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Configuration de la base de données:', data);
+                    alert(`Base de données: ${data.success ? 'OK' : 'Erreur'}\nÉquipes: ${data.database?.teamCount || 0}`);
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    alert('Erreur lors de la vérification de la base de données');
+                });
+        });
+    </script>
+    <style>
+        .admin-controls {
+            margin: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        
+        .danger-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        .danger-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        #resetStatus {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        
+        .debug-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+            margin-right: 5px;
+        }
+        
+        .debug-btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
 </body>
 </html>

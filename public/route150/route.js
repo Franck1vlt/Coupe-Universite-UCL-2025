@@ -18,95 +18,135 @@ const TEAMS = [
 
 let rankings = [];
 
+let socket;
+let socketConnected = false;
+
+function initWebSocket() {
+    try {
+        // Vérifier si Socket.IO est disponible
+        if (typeof io === 'undefined') {
+            console.warn('Socket.IO non disponible - mode hors-ligne activé');
+            socketConnected = false;
+            loadRankingsFromLocal(); // Charger depuis le localStorage
+            return;
+        }
+        
+        socket = io();
+        
+        socket.on('connect', () => {
+            console.log('WebSocket connecté');
+            socketConnected = true;
+            // Charger les données dès la connexion établie
+            socket.emit('get_route_rankings');
+        });
+
+        socket.on('route_rankings', (data) => {
+            console.log('Rankings reçus:', data);
+            displayRankings(data.rankings || []);
+        });
+
+        socket.on('disconnect', () => {
+            console.log('WebSocket déconnecté');
+            socketConnected = false;
+            loadRankingsFromLocal(); // Fallback vers local
+        });
+
+    } catch (error) {
+        console.error('Erreur WebSocket:', error);
+        socketConnected = false;
+        loadRankingsFromLocal(); // Fallback vers local
+    }
+}
+
 async function initializeRankings() {
     try {
-        const response = await fetch('/api/rankings/route150');
-        const data = await response.json();
+        // Charger d'abord depuis le localStorage
+        const savedRankings = loadRankingsFromLocal();
+        if (savedRankings) {
+            rankings = savedRankings;
+        } else {
+            // Si pas de données locales, initialiser avec des points à 0
+            rankings = TEAMS.map(team => ({
+                name: team,
+                points: 0
+            }));
+        }
         
-        const rankingList = document.getElementById('rankingList');
-        if (!rankingList) return;
+        // Afficher les données initiales
+        displayRanking();
 
-        rankingList.innerHTML = '';
-        
-        // S'assurer que toutes les équipes sont présentes, même celles sans points
-        const allTeams = new Set(TEAMS);
-        const teamPoints = new Map();
-        
-        // Récupérer les points existants
-        data.rankings.forEach(team => {
-            teamPoints.set(team.nom_equipe, parseInt(team.points) || 0);
-            allTeams.delete(team.nom_equipe);
-        });
-        
-        // Ajouter les équipes manquantes avec 0 points
-        allTeams.forEach(team => {
-            teamPoints.set(team, 0);
-        });
+        // Ensuite essayer de charger depuis le serveur via WebSocket
+        if (socket && socketConnected) {
+            return new Promise((resolve, reject) => {
+                socket.emit('get_route_rankings');
+                
+                // Augmenter le timeout à 15 secondes
+                const timeoutId = setTimeout(() => {
+                    console.log('Timeout WebSocket - utilisation des données locales');
+                    resolve(false);
+                }, 15000);
 
-        // Trier les équipes par points
-        const sortedTeams = Array.from(teamPoints.entries())
-            .sort(([,a], [,b]) => b - a)
-            .map(([name, points]) => ({ nom_equipe: name, points }));
-
-        // Afficher le classement
-        sortedTeams.forEach((team, index) => {
-            const position = index + 1;
-            const highlightClass = position <= 3 ? `highlight-${position}` : '';
-            
-            rankingList.innerHTML += `
-                <div class="ranking-row ${highlightClass}">
-                    <div class="rank">${position}</div>
-                    <div class="team">
-                        <img src="../img/${team.nom_equipe}.png" alt="${team.nom_equipe}" class="team-logo">
-                        ${team.nom_equipe}
-                    </div>
-                    <div class="points">${team.points}</div>
-                </div>
-            `;
-        });
-        
+                socket.once('route_rankings', (data) => {
+                    clearTimeout(timeoutId);
+                    if (data && data.rankings) {
+                        // Mettre à jour uniquement les points des équipes existantes
+                        data.rankings.forEach(serverTeam => {
+                            const team = rankings.find(t => t.name === serverTeam.nom_equipe);
+                            if (team) {
+                                team.points = parseInt(serverTeam.points) || 0;
+                            }
+                        });
+                        displayRanking();
+                    }
+                    resolve(true);
+                });
+            });
+        }
     } catch (error) {
         console.error('Erreur lors de l\'initialisation:', error);
+        // En cas d'erreur, utiliser les données locales
         loadRankingsFromLocal();
     }
 }
 
+// Modifier displayRanking pour mieux gérer l'affichage
 function displayRanking() {
     const rankingList = document.getElementById('rankingList');
-    if (!rankingList) {
-        console.error('Element rankingList non trouvé');
-        return;
-    }
+    if (!rankingList) return;
 
-    // Tri des équipes
-    const sortedRankings = [...rankings].sort((a, b) => {
-        if (b.points !== a.points) {
-            return b.points - a.points;
+    // S'assurer que toutes les équipes sont présentes
+    TEAMS.forEach(teamName => {
+        if (!rankings.find(r => r.name === teamName)) {
+            rankings.push({ name: teamName, points: 0 });
         }
-        return a.name.localeCompare(b.name);
     });
 
-    console.log('Rankings triés avant affichage:', sortedRankings); // Debug
+    // Trier par points (décroissant) puis par nom
+    const sortedRankings = [...rankings].sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        return a.name.localeCompare(b.name);
+    });
 
     rankingList.innerHTML = '';
     sortedRankings.forEach((team, index) => {
         const position = index + 1;
-        const logoSrc = `../img/${team.name}.png`;
-        
-        const row = document.createElement('div');
-        row.className = `ranking-row ${position <= 3 ? 'highlight-' + position : ''}`;
-        row.innerHTML = `
-            <div class="rank">${position}</div>
-            <div class="team">
-                <img src="${logoSrc}" alt="${team.name} logo" class="team-logo">
-                ${team.name}
+        rankingList.innerHTML += `
+            <div class="ranking-row ${position <= 3 ? `highlight-${position}` : ''}">
+                <div class="rank">${position}</div>
+                <div class="teamname">
+                    <img src="../img/${team.name}.png" alt="${team.name}" class="team-logo-mini" />
+                    ${team.name}
+                </div>
+                <div class="points">${team.points}</div>
             </div>
-            <div class="points">${team.points}</div>
         `;
-        rankingList.appendChild(row);
     });
+
+    // Sauvegarder après chaque mise à jour
+    saveRankingsToLocal();
 }
 
+// Modifier la fonction updatePoints pour gérer le mode hors-ligne
 async function updatePoints(action) {
     try {
         const teamSelect = document.getElementById('teamSelect');
@@ -115,46 +155,48 @@ async function updatePoints(action) {
         const selectedTeam = teamSelect.value;
         const pointsToAdd = parseInt(pointsInput.value);
 
-        if (!selectedTeam) throw new Error('Veuillez sélectionner une équipe');
+        if (!selectedTeam) {
+            throw new Error('Veuillez sélectionner une équipe');
+        }
         if (isNaN(pointsToAdd) || pointsToAdd <= 0) {
             throw new Error('Veuillez entrer un nombre de points valide');
         }
 
-        // 1. Récupérer les points actuels
-        const response = await fetch('/api/rankings/route150');
-        const data = await response.json();
-        const currentTeamData = data.rankings.find(r => r.nom_equipe === selectedTeam);
-        const currentPoints = currentTeamData ? parseInt(currentTeamData.points) || 0 : 0;
-
-        console.log('Points actuels:', currentPoints);
-
-        // 2. Calculer les nouveaux points
-        const newPoints = action === 'add' ? 
-            currentPoints + pointsToAdd : 
-            Math.max(0, currentPoints - pointsToAdd);
-
-        // 3. Envoyer la mise à jour avec les nouveaux points absolus
-        const updateResponse = await fetch('/api/rankings/route150/update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                teamName: selectedTeam,
-                points: newPoints
-            })
-        });
-
-        if (!updateResponse.ok) {
-            const errorData = await updateResponse.json();
-            throw new Error(errorData.message || 'Erreur lors de la mise à jour');
+        // Trouver ou créer l'équipe dans le tableau rankings
+        let team = rankings.find(t => t.name === selectedTeam);
+        if (!team) {
+            team = { name: selectedTeam, points: 0 };
+            rankings.push(team);
         }
 
-        // 4. Rafraîchir immédiatement
-        await initializeRankings();
+        const newPoints = action === 'add' ? 
+            team.points + pointsToAdd : 
+            Math.max(0, team.points - pointsToAdd);
+        
+        team.points = newPoints;
 
-        // 5. Réinitialiser le formulaire
+        // Sauvegarder immédiatement
+        if (!saveRankingsToLocal()) {
+            throw new Error('Erreur lors de la sauvegarde locale');
+        }
+
+        // Mettre à jour l'affichage
+        displayRanking();
+
+        // Synchroniser avec le serveur si disponible
+        if (socket && socketConnected) {
+            socket.emit('update_route_points', {
+                teamName: selectedTeam,
+                points: newPoints,
+                action: action
+            });
+        }
+
+        // Réinitialiser le formulaire
         pointsInput.value = '';
         teamSelect.value = '';
 
+        // Message de confirmation
         alert(`Points ${action === 'add' ? 'ajoutés' : 'retirés'} avec succès !`);
 
     } catch (error) {
@@ -171,34 +213,47 @@ async function removePoints() {
     await updatePoints('sub');
 }
 
-// Modifier la fonction resetRanking et l'exposition globale
 async function resetRanking() {
-    if (!confirm('Voulez-vous vraiment réinitialiser tous les points de route 150 ? Cette action est irréversible.')) {
+    if (!confirm('Voulez-vous vraiment réinitialiser tous les points de route 150 ?')) {
         return;
     }
 
     try {
-        // Réinitialiser les points de toutes les équipes en une seule requête
-        const response = await fetch('/api/rankings/route150/reset', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        });
+        // Réinitialiser localement d'abord
+        rankings = TEAMS.map(team => ({
+            name: team,
+            points: 0
+        }));
 
-        if (!response.ok) {
-            throw new Error('Erreur lors de la réinitialisation');
+        // Sauvegarder en local
+        saveRankingsToLocal();
+        
+        // Mettre à jour l'affichage
+        displayRanking();
+
+        // Tenter la synchronisation avec le serveur si disponible
+        if (socket && socketConnected) {
+            return new Promise((resolve, reject) => {
+                const timeoutId = setTimeout(() => {
+                    console.log('Timeout WebSocket - réinitialisation locale uniquement');
+                    resolve(false);
+                }, 5000);
+
+                socket.emit('reset_route_rankings');
+                
+                socket.once('route_rankings_reset', () => {
+                    clearTimeout(timeoutId);
+                    console.log('Réinitialisation synchronisée avec le serveur');
+                    resolve(true);
+                });
+            });
         }
 
-        // Rafraîchir l'affichage
-        await initializeRankings();
-        
-        // Réinitialiser les champs du formulaire
-        document.getElementById('teamSelect').value = '';
-        document.getElementById('pointsInput').value = '';
-        
         alert('Points de route 150 réinitialisés avec succès !');
+
     } catch (error) {
         console.error('Erreur lors de la réinitialisation:', error);
-        alert('Une erreur est survenue lors de la réinitialisation des points');
+        alert('Les points ont été réinitialisés localement mais la synchronisation avec le serveur a échoué');
     }
 }
 
@@ -208,34 +263,64 @@ window.removePoints = removePoints;
 window.resetRanking = resetRanking;
 
 // Initialisation
-document.addEventListener('DOMContentLoaded', initializeRankings);
+document.addEventListener('DOMContentLoaded', () => {
+    // Charger d'abord les données locales
+    loadRankingsFromLocal();
+    
+    // Puis initialiser WebSocket
+    initWebSocket();
+    
+    // Et enfin initialiser le classement
+    initializeRankings();
+});
 
 // Fonctions de gestion du localStorage
 function saveRankingsToLocal() {
     try {
-        localStorage.setItem('routeRankings', JSON.stringify(rankings));
-        localStorage.setItem('routeLastUpdate', new Date().getTime().toString());
+        // S'assurer que toutes les équipes sont présentes
+        const completeRankings = TEAMS.map(teamName => {
+            const existingTeam = rankings.find(r => r.name === teamName);
+            return {
+                name: teamName,
+                points: existingTeam ? parseInt(existingTeam.points) || 0 : 0
+            };
+        });
+
+        // Sauvegarder dans le localStorage
+        localStorage.setItem('routeRankings', JSON.stringify(completeRankings));
+        localStorage.setItem('routeLastUpdate', new Date().toISOString());
+        
+        console.log('Données sauvegardées localement:', completeRankings);
+        return true;
     } catch (error) {
         console.error('Erreur lors de la sauvegarde locale:', error);
+        return false;
     }
 }
 
 function loadRankingsFromLocal() {
     try {
-        const savedRankings = localStorage.getItem('routeRankings');
-        if (savedRankings) {
-            rankings = JSON.parse(savedRankings);
-            displayRanking();
-            rankings = JSON.parse(savedRankings);
-            displayRanking();
+        const savedData = localStorage.getItem('routeRankings');
+        if (!savedData) {
+            return null;
         }
+
+        let loadedRankings = JSON.parse(savedData);
+        
+        // Vérifier et compléter les données manquantes
+        loadedRankings = TEAMS.map(teamName => {
+            const savedTeam = loadedRankings.find(r => r.name === teamName);
+            return {
+                name: teamName,
+                points: savedTeam ? parseInt(savedTeam.points) || 0 : 0
+            };
+        });
+
+        console.log('Données chargées depuis le localStorage:', loadedRankings);
+        return loadedRankings;
     } catch (error) {
         console.error('Erreur lors du chargement local:', error);
-        rankings = TEAMS.map(team => ({
-            name: team,
-            points: 0
-        }));
-        displayRanking();
+        return null;
     }
 }
 
@@ -288,69 +373,7 @@ async function simulateRouteRanking() {
     }
 }
 
-async function simulateRoute150Ranking() {
-    if (!confirm('Est-ce bien le classement final de la Route150 ? Cela réinitialisera les points actuels.')) {
-        return;
-    }
-
-    try {
-        // Réinitialiser les points
-        await fetch('/api/rankings/route150/reset', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        });
-
-        // Définir l'ordre des équipes et leurs points
-        const rankingData = [
-            { team: 'FLSH', points: 75 },
-            { team: 'FMMS', points: 50 },
-            { team: 'FLD', points: 44 },
-            { team: 'ESPOL', points: 38 },
-            { team: 'ISTC', points: 33 },
-            { team: 'ICAM', points: 28 },
-            { team: 'ESPAS-ESTICE', points: 24 },
-            { team: 'JUNIA', points: 21 },
-            { team: 'IKPO', points: 18 },
-            { team: 'FGES', points: 15 },
-            { team: 'USCHOOL', points: 12 },
-            { team: 'IESEG', points: 9 },
-            { team: 'LiDD', points: 6 },
-            { team: 'ESSLIL', points: 4 }
-        ];
-
-        // Attribuer les points à chaque équipe
-        for (const entry of rankingData) {
-            console.log(`Attribution de ${entry.points} points à ${entry.team}`);
-            
-            const response = await fetch('/api/rankings/route150/update', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    teamName: entry.team,
-                    points: entry.points,
-                    action: 'add'
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`Erreur lors de l'attribution des points à ${entry.team}`);
-            }
-        }
-
-        // Rafraîchir l'affichage
-        await initializeRankings();
-        alert('Simulation du classement Route150 terminée !');
-
-    } catch (error) {
-        console.error('Erreur lors de la simulation:', error);
-        alert('Une erreur est survenue lors de la simulation');
-    }
-}
-
-// Ajouter au bas du fichier
-window.simulateRoute150Ranking = simulateRoute150Ranking;
-
 // Ajouter au bas du fichier
 window.simulateRouteRanking = simulateRouteRanking;
 
-window.resetRanking = resetRanking;
+window.resetRouteRanking = resetRouteRanking;

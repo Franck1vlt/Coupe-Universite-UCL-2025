@@ -10,150 +10,513 @@
   <!-- Charger flechettes.js ensuite -->
   <script src="flechettes.js"></script>
   <script>
-    // Supprimer les variables globales en double
+    // Ajouter cette variable avant les autres déclarations
+    let isUpdating = false;
     let matchData = {};
-    // Supprimer cette ligne pour éviter la double déclaration
-    // let socket;
-    // Supprimer cette ligne également pour éviter la double déclaration
-    // let socketConnected = false;
-
-    // Fonction pour initialiser WebSocket avec polling prioritaire
-    function initWebSocket() {
-        try {
-            console.log('Tentative de connexion WebSocket pour fléchettes...');
-            
-            // Utiliser window.socket au lieu de déclarer une nouvelle variable
-            window.socket = io({
-                reconnection: true,
-                reconnectionAttempts: Infinity,
-                reconnectionDelay: 1000,
-                reconnectionDelayMax: 5000,
-                timeout: 20000,
-                transports: ['polling', 'websocket'] // Polling d'abord pour plus de stabilité
-            });
-            
-            window.socket.on('connect', () => {
-                console.log('Connecté au serveur WebSocket avec ID:', window.socket.id);
-                window.socketConnected = true; // Utiliser la variable globale
-                
-                // IMPORTANT: rejoindre explicitement le groupe 'flechettes'
-                window.socket.emit('join_sport', 'flechettes');
-                console.log("Rejoint groupe fléchettes");
-            });
-            
-            // Utiliser window.socket pour tous les événements
-            window.socket.on('disconnect', (reason) => {
-                console.log('Déconnecté du serveur. Raison:', reason);
-                window.socketConnected = false; // Utiliser la variable globale
-            });
-            
-            window.socket.on('connect_error', (error) => {
-                console.error('Erreur de connexion WebSocket:', error);
-                window.socketConnected = false; // Utiliser la variable globale
-            });
-            
-            // Écouter les mises à jour de score
-            window.socket.on('live_score_update', (data) => {
-                console.log('Réception mise à jour depuis le serveur:', data);
-                const currentMatchId = new URLSearchParams(window.location.search).get('matchId');
-                
-                if (data.matchId === currentMatchId && !window.isUpdating) { // Utiliser window.isUpdating
-                    // Mettre à jour les données locales
-                    updateFromRemoteData(data);
-                }
-            });
-        } catch (error) {
-            console.error('Erreur lors de l\'initialisation WebSocket:', error);
-        }
-    }
     
-    // Fonction pour envoyer les mises à jour
-    function sendLiveUpdate() {
-        const matchId = new URLSearchParams(window.location.search).get('matchId');
-        if (!matchId) return;
+    // Intervalle entre les synchronisations (en millisecondes)
+    const SYNC_INTERVAL = 3000;
+    let lastUpdateTimestamp = 0;
+    
+    // Variable pour la connexion Socket.io
+    let socket;
+    let isSocketConnected = false;
+    
+    // Initialisation de la connexion Socket.io
+    function initSocketConnection() {
+      try {
+        // Vérifier si Socket.IO est disponible
+        if (typeof io === 'undefined') {
+          console.log('Socket.IO n\'est pas chargé, mode local uniquement');
+          return false;
+        }
         
-        try {
-            // Utiliser la variable isUpdating depuis flechettes.js au lieu de la redéclarer
-            window.isUpdating = true;
-            
-            // Récupérer toutes les données importantes
-            const liveData = {
-                matchId,
-                team1: document.getElementById('teamAName').textContent,
-                team2: document.getElementById('teamBName').textContent,
-                score1: document.getElementById('teamAScore').textContent,
-                score2: document.getElementById('teamBScore').textContent,
-                currentPlayer: document.getElementById('currentPlayer').textContent,
-                throwsLeft: window.throwsLeft ? window.throwsLeft[window.currentPlayer] : 3,
-                matchType: document.getElementById('matchType').textContent
-            };
-            
-            // Sauvegarde locale
-            localStorage.setItem('liveMatchData', JSON.stringify(liveData));
-            
-            // Envoyer au serveur
-            if (window.socket && window.socketConnected) { // Référencer window.socketConnected au lieu de socketConnected
-                console.log('Envoi des données au serveur:', liveData);
-                window.socket.emit('live_score_update', liveData);
-            }
-        } catch (error) {
-            console.error('Erreur lors de l\'envoi des données:', error);
-        } finally {
-            window.isUpdating = false;
-        }
+        // Créer la connexion Socket.io
+        socket = io();
+        
+        // Gestionnaires d'événements pour la connexion
+        socket.on('connect', () => {
+          console.log('Connecté au serveur WebSocket');
+          isSocketConnected = true;
+          
+          // Envoyer une demande d'initialisation avec l'ID du match
+          const matchId = new URLSearchParams(window.location.search).get('matchId');
+          if (matchId) {
+            socket.emit('join_match', { 
+              matchId: matchId,
+              sport: 'flechettes'
+            });
+            console.log('Demande de rejoindre le match', matchId);
+          }
+        });
+        
+        // Gestionnaire pour les déconnexions
+        socket.on('disconnect', () => {
+          console.log('Déconnecté du serveur WebSocket');
+          isSocketConnected = false;
+        });
+        
+        // Gestionnaire pour les erreurs de connexion
+        socket.on('connect_error', (error) => {
+          console.error('Erreur de connexion WebSocket:', error);
+          isSocketConnected = false;
+        });
+        
+        // Gestionnaire pour les mises à jour du match
+        socket.on('match_update', (data) => {
+          console.log('Mise à jour du match reçue:', data);
+          updateFromRemoteData(data);
+        });
+        
+        return true;
+      } catch (error) {
+        console.error('Erreur lors de l\'initialisation de Socket.IO:', error);
+        return false;
+      }
     }
     
-    // Fonction pour mettre à jour depuis les données reçues
+    // Fonction pour envoyer les mises à jour via WebSocket
+    function sendLiveUpdate() {
+      try {
+        // Vérifier que tous les éléments nécessaires existent
+        const elements = {
+          teamAName: document.getElementById('teamAName'),
+          teamBName: document.getElementById('teamBName'),
+          teamAScore: document.getElementById('teamAScore'),
+          teamBScore: document.getElementById('teamBScore'),
+          teamASets: document.getElementById('teamASets'),
+          teamBSets: document.getElementById('teamBSets'),
+          matchType: document.getElementById('matchType'),
+          currentPlayer: document.getElementById('currentPlayer')
+        };
+
+        // Si un élément requis est manquant, attendre et réessayer
+        if (Object.values(elements).some(el => !el)) {
+          console.log("Certains éléments ne sont pas encore chargés, nouvelle tentative dans 1s");
+          setTimeout(sendLiveUpdate, 1000);
+          return;
+        }
+
+        // Construire les données pour la mise à jour
+        const matchId = new URLSearchParams(window.location.search).get('matchId');
+        const updateData = {
+          matchId: matchId,
+          sport: 'flechettes',
+          team1: elements.teamAName.textContent,
+          team2: elements.teamBName.textContent,
+          score1: parseInt(elements.teamASets.textContent) || 0,
+          score2: parseInt(elements.teamBSets.textContent) || 0,
+          currentData: {
+            teamA: {
+              score: parseInt(elements.teamAScore.textContent) || 301,
+              sets: parseInt(elements.teamASets.textContent) || 0
+            },
+            teamB: {
+              score: parseInt(elements.teamBScore.textContent) || 301,
+              sets: parseInt(elements.teamBSets.textContent) || 0
+            },
+            currentPlayer: window.currentPlayer || '1A',
+            throwsLeft: window.throwsLeft ? window.throwsLeft[window.currentPlayer] : 3,
+            matchType: elements.matchType?.textContent !== 'Type de Match' 
+              ? elements.matchType.textContent 
+              : 'Poule', // Valeur par défaut à 'Poule' si 'Type de Match'
+            matchMode: document.getElementById('matchModeSelector')?.value || 'BO3', // Ajout du mode de jeu
+            setsToWin: window.SETS_TO_WIN || 2 // Ajout du nombre de sets à gagner
+          },
+          timestamp: Date.now()
+        };
+
+        // Envoyer les données via Socket.io si connecté
+        if (socket && isSocketConnected) {
+          socket.emit('update_match', updateData);
+          console.log('Mise à jour envoyée via WebSocket');
+        } else {
+          console.log('Mode hors ligne: mise à jour sauvegardée localement uniquement');
+        }
+
+        // Sauvegarder également dans le localStorage pour l'affichage local
+        localStorage.setItem('liveMatchData', JSON.stringify(updateData));
+        
+        // Déclencher un événement personnalisé pour notifier les mises à jour
+        window.dispatchEvent(new CustomEvent('liveDataUpdated', { detail: updateData }));
+
+      } catch (error) {
+        console.error('Erreur lors de l\'envoi de la mise à jour:', error);
+      }
+    }
+    
+    // Fonction pour traiter les données reçues via WebSocket ou API
     function updateFromRemoteData(data) {
-        try {
-            if (data.score1) document.getElementById('teamAScore').textContent = data.score1;
-            if (data.score2) document.getElementById('teamBScore').textContent = data.score2;
-            if (data.currentPlayer) document.getElementById('currentPlayer').textContent = data.currentPlayer;
-            if (data.throwsLeft !== undefined) throwsRemaining = data.throwsLeft;
-            
-            // Mettre à jour l'interface des lancers restants
-            updateThrowsUI();
-        } catch (error) {
-            console.error('Erreur lors de la mise à jour depuis les données distantes:', error);
+      try {
+        // Vérifier que les données sont valides
+        if (!data) return;
+        
+        // Mise à jour des scores si disponibles
+        if (data.currentData) {
+          const scoreA = document.getElementById('teamAScore');
+          const scoreB = document.getElementById('teamBScore');
+          const currentPlayerEl = document.getElementById('currentPlayer');
+
+          if (scoreA && data.currentData.teamA && data.currentData.teamA.score !== undefined) {
+            scoreA.textContent = data.currentData.teamA.score;
+          }
+          
+          if (scoreB && data.currentData.teamB && data.currentData.teamB.score !== undefined) {
+            scoreB.textContent = data.currentData.teamB.score;
+          }
+          
+          // Mise à jour des sets si disponibles
+          const teamASets = document.getElementById('teamASets');
+          const teamBSets = document.getElementById('teamBSets');
+          
+          if (teamASets && data.currentData.teamA && data.currentData.teamA.sets !== undefined) {
+            teamASets.textContent = data.currentData.teamA.sets;
+          }
+          
+          if (teamBSets && data.currentData.teamB && data.currentData.teamB.sets !== undefined) {
+            teamBSets.textContent = data.currentData.teamB.sets;
+          }
+          
+          // Mise à jour du joueur actuel
+          if (data.currentData.currentPlayer && typeof window.selectPlayer === 'function') {
+            window.selectPlayer(data.currentData.currentPlayer);
+          }
         }
+
+      } catch (error) {
+        console.error('Erreur détaillée lors de la mise à jour:', error);
+        console.log('Données reçues:', data);
+      }
     }
     
-    // Afficher visuellement le nombre de lancers restants
-    function updateThrowsUI() {
-        // Cette fonction sera implémentée pour mettre à jour visuellement les lancers restants
-        console.log(`Lancers restants: ${throwsRemaining}`);
+    // Fonction pour ouvrir l'affichage des scores
+    function openScoreDisplay() {
+      try {
+        // Construire les données avec une meilleure gestion des erreurs
+        const liveData = {
+          team1: document.getElementById('teamAName')?.textContent || 'Team A',
+          team2: document.getElementById('teamBName')?.textContent || 'Team B',
+          score1: document.getElementById('teamAScore')?.textContent || '301',
+          score2: document.getElementById('teamBScore')?.textContent || '301',
+          sets: {
+            teamA: document.getElementById('teamASets')?.textContent || '0',
+            teamB: document.getElementById('teamBSets')?.textContent || '0'
+          },
+          matchType: document.getElementById('matchType')?.textContent || 'Poule',
+          currentPlayer: document.getElementById('currentPlayer')?.textContent || '1A',
+          currentPlayerId: window.currentPlayer || '1A',
+          throwsLeft: window.throwsLeft ? window.throwsLeft[window.currentPlayer] || 3 : 3,
+          currentData: {
+            matchMode: document.getElementById('matchModeSelector')?.value || 'BO3',
+            setsToWin: window.SETS_TO_WIN || 2,
+            currentPlayer: window.currentPlayer || '1A'
+          },
+          lastUpdate: new Date().toISOString()
+        };
+
+        // Sauvegarder dans le localStorage
+        localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+        
+        // Ouvrir dans une nouvelle fenêtre avec dimensions spécifiées
+        const width = 800;
+        const height = 600;
+        const left = (screen.width - width) / 2;
+        const top = (screen.height - height) / 2;
+        
+        window.open('affichage_score.html', '_blank');
+        
+      } catch (error) {
+        console.error('Erreur détaillée:', error);
+        alert('Erreur lors de l\'ouverture de l\'affichage. Veuillez réessayer.');
+      }
     }
     
+    // Fonction pour mettre à jour les équipes
+    function updateTeams() {
+      const teamASelect = document.getElementById('teamA');
+      const teamBSelect = document.getElementById('teamB');
+      const teamANameElement = document.getElementById('teamAName');
+      const teamBNameElement = document.getElementById('teamBName');
+      
+      if (teamASelect && teamANameElement) {
+        teamANameElement.textContent = teamASelect.value;
+      }
+      if (teamBSelect && teamBNameElement) {
+        teamBNameElement.textContent = teamBSelect.value;
+      }
+      
+      // Mettre à jour l'affichage
+      if (typeof window.updateScoreDisplay === 'function') {
+        window.updateScoreDisplay();
+      }
+      
+      // Envoyer la mise à jour
+      sendLiveUpdate();
+    }
+
+    // Fonction pour mettre à jour le type de match
+    function updateMatchType() {
+      const matchTypeSelector = document.getElementById('matchTypeSelector');
+      const matchTypeElement = document.getElementById('matchType');
+      
+      if (matchTypeSelector && matchTypeElement) {
+        let selectedValue = matchTypeSelector.value;
+        
+        // Convertir les types de match internes en formats lisibles
+        if (selectedValue === 'poule') {
+          matchTypeElement.textContent = 'Poule';
+        } else {
+          matchTypeElement.textContent = selectedValue;
+        }
+      }
+      
+      // Envoyer la mise à jour
+      sendLiveUpdate();
+    }
+    
+    // Fonction pour mettre à jour le mode de jeu (BO3 ou BO5)
+    function updateMatchMode() {
+      const matchModeSelector = document.getElementById('matchModeSelector');
+      if (!matchModeSelector) return;
+      
+      const selectedMode = matchModeSelector.value;
+      
+      // Mettre à jour la constante SETS_TO_WIN dans flechettes.js
+      if (selectedMode === 'BO3') {
+        window.SETS_TO_WIN = 2;
+      } else if (selectedMode === 'BO5') {
+        window.SETS_TO_WIN = 3;
+      }
+      
+      // Mettre à jour l'affichage du bouton toggle
+      const toggleButton = document.getElementById('toggleModeButton');
+      if (toggleButton) {
+        if (selectedMode === 'BO3') {
+          toggleButton.textContent = 'Passer en BO5';
+          toggleButton.style.backgroundColor = '#28a745';
+        } else {
+          toggleButton.textContent = 'Passer en BO3';
+          toggleButton.style.backgroundColor = '#007bff';
+        }
+      }
+      
+      // Mettre à jour l'affichage
+      console.log(`Mode de jeu mis à jour: ${selectedMode}, SETS_TO_WIN = ${window.SETS_TO_WIN}`);
+      
+      // Si la fonction existe, envoyer la mise à jour
+      if (typeof sendLiveUpdate === 'function') {
+        sendLiveUpdate();
+      }
+    }
+    
+    // Fonction pour basculer entre BO3 et BO5
+    function toggleMatchMode() {
+      const matchModeSelector = document.getElementById('matchModeSelector');
+      const toggleButton = document.getElementById('toggleModeButton');
+      
+      if (!matchModeSelector || !toggleButton) return;
+      
+      if (matchModeSelector.value === 'BO3') {
+        matchModeSelector.value = 'BO5';
+        toggleButton.textContent = 'Passer en BO3';
+        toggleButton.style.backgroundColor = '#007bff';
+      } else {
+        matchModeSelector.value = 'BO3';
+        toggleButton.textContent = 'Passer en BO5';
+        toggleButton.style.backgroundColor = '#28a745';
+      }
+      
+      // Mettre à jour le mode de jeu
+      updateMatchMode();
+    }
+
     // Initialisation au chargement de la page
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialiser la connexion WebSocket
-        initWebSocket();
-        
-        // Paramétrer le match depuis l'URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const team1 = urlParams.get('team1');
-        const team2 = urlParams.get('team2');
-        
-        if (team1) document.getElementById('teamAName').textContent = team1;
-        if (team2) document.getElementById('teamBName').textContent = team2;
-        
-        // Synchronisation périodique automatique
-        setInterval(sendLiveUpdate, 2000);
-        
-        // Attendre que flechettes.js soit complètement chargé
-        setTimeout(() => {
-            if (typeof window.selectPlayer === 'function') {
-                window.selectPlayer("1A");
-            } else {
-                console.error("La fonction selectPlayer n'est pas disponible");
+      // Initialiser la connexion WebSocket
+      initSocketConnection();
+      
+      // Paramétrer le match depuis l'URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const team1 = urlParams.get('team1');
+      const team2 = urlParams.get('team2');
+      const matchType = urlParams.get('matchType');
+      const terrain = urlParams.get('terrain');
+      
+      // Mettre à jour les équipes
+      if (team1) {
+        document.getElementById('teamAName').textContent = team1;
+        // Sélectionner également dans la liste déroulante
+        const teamASelect = document.getElementById('teamA');
+        if (teamASelect) {
+          for (let i = 0; i < teamASelect.options.length; i++) {
+            if (teamASelect.options[i].value === team1) {
+              teamASelect.selectedIndex = i;
+              break;
             }
-            
-            if (typeof window.updateScoreDisplay === 'function') {
-                window.updateScoreDisplay();
-            } else {
-                console.error("La fonction updateScoreDisplay n'est pas disponible");
+          }
+        }
+      }
+      
+      if (team2) {
+        document.getElementById('teamBName').textContent = team2;
+        // Sélectionner également dans la liste déroulante
+        const teamBSelect = document.getElementById('teamB');
+        if (teamBSelect) {
+          for (let i = 0; i < teamBSelect.options.length; i++) {
+            if (teamBSelect.options[i].value === team2) {
+              teamBSelect.selectedIndex = i;
+              break;
             }
-        }, 100);
+          }
+        }
+      }
+      
+      // Mettre à jour le type de match
+      if (matchType) {
+        const matchTypeElement = document.getElementById('matchType');
+        const matchTypeSelector = document.getElementById('matchTypeSelector');
+        
+        if (matchTypeElement) {
+          // Convertir les types de match internes en formats lisibles
+          if (matchType === 'poule') {
+            matchTypeElement.textContent = 'Poule';
+          } else if (matchType === 'semifinal') {
+            matchTypeElement.textContent = 'Demi-finale';
+          } else if (matchType === 'final') {
+            matchTypeElement.textContent = 'Finale';
+          } else if (matchType === 'bronze_final') {
+            matchTypeElement.textContent = 'Petite Finale';
+          } else if (matchType === 'classif_semifinal') {
+            matchTypeElement.textContent = 'Classement';
+          } else if (matchType === 'final_5th') {
+            matchTypeElement.textContent = 'Match 5e place';
+          } else if (matchType === 'final_7th') {
+            matchTypeElement.textContent = 'Match 7e place';
+          } else {
+            matchTypeElement.textContent = matchType;
+          }
+        }
+        
+        // Sélectionner dans la liste déroulante
+        if (matchTypeSelector) {
+          for (let i = 0; i < matchTypeSelector.options.length; i++) {
+            if (matchTypeSelector.options[i].value === matchType || 
+                (matchType === 'semifinal' && matchTypeSelector.options[i].value === 'Demi-finale') ||
+                (matchType === 'final' && matchTypeSelector.options[i].value === 'Finale')) {
+              matchTypeSelector.selectedIndex = i;
+              break;
+            }
+          }
+        }
+      }
+      else {
+        // Si le type n'est pas fourni, vérifier s'il pourrait être une poule
+        const matchTypeElement = document.getElementById('matchType');
+        if (matchTypeElement && matchTypeElement.textContent === 'Type de Match') {
+          const path = window.location.pathname;
+          if (path.includes('poule') || (team1 && team2)) {
+            matchTypeElement.textContent = 'Poule';
+            // Sélectionner l'option correspondante dans le sélecteur
+            const matchTypeSelector = document.getElementById('matchTypeSelector');
+            if (matchTypeSelector) {
+              for (let i = 0; i < matchTypeSelector.options.length; i++) {
+                if (matchTypeSelector.options[i].value === 'poule') {
+                  matchTypeSelector.selectedIndex = i;
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      // Mettre à jour le terrain
+      if (terrain) {
+        const matchGroundSelector = document.getElementById('matchGroundSelector');
+        if (matchGroundSelector) {
+          for (let i = 0; i < matchGroundSelector.options.length; i++) {
+            if (matchGroundSelector.options[i].value === terrain) {
+              matchGroundSelector.selectedIndex = i;
+              break;
+            }
+          }
+        }
+      }
+      
+      // Initialiser le mode de jeu en fonction de la constante SETS_TO_WIN
+      setTimeout(() => {
+        if (typeof window.SETS_TO_WIN !== 'undefined') {
+          const matchModeSelector = document.getElementById('matchModeSelector');
+          if (matchModeSelector) {
+            if (window.SETS_TO_WIN === 3) {
+              matchModeSelector.value = 'BO5';
+            } else {
+              matchModeSelector.value = 'BO3';
+            }
+          }
+        } else {
+          // Si SETS_TO_WIN n'est pas défini, l'initialiser à 2 (BO3)
+          window.SETS_TO_WIN = 2;
+        }
+        
+        // Mettre à jour l'affichage après initialisation du mode
+        updateMatchMode();
+        
+        // Forcer la mise à jour du type de match si nécessaire
+        const matchTypeElement = document.getElementById('matchType');
+        if (matchTypeElement && matchTypeElement.textContent === 'Type de Match') {
+          matchTypeElement.textContent = 'Poule';
+          // Mettre à jour le sélecteur aussi
+          const matchTypeSelector = document.getElementById('matchTypeSelector');
+          if (matchTypeSelector) {
+            for (let i = 0; i < matchTypeSelector.options.length; i++) {
+              if (matchTypeSelector.options[i].value === 'poule') {
+                matchTypeSelector.selectedIndex = i;
+                break;
+              }
+            }
+          }
+        }
+      }, 500);
+      
+      // Attacher les gestionnaires d'événements pour les boutons des joueurs
+      document.querySelectorAll('.player-button').forEach(button => {
+        button.addEventListener('click', function() {
+          const playerId = this.getAttribute('data-player');
+          if (typeof window.selectPlayer === 'function') {
+            window.selectPlayer(playerId);
+          }
+        });
+      });
+      
+      // Synchronisation périodique automatique - envoi des mises à jour
+      setInterval(sendLiveUpdate, SYNC_INTERVAL);
+      
+      // Attendre que flechettes.js soit complètement chargé
+      setTimeout(() => {
+        if (typeof window.selectPlayer === 'function') {
+          window.selectPlayer("1A");
+        } else {
+          console.error("La fonction selectPlayer n'est pas disponible");
+        }
+        
+        if (typeof window.updateScoreDisplay === 'function') {
+          window.updateScoreDisplay();
+        } else {
+          console.error("La fonction updateScoreDisplay n'est pas disponible");
+        }
+        
+        // Ajouter div pour le joueur actuel s'il n'existe pas
+        if (!document.getElementById('currentPlayer')) {
+          const playerDiv = document.createElement('div');
+          playerDiv.id = 'currentPlayer';
+          playerDiv.textContent = 'Joueur actuel: 1A (3 lancers restants)';
+          const detailsLine = document.querySelector('.details-line');
+          if (detailsLine) {
+            detailsLine.parentNode.insertBefore(playerDiv, detailsLine);
+          }
+        }
+      }, 300);
     });
   </script>
 </head>
@@ -179,6 +542,7 @@
           <option value="ISTC">ISTC</option>
           <option value="JUNIA">JUNIA</option>
           <option value="LiDD">LiDD</option>
+          <option value="PIKTURA">PIKTURA</option>
           <option value="USCHOOL">USCHOOL</option>
         </select>
         <label for="teamB">Équipe B :</label>
@@ -196,17 +560,21 @@
           <option value="ISTC">ISTC</option>
           <option value="JUNIA">JUNIA</option>
           <option value="LiDD">LiDD</option>
+          <option value="PIKTURA">PIKTURA</option>
           <option value="USCHOOL">USCHOOL</option>
         </select>
         <label for="matchType">Type de match :</label>
         <select id="matchTypeSelector" onchange="updateMatchType()">
           <option>Type de match</option>
+          <option value="poule">Poule</option>
           <option value="Barrages">Barrages</option>
           <option value="Quart de finale">Quart de finale</option>
           <option value="Demi-finale">Demi-finale</option>
           <option value="Petite Finale">Petite Finale</option>
           <option value="Finale">Finale</option>
-          <option value="poule">Poule</option>
+          <option value="Match 5e place">Match 5e place</option>
+          <option value="Match 7e place">Match 7e place</option>
+          <option value="Classement">Classement</option>
         </select>
         <label for="matchGround">Terrain :</label>
         <select id="matchGroundSelector">
@@ -216,13 +584,26 @@
           <option value="3">3</option>
           <option value="4">4</option>
         </select>
+        <label for="matchMode">Mode de jeu :</label>
+        <select id="matchModeSelector" onchange="updateMatchMode()">
+          <option value="BO3">BO3 (2 sets gagnants)</option>
+          <option value="BO5">BO5 (3 sets gagnants)</option>
+        </select>
+        <div class="mode-toggle" style="margin-top: 10px;">
+          <button id="toggleModeButton" onclick="toggleMatchMode()" style="padding: 5px 10px; background-color: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">
+            Passer en BO5
+          </button>
+        </div>
       </div>
       <div class="bouton_pied_page">
         <div class="button-row1">
-          <button onclick="location.href='flechettes.html'">Retour</button>
+          <button onclick="location.href='../flechettes.html'">Retour</button>
         </div>
         <div class="button-row2">
           <button onclick="openScoreDisplay()">Spectateurs</button>
+        </div>
+        <div class="button-row3">
+          <button onclick="location.href='split_screen.html'">Multi-screen</button>
         </div>
       </div>
     </div>
@@ -232,7 +613,9 @@
           <div class="score-line">
             <span id="teamAName" class="team-name">Team A</span>
             <span id="teamAScore" class="team-score">301</span>
+            <div><span id="teamASets">0</span></div>
             <span class="score-divider">-</span>
+            <div><span id="teamBSets">0</span></div>
             <span id="teamBScore" class="team-score">301</span>
             <span id="teamBName" class="team-name">Team B</span>
           </div>
@@ -247,13 +630,11 @@
           </div>
 
           <div class="multiple-points">
-            <button class="control-button" onclick="mulScore(1)">x1</button>
+            <button class="control-button active" onclick="mulScore(1)">x1</button>
             <button class="control-button" onclick="mulScore(2)">x2</button>
             <button class="control-button" onclick="mulScore(3)">x3</button>
             <button class="control-button" onclick="supScore(0)">Manqué</button>
           </div>
-
-          <div id="currentPlayer" class="current-player">Joueur actuel: </div>
           <div class="players">
             <div class="team-a-players">
               <button class="player-button" data-player="1A">1A</button>
@@ -266,234 +647,12 @@
           </div>
 
           <div class="bottom-controls">
-            <button onclick="resetGame()" class="action-button" id="resetGameButton">Terminer</button>
+            <button onclick="finishGame()" class="action-button" id="resetGameButton">Terminer</button>
           </div>
 
         </div>
       </div>
     </div>
   </main>
-  <script>
-    // Attendre que le DOM soit chargé avant d'initialiser
-    document.addEventListener('DOMContentLoaded', function() {
-        // Récupérer les paramètres de l'URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const team1Name = urlParams.get('team1');
-        const team2Name = urlParams.get('team2');
-        const matchType = urlParams.get('matchType');
-        const isCorrection = urlParams.get('correction') === 'true';
-
-        // Fonction pour convertir le matchType en texte affichable
-        function getMatchTypeDisplay(type) {
-            const matchTypes = {
-                'qualification': 'Qualification',
-                'quarterfinal': 'Quart de finale',
-                'semifinal': 'Demi-finale',
-                'smallfinal': 'Petite Finale',
-                'final': 'Finale',
-                'poule_a': 'Match de Poule',
-                'poule_b': 'Match de Poule'
-            };
-            return matchTypes[type] || type;
-        }
-
-        // Initialiser les sélecteurs
-        if (team1Name) {
-            document.getElementById('teamA').value = team1Name;
-        }
-        if (team2Name) {
-            document.getElementById('teamB').value = team2Name;
-        }
-        
-        // Mettre à jour les noms affichés
-        document.getElementById('teamAName').textContent = team1Name || 'Team A';
-        document.getElementById('teamBName').textContent = team2Name || 'Team B';
-
-        // Mettre à jour le type de match
-        if (matchType) {
-            const displayMatchType = (matchType === 'poule_a' || matchType === 'poule_b') 
-                ? 'Match de Poule' 
-                : matchType;
-            const matchTypeSelector = document.getElementById('matchTypeSelector');
-            matchTypeSelector.value = displayMatchType;
-            document.getElementById('matchType').textContent = displayMatchType;
-        }
-
-        // Initialiser le terrain par défaut
-        document.getElementById('matchGroundSelector').value = '1';
-
-        if (isCorrection) {
-            // Pré-remplir les scores si c'est une correction
-            const score1 = parseInt(urlParams.get('score1')) || 0;
-            const score2 = parseInt(urlParams.get('score2')) || 0;
-            document.getElementById('teamAScore').textContent = score1;
-            document.getElementById('teamBScore').textContent = score2;
-        }
-
-        // Initialiser le joueur actuel avec la fonction importée
-        if (window.selectPlayer) {
-            window.selectPlayer('1A');
-        }
-        
-        // Supprimer cette ligne qui cause l'erreur
-        // selectPlayer('1A');
-        
-        updateScoreDisplay();
-    });
-
-    function updateMatchType() {
-        const matchTypeSelector = document.getElementById('matchTypeSelector');
-        const matchType = matchTypeSelector.options[matchTypeSelector.selectedIndex].value;
-
-        // Correction : Afficher "Match de Poule" pour poule_a et poule_b
-        const displayMatchType = (matchType === 'poule_a' || matchType === 'poule_b' || matchType === 'poule') 
-            ? 'Match de Poule' 
-            : matchType;
-        document.getElementById('matchType').textContent = displayMatchType;
-        
-        // Mettre à jour les données en direct immédiatement
-        updateLiveData();
-    }
-
-    function openScoreDisplay() {
-        try {
-            // Récupérer le joueur actuel
-            const currentPlayerEl = document.getElementById('currentPlayer');
-            const currentPlayerText = currentPlayerEl ? currentPlayerEl.textContent : '';
-            
-            // Récupérer le nombre de lancers restants depuis fléchettes.js
-            const remainingThrows = window.throwsLeft ? window.throwsLeft[window.currentPlayer] || 3 : 3;
-            
-            const liveData = {
-                team1: document.getElementById('teamA').value,
-                team2: document.getElementById('teamB').value,
-                matchType: document.getElementById('matchType').textContent,
-                score1: document.getElementById('teamAScore').textContent,
-                score2: document.getElementById('teamBScore').textContent,
-                currentPlayer: currentPlayerText,
-                throwsLeft: remainingThrows
-            };
-
-            localStorage.setItem('liveMatchData', JSON.stringify(liveData));
-            window.open('affichage_score.html');
-        } catch (error) {
-            console.error('Erreur lors de l\'ouverture de l\'affichage:', error);
-        }
-    }
-
-    // Fonction pour mettre à jour les données en direct
-    function updateLiveData() {
-        const liveData = {
-            team1: document.getElementById('teamA').value,
-            team2: document.getElementById('teamB').value,
-            score1: document.getElementById('teamAScore').textContent,
-            score2: document.getElementById('teamBScore').textContent,
-            currentPlayer: document.getElementById('currentPlayer').textContent,
-            // Corriger ici pour utiliser window.throwsLeft au lieu de throwsRemaining
-            throwsLeft: window.throwsLeft ? window.throwsLeft[window.currentPlayer] : 3
-        };
-
-        localStorage.setItem('liveMatchData', JSON.stringify(liveData));
-    }
-
-    // Ajouter l'observateur pour mettre à jour les données en direct
-    const observer = new MutationObserver(updateLiveData);
-    const scoreboard = document.querySelector('.scoreboard');
-    observer.observe(scoreboard, { 
-        subtree: true, 
-        childList: true,
-        characterData: true,
-        characterDataOldValue: true
-    });
-  </script>
-  <script>
-// Script de récupération d'urgence pour la page de marquage
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("Initialisation de récupération pour la page de marquage");
-    
-    // Vérifier si les fonctions essentielles sont disponibles
-    if (typeof window.selectPlayer !== 'function') {
-        console.error("Fonction selectPlayer manquante, définition d'une version de secours");
-        window.selectPlayer = function(playerId) {
-            console.log("Sélection du joueur (version de secours):", playerId);
-            const playerElement = document.getElementById('currentPlayer');
-            if (playerElement) {
-                playerElement.textContent = `Joueur actuel: ${playerId}`;
-            }
-        };
-    }
-    
-    if (typeof window.updateScoreDisplay !== 'function') {
-        console.error("Fonction updateScoreDisplay manquante, définition d'une version de secours");
-        window.updateScoreDisplay = function() {
-            console.log("Mise à jour de l'affichage des scores (version de secours)");
-            const teamAScore = document.getElementById('teamAScore');
-            const teamBScore = document.getElementById('teamBScore');
-            
-            if (teamAScore && typeof window.scores !== 'undefined' && window.scores.teamA) {
-                teamAScore.textContent = window.scores.teamA;
-            }
-            
-            if (teamBScore && typeof window.scores !== 'undefined' && window.scores.teamB) {
-                teamBScore.textContent = window.scores.teamB;
-            }
-        };
-    }
-    
-    // Définir une version de secours de sendLiveUpdate si nécessaire
-    if (typeof sendLiveUpdate !== 'function') {
-        window.sendLiveUpdate = function(forceUpdate = false) {
-            console.log("Envoi de mise à jour en direct (version de secours)");
-            try {
-                const matchId = new URLSearchParams(window.location.search).get('matchId');
-                if (!matchId) return;
-                
-                // Récupérer les données importantes
-                const liveData = {
-                    matchId,
-                    team1: document.getElementById('teamAName')?.textContent || 'TEAM A',
-                    team2: document.getElementById('teamBName')?.textContent || 'TEAM B',
-                    score1: document.getElementById('teamAScore')?.textContent || '301',
-                    score2: document.getElementById('teamBScore')?.textContent || '301',
-                    currentPlayer: document.getElementById('currentPlayer')?.textContent || 'Joueur actuel: 1A',
-                    throwsLeft: typeof window.throwsLeft !== 'undefined' ? (window.throwsLeft[window.currentPlayer] || 3) : 3,
-                    matchType: document.getElementById('matchType')?.textContent || 'Match'
-                };
-                
-                // Sauvegarde locale de secours
-                localStorage.setItem('liveMatchData', JSON.stringify(liveData));
-                
-                // Tentative d'envoi au serveur
-                if (typeof window.socket !== 'undefined' && window.socket && !window.isUpdating) {
-                    try {
-                        window.socket.emit('live_score_update', liveData);
-                        return true;
-                    } catch(e) {
-                        console.error("Erreur lors de l'envoi des données:", e);
-                    }
-                }
-            } catch (error) {
-                console.error('Erreur lors de l\'envoi des données (version de secours):', error);
-            }
-            return false;
-        };
-    }
-    
-    // Initialiser le joueur actuel et les scores
-    setTimeout(() => {
-        try {
-            if (typeof window.selectPlayer === 'function') {
-                window.selectPlayer("1A");
-            }
-            
-            if (typeof window.updateScoreDisplay === 'function') {
-                window.updateScoreDisplay();
-            }
-        } catch (e) {
-            console.error("Erreur lors de l'initialisation récupération:", e);
-        }
-    }, 500);
-});
-</script>
 </body>
 </html>

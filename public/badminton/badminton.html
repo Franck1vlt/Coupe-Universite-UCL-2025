@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Badminton</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Fonction pour charger Socket.IO de manière conditionnelle -->
+    <script>
+        function loadSocketIO() {
+            return new Promise((resolve, reject) => {
+                // Vérifier si le serveur est accessible avant de charger Socket.IO
+                fetch('/socket.io/socket.io.js', { 
+                    method: 'HEAD',
+                    cache: 'no-store',
+                    signal: AbortSignal.timeout(3000)
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Serveur accessible, charger Socket.IO
+                        const script = document.createElement('script');
+                        script.src = '/socket.io/socket.io.js';
+                        script.onload = () => {
+                            console.log('Socket.IO chargé avec succès');
+                            resolve(true);
+                        };
+                        script.onerror = (error) => {
+                            console.error('Erreur lors du chargement de Socket.IO:', error);
+                            reject(error);
+                        };
+                        document.head.appendChild(script);
+                    } else {
+                        console.warn('Serveur accessible mais retourne une erreur:', response.status);
+                        reject(new Error(`Erreur serveur: ${response.status}`));
+                    }
+                })
+                .catch(error => {
+                    console.error('Serveur non accessible lors de la tentative de chargement de Socket.IO:', error);
+                    reject(error);
+                });
+            });
+        }
+
+        // Essayer de charger Socket.IO, mais continuer même en cas d'échec
+        loadSocketIO().catch(error => {
+            console.warn('Application démarrée sans Socket.IO:', error);
+            // Créer une notification pour l'utilisateur
+            document.addEventListener('DOMContentLoaded', () => {
+                const offlineNotice = document.createElement('div');
+                offlineNotice.id = 'offlineNotice';
+                offlineNotice.innerHTML = `
+                    <div style="position: fixed; bottom: 20px; right: 20px; background-color: #fff3cd; 
+                         color: #856404; padding: 10px; border-radius: 4px; z-index: 1000; 
+                         box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                        Mode hors ligne actif - Les données sont sauvegardées localement.
+                        <br><small>Serveur non disponible: ${error.message}</small>
+                    </div>
+                `;
+                document.body.appendChild(offlineNotice);
+            });
+        });
+    </script>
+<style>
+    .correction-button {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: #f44336;
+      color: white;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+
+    .correction-button:hover {
+      transform: scale(1.1);
+      background-color: #d32f2f;
+    }
+
+    .match.terminé {
+      cursor: pointer;
+    }
+
+    .match.terminé:hover {
+      border: 2px solid #f44336;
+    }
+
+    /* Style pour le statut de connexion */
+    .connection-status {
+        position: fixed;
+        top: 20px;
+        right: 100px;
+        padding: 8px 12px;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: bold;
+        z-index: 1000;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        min-width: 150px;
+    }
+    
+    .connection-status::before {
+        content: '';
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+        background-color: #f8d7da;
+    }
+    
+    .connection-status.connected::before {
+        background-color: #28a745;
+    }
+    
+    .connection-status.offline::before {
+        background-color: #ffc107;
+    }
+    
+    .connection-status.disconnected::before {
+        background-color: #dc3545;
+    }
+    
+    .connection-status.connecting::before {
+        background-color: #6c757d;
+        animation: pulse 1s infinite;
+    }
+
+    /* Style pour les matchs désactivés mais interactifs */
+    .match.disabled {
+      position: relative;
+    }
+    
+    .match.disabled::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(200, 200, 200, 0.2);
+      z-index: 5;
+    }
+    
+    /* Style pour montrer qu'un match est cliquable */
+    .match {
+      transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    
+    .match:not(.disabled):hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      border: 2px solid #3498db;
+      cursor: pointer;
+    }
+    
+    .match.terminé:hover {
+      border: 2px solid #2ecc71;
+    }
+    
+    /* Style pour le mode correction actif */
+    .correction-mode-active .match {
+      cursor: pointer;
+      opacity: 1 !important;
+    }
+    
+    .correction-mode-active .match:hover {
+      border: 2px solid #e74c3c;
+    }
+  </style>
+</head>
+<body>
+    <button id="correctionMode" class="correction-button" onclick="toggleCorrectionMode()">✏️</button>
+    <div class="background-lines"></div>
+    <div class="container">
+      <header>
+        <div class="phase-selector">
+          <select id="phaseSelect" class="phase-select">
+            <option value="qualification-phase">Qualifications</option>
+            <option value="final-phase">Phase finale</option>
+            <option value="classification-phase">Matchs de classement</option>
+            <option value="ranking-phase">Classement final</option>
+          </select>
+        </div>
+        <h1>Badminton</h1>
+        <div class="subtitle">Phase à élimination directe</div>
+      </header>
+        
+      <div class="tournament-container">
+        <!-- SECTION QUALIFICATIONS -->
+        <div class="bracket phase-content" id="qualification-phase">
+            <div class="round qualification-round">
+            <div class="round-title">Barrages</div>
+                <!-- Match 1 -->
+                <div class="match-wrapper">
+                    <div class="match terminé" data-match-id="1" data-match-type="barrage">
+                    <div class="team">
+                        <div class="team-name">FMMS</div>
+                        <div class="score">-</div>
+                    </div>
+                    <div class="team">
+                        <div class="team-name">IESEG</div>
+                        <div class="score">-</div>
+                    </div>
+                    <div class="match-info-container">
+                        <div class="match-time">9:00</div>
+                        <div class="match-status">à venir</div>
+                    </div>
+                    </div>
+                    <div class="connector right"></div>
+                </div>
+                
+                <!-- Match 2 -->
+                <div class="match-wrapper">
+                    <div class="match terminé" data-match-id="2" data-match-type="barrage">
+                    <div class="team">
+                        <div class="team-name">FGES</div>
+                        <div class="score">-</div>
+                    </div>
+                    <div class="team">
+                        <div class="team-name">FLSH</div>
+                        <div class="score">-</div>
+                    </div>
+                    <div class="match-info-container">
+                        <div class="match-time">9:00</div>
+                        <div class="match-status">à venir</div>
+                    </div>
+                    </div>
+                    <div class="connector right"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION PHASE FINALE -->
+        <div class="bracket phase-content" id="final-phase">
+            <!-- Quarts de finale -->
+            <div class="round">
+            <div class="round-title">Quarts de finale</div>
+            <!-- Match 1: FMMS vs FGES -->
+            <div class="match-wrapper">
+                <div class="match" data-match-id="3" data-match-type="quarterfinal" data-position="1">
+                <div class="team">
+                    <div class="team-name">ESPAS-ESTICE</div>
+                    <div class="score">-</div>
+                </div>
+                <div class="team">
+                    <div class="team-name">FLD</div>
+                    <div class="score">-</div>
+                </div>
+                <div class="match-info-container">
+                    <div class="match-time">9:30</div>
+                    <div class="match-status">à venir</div>
+                </div>
+                </div>
+                <div class="connector top"></div>
+            </div>
+            <!-- Match 2: FLD vs JUNIA -->
+            <div class="match-wrapper">
+                <div class="match" data-match-id="4" data-match-type="quarterfinal" data-position="2">
+                <div class="team">
+                    <div class="team-name">ICAM</div>
+                    <div class="score">-</div>
+                </div>
+                <div class="team">
+                    <div class="team-name">-</div>
+                    <div class="score">-</div>
+                </div>
+                <div class="match-info-container">
+                    <div class="match-time">9:30</div>
+                    <div class="match-status">à venir</div>
+                </div>
+                </div>
+                <div class="connector bottom"></div>
+            </div>
+            <!-- Match 3: FLSH vs IESEG -->
+            <div class="match-wrapper">
+                <div class="match" data-match-id="5" data-match-type="quarterfinal" data-position="3">
+                <div class="team">
+                    <div class="team-name">IKPO</div>
+                    <div class="score">-</div>
+                </div>
+                <div class="team">
+                    <div class="team-name">USCHOOL</div>
+                    <div class="score">-</div>
+                </div>
+                <div class="match-info-container">
+                    <div class="match-time">10:00</div>
+                    <div class="match-status">à venir</div>
+                </div>
+                </div>
+                <div class="connector top"></div>
+            </div>
+            <!-- Match 4: ICAM vs ESPOL -->
+            <div class="match-wrapper">
+                <div class="match" data-match-id="6" data-match-type="quarterfinal" data-position="4">
+                <div class="team">
+                    <div class="team-name">PIKTURA</div>
+                    <div class="score">-</div>
+                </div>
+                <div class="team">
+                    <div class="team-name">-</div>
+                    <div class="score">-</div>
+                </div>
+                <div class="match-info-container">
+                    <div class="match-time">10:00</div>
+                    <div class="match-status">à venir</div>
+                </div>
+                </div>
+                <div class="connector bottom"></div>
+            </div>
+            </div>
+            <!-- Demi-finales -->
+            <div class="round2">
+            <div class="round-title">Demi-finales</div>
+            <div class="match-wrapper">
+                <div class="match" data-match-id="9" data-match-type="semifinal" data-position="1">
+                <div class="team">
+                    <div class="team-name">-</div>
+                    <div class="score">-</div>
+                </div>
+                <div class="team">
+                    <div class="team-name">-</div>
+                    <div class="score">-</div>
+                </div>
+                <div class="match-info-container">
+                    <div class="match-time">10:30</div>
+                    <div class="match-status">à venir</div>
+                </div>
+                </div>
+                <div class="connector top"></div>
+            </div>
+            <div class="match-wrapper">
+                <div class="match" data-match-id="10" data-match-type="semifinal" data-position="2">
+                <div class="team">
+                    <div class="team-name">-</div>
+                    <div class="score">-</div>
+                </div>
+                <div class="team">
+                    <div class="team-name">-</div>
+                    <div class="score">-</div>
+                </div>
+                <div class="match-info-container">
+                    <div class="match-time">11:00</div>
+                    <div class="match-status">à venir</div>
+                </div>
+                </div>
+                <div class="connector bottom"></div>
+            </div>
+            </div>
+            <!-- Finale & Petite Finale -->
+            <div class="round3">
+            <div class="round-title">Finale</div>
+            <div class="match-wrapper">
+                <div class="match" data-match-id="14" data-match-type="final" data-position="1">
+                <div class="team">
+                    <div class="team-name">-</div>
+                    <div class="score">-</div>
+                </div>
+                <div class="team">
+                    <div class="team-name">-</div>
+                    <div class="score">-</div>
+                </div>
+                <div class="match-info-container">
+                    <div class="match-time">12:00</div>
+                    <div class="match-status">à venir</div>
+                </div>
+                </div>
+            </div>
+            <div class="small-final">
+                <div class="round-title">Place de 3ème</div>
+                <div class="match" data-match-id="13" data-match-type="smallfinal" data-position="1">
+                <div class="team">
+                    <div class="team-name">-</div>
+                    <div class="score">-</div>
+                </div>
+                <div class="team">
+                    <div class="team-name">-</div>
+                    <div class="score">-</div>
+                </div>
+                <div class="match-info-container">
+                    <div class="match-time">12:00</div>
+                    <div class="match-status">à venir</div>
+                </div>
+                </div>
+            </div>
+            </div>
+            <!-- Champion -->
+            <div class="round4">
+            <div class="round-title">Champion</div>
+            <div class="trophy">
+                <div class="trophy-icon">🏆</div>
+                <div class="champion" id="champion">À déterminer</div>
+            </div>
+            </div>
+        </div>
+
+        <!-- SECTION MATCHS DE CLASSEMENT -->
+        <div class="bracket phase-content" id="classification-phase">
+            <div class="classification-container">
+            <!-- Demi-finales de classement (entre perdants des quarts) -->
+            <div class="round">
+                <div class="round-title">Demi-finales de classement</div>
+                <div class="match-wrapper">
+                <div class="match" data-match-id="7" data-match-type="classification_semifinal">
+                    <div class="team"><div class="team-name">Perdant QF1</div><div class="score">-</div></div>
+                    <div class="team"><div class="team-name">Perdant QF2</div><div class="score">-</div></div>
+                </div>
+                <div class="match-info-container">
+                    <div class="match-time">10:30</div>
+                    <div class="match-status">à venir</div>
+                </div>
+                </div>
+                <div class="match-wrapper">
+                <div class="match" data-match-id="8" data-match-type="classification_semifinal">
+                    <div class="team"><div class="team-name">Perdant QF3</div><div class="score">-</div></div>
+                    <div class="team"><div class="team-name">Perdant QF4</div><div class="score">-</div></div>
+                </div>
+                <div class="match-info-container">
+                    <div class="match-time">11:00</div>
+                    <div class="match-status">à venir</div>
+                </div>
+                </div>
+            </div>
+            <!-- Match pour la 5ème place -->
+            <div class="round2">
+                <div class="round-title">Place de 5ème</div>
+                <div class="match-wrapper">
+                    <div class="match" data-match-id="12" data-match-type="classification_final" data-position="1">
+                    <div class="team">
+                        <div class="team-name">-</div>
+                        <div class="score">-</div>
+                    </div>
+                    <div class="team">
+                        <div class="team-name">-</div>
+                        <div class="score">-</div>
+                    </div>
+                    <div class="match-info-container">
+                        <div class="match-time">11:30</div>
+                        <div class="match-status">à venir</div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Match pour la 7ème place -->
+            <div class="round3">
+                <div class="small-final">
+                    <div class="round-title">Place de 7ème</div>
+                    <div class="match" data-match-id="11" data-match-type="classification_smallfinal" data-position="1">
+                    <div class="team">
+                        <div class="team-name">-</div>
+                        <div class="score">-</div>
+                    </div>
+                    <div class="team">
+                        <div class="team-name">-</div>
+                        <div class="score">-</div>
+                    </div>
+                    <div class="match-info-container">
+                        <div class="match-time">11:30</div>
+                        <div class="match-status">à venir</div>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </div>
+                
+        <!-- SECTION CLASSEMENT FINAL -->
+        <div class="bracket phase-content" id="ranking-phase">
+            <div class="ranking-container">
+            <div class="round-title">Classement Final Badminton</div>
+            <div class="ranking-table">
+                <div class="ranking-row header">
+                <div class="rank">Position</div>
+                <div class="teamname">Équipe</div>
+                <div class="points">Points</div>
+                </div>
+                <div id="rankingList">
+                <!-- Rempli dynamiquement par JavaScript -->
+                </div>
+            </div>
+            </div>
+        </div>
+      </div>
+      <div style="text-align: center;">
+          <button class="reset-button" id="resetTournament" onclick="resetTournament()">Réinitialiser le tournoi</button>
+          <!--<button onclick="simulateTournament()">Simuler la compétition</button>-->
+          <button class="back-button" onclick="window.location.href='../index.html'">Retour</button>
+      </div>
+    </div>
+    
+    <!-- Ajouter Socket.IO avant tournament.js -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="tournament.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          const phaseSelect = document.getElementById('phaseSelect');
+          const phaseContents = document.querySelectorAll('.phase-content');
+          
+          phaseSelect.addEventListener('change', async function() {
+            const selectedPhase = phaseSelect.value;
+            phaseContents.forEach(function(content) {
+              if (content.id === selectedPhase) {
+                content.classList.remove('hidden');
+              } else {
+                content.classList.add('hidden');
+              }
+            });
+            
+            if (selectedPhase === 'ranking-phase') {
+              try {
+                await updateRankingDisplay();
+              } catch (error) {
+                console.error('Erreur lors de la mise à jour du classement masculin:', error);
+              }
+            }
+          });
+          
+          // Déclencher l'événement change initial de manière asynchrone
+          setTimeout(() => phaseSelect.dispatchEvent(new Event('change')), 0);
+        });  
+        
+        // Ajouter au script existant
+        document.addEventListener('DOMContentLoaded', function() {
+            // Code existant...
+            
+            // Surveiller l'état de la connexion au serveur
+            const connectionStatus = document.getElementById('connectionStatus');
+            
+            function updateConnectionStatus(state) {
+                if (!connectionStatus) return;
+                
+                connectionStatus.classList.remove('connected', 'disconnected', 'connecting', 'offline');
+                
+                if (state === 'connected') {
+                    connectionStatus.textContent = 'Connexion: ✅';
+                    connectionStatus.classList.add('connected');
+                } else if (state === 'disconnected') {
+                    connectionStatus.textContent = 'Connexion: ❌';
+                    connectionStatus.classList.add('disconnected');
+                } else if (state === 'offline') {
+                    connectionStatus.textContent = 'Mode hors ligne';
+                    connectionStatus.classList.add('offline');
+                } else {
+                    connectionStatus.textContent = 'Vérification...';
+                    connectionStatus.classList.add('connecting');
+                }
+            }
+            
+            // Remplacer la vérification HTTP par WebSocket
+            if (socket && socket.connected) {
+                updateConnectionStatus('connected');
+            } else {
+                updateConnectionStatus('connecting');
+                socket.once('connect', () => {
+                    updateConnectionStatus('connected');
+                });
+                socket.once('connect_error', () => {
+                    updateConnectionStatus('offline');
+                });
+            }
+        });
+    </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Fonction pour mettre à jour les statuts des matchs
+        function updateMatchStatus(status) {
+            const matches = document.querySelectorAll('.match');
+            matches.forEach(match => {
+                const matchStatus = match.querySelector('.match-status');
+                if (!matchStatus) return;
+
+                let text = '';
+                let bgColor = '';
+                let textColor = '';
+
+                switch (status) {
+                    case 'à_venir':
+                        text = 'À venir';
+                        bgColor = '#f0f0f0';
+                        textColor = '#666';
+                        break;
+                    case 'en_cours':
+                        text = 'En cours';
+                        bgColor = '#fff3cd';
+                        textColor = '#856404';
+                        break;
+                    case 'terminé':
+                        text = 'Terminé';
+                        bgColor = '#d4edda';
+                        textColor = '#155724';
+                        break;
+                    default:
+                        text = 'Inconnu';
+                        bgColor = '#f8d7da';
+                        textColor = '#721c24';
+                }
+
+                matchStatus.textContent = text;
+                matchStatus.style.backgroundColor = bgColor;
+                matchStatus.style.color = textColor;
+                match.setAttribute('data-status', status);
+            });
+        }
+
+        // Initialisation des statuts des matchs
+        updateMatchStatus('à_venir');
+    });
+    </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Détecter si la page a été rechargée avec un paramètre de rafraîchissement
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('refresh')) {
+            console.log("Rechargement forcé détecté, mise à jour de l'interface...");
+            setTimeout(() => {
+                // Forcer le rechargement de l'état du tournoi
+                if (typeof loadTournamentState === 'function') {
+                    loadTournamentState();
+                }
+                
+                // Recalculer les liens et mettre à jour l'interface
+                if (typeof linkWinnersAndLosers === 'function') {
+                    linkWinnersAndLosers();
+                }
+                
+                if (typeof updateUI === 'function') {
+                    updateUI();
+                }
+                
+                if (typeof updateMatchClickability === 'function') {
+                    updateMatchClickability();
+                }
+                
+                // Aller à la phase finale
+                if (phaseSelect) {
+                    phaseSelect.value = 'final-phase';
+                    phaseSelect.dispatchEvent(new Event('change'));
+                }
+            }, 500);
+        }
+    });
+
+    function checkActiveMatches() {
+        const activeMatches = new Set();
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('liveMatchData_match')) {
+                // ... vérification de status "en_cours" ...
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Détecter si la page a été rechargée avec un paramètre de rafraîchissement
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('refresh')) {
+            console.log("Rechargement forcé détecté, mise à jour de l'interface...");
+            
+            // Restaurer les matchs terminés sauvegardés
+            const savedFinishedMatches = localStorage.getItem('badminton_finishedMatches');
+            const matchesToRestore = savedFinishedMatches ? JSON.parse(savedFinishedMatches) : {};
+            console.log("Matchs terminés à restaurer:", Object.keys(matchesToRestore));
+            
+            // Vérifier si on a un statut de match terminé
+            const matchStatus = urlParams.get('matchStatus');
+            const matchIdToUpdate = urlParams.get('forceClear');
+            const preserveAll = urlParams.has('preserveAll');
+            
+            setTimeout(() => {
+                // Forcer le rechargement de l'état du tournoi
+                if (typeof loadTournamentState === 'function') {
+                    loadTournamentState();
+                }
+                
+                // Récupérer la copie actuelle du tournoi après chargement
+                const currentState = JSON.parse(localStorage.getItem('badmintonTournamentState') || '{}');
+                
+                // Si on a un état valide et des matchs à restaurer
+                if (currentState.matches) {
+                    // Restaurer tous les statuts 'terminé'
+                    let changesApplied = false;
+                    
+                    // Parcourir tous les matchs à restaurer depuis badminton_finishedMatches
+                    if (Object.keys(matchesToRestore).length > 0) {
+                        Object.keys(matchesToRestore).forEach(matchId => {
+                            if (currentState.matches[matchId]) {
+                                // Vérifier si le statut a été modifié
+                                if (currentState.matches[matchId].status !== 'terminé') {
+                                    console.log(`Restauration du statut 'terminé' pour match ${matchId}`);
+                                    currentState.matches[matchId].status = 'terminé';
+                                    changesApplied = true;
+                                }
+                            }
+                        });
+                    }
+                    
+                    // Appliquer également au match nouvellement terminé
+                    if (matchIdToUpdate && matchStatus === 'termine' && currentState.matches[matchIdToUpdate]) {
+                        console.log(`Application du statut 'terminé' pour match ${matchIdToUpdate}`);
+                        currentState.matches[matchIdToUpdate].status = 'terminé';
+                        changesApplied = true;
+                    }
+                    
+                    // Si preserveAll est spécifié, vérifier tous les statuts terminés existants
+                    if (preserveAll) {
+                        // Créer une sauvegarde de tous les matchs actuellement terminés
+                        const newFinishedMatches = {};
+                        Object.entries(currentState.matches).forEach(([id, matchData]) => {
+                            if (matchData.status === 'terminé') {
+                                newFinishedMatches[id] = {status: 'terminé'};
+                                console.log(`Match ${id} ajouté à la sauvegarde des matchs terminés`);
+                            }
+                        });
+                        
+                        // Mettre à jour la sauvegarde des matchs terminés
+                        localStorage.setItem('badminton_finishedMatches', JSON.stringify(newFinishedMatches));
+                    }
+                    
+                    // Sauvegarder l'état mis à jour
+                    if (changesApplied) {
+                        console.log("Sauvegarde de l'état modifié avec statuts 'terminé' restaurés");
+                        localStorage.setItem('badmintonTournamentState', JSON.stringify(currentState));
+                    }
+                }
+                
+                // Recalculer les liens et mettre à jour l'interface
+                if (typeof linkWinnersAndLosers === 'function') {
+                    linkWinnersAndLosers();
+                }
+                
+                if (typeof updateUI === 'function') {
+                    updateUI();
+                }
+                
+                // Mise à jour de l'interface visuelle
+                document.querySelectorAll('.match').forEach(match => {
+                    const matchId = match.getAttribute('data-match-id');
+                    if (matchId && (matchesToRestore[matchId] || matchId === matchIdToUpdate)) {
+                        const statusEl = match.querySelector('.match-status');
+                        if (statusEl) {
+                            statusEl.textContent = 'Terminé';
+                            statusEl.style.backgroundColor = '#d4edda';
+                            statusEl.style.color = '#155724';
+                        }
+                        match.setAttribute('data-status', 'terminé');
+                    }
+                });
+                
+                if (typeof updateMatchClickability === 'function') {
+                    updateMatchClickability();
+                }
+                
+                // Aller à la phase finale
+                if (phaseSelect) {
+                    phaseSelect.value = 'final-phase';
+                    phaseSelect.dispatchEvent(new Event('change'));
+                }
+            }, 500);
+        }
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Ajouter une classe au body quand le mode correction est actif
+        const correctionButton = document.getElementById('correctionMode');
+        if (correctionButton) {
+            correctionButton.addEventListener('click', function() {
+                document.body.classList.toggle('correction-mode-active');
+            });
+        }
+        
+        // Ajouter un écouteur d'événements global pour les clics sur les matchs
+        document.addEventListener('click', function(event) {
+            // Trouver le match le plus proche
+            const match = event.target.closest('.match');
+            if (match) {
+                // Si le clic était sur un match, vérifier s'il a un gestionnaire de clic
+                if (!match._hasClickHandler) {
+                    console.log("Ajout d'un gestionnaire de clic pour le match", match.getAttribute('data-match-id'));
+                    match._hasClickHandler = true;
+                    
+                    match.addEventListener('click', function() {
+                        const matchId = this.getAttribute('data-match-id');
+                        if (matchId && window.tournamentState && window.tournamentState.matches && window.tournamentState.matches[matchId]) {
+                            console.log(`Clic détecté sur le match ${matchId}`);
+                            
+                            // Récupérer les données du match
+                            const matchData = window.tournamentState.matches[matchId];
+                            
+                            // Déterminer si le match est jouable
+                            const isPlayable = !this.classList.contains('disabled') || window.correctionModeActive;
+                            
+                            if (isPlayable) {
+                                if (typeof window.navigateToScoring === 'function') {
+                                    window.navigateToScoring(matchId);
+                                } else {
+                                    console.error("La fonction navigateToScoring n'est pas disponible");
+                                }
+                            } else {
+                                if (!matchData.team1 || !matchData.team2) {
+                                    alert('Ce match n\'est pas encore disponible car les équipes n\'ont pas encore été déterminées.');
+                                } else {
+                                    alert('Ce match n\'est pas encore disponible. Terminez d\'abord les matchs précédents.');
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Ajouter une fonction de vérification périodique des matchs actifs
+        function checkActiveMatches() {
+            const activeMatches = new Set();
+            const finishedMatches = new Set();
+            
+            // Récupérer d'abord tous les matchs terminés pour ne pas les écraser
+            if (window.tournamentState && window.tournamentState.matches) {
+                Object.entries(window.tournamentState.matches).forEach(([id, match]) => {
+                    if (match.status === 'terminé') {
+                        finishedMatches.add(id);
+                    }
+                });
+            }
+            
+            // Récupérer également les matchs terminés sauvegardés
+            try {
+                const savedFinishedMatches = JSON.parse(localStorage.getItem('badminton_finishedMatches') || '{}');
+                Object.keys(savedFinishedMatches).forEach(id => {
+                    finishedMatches.add(id);
+                });
+            } catch (e) {
+                console.warn('Erreur lors de la lecture des matchs terminés sauvegardés:', e);
+            }
+            
+            // Chercher les matchs actifs
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('liveMatchData_match')) {
+                    try {
+                        const matchId = key.replace('liveMatchData_match', '');
+                        const data = JSON.parse(localStorage.getItem(key));
+                        
+                        // Ne pas ajouter comme actif si le match est déjà marqué comme terminé
+                        if (data && data.status === 'en_cours' && !finishedMatches.has(matchId)) {
+                            activeMatches.add(matchId);
+                        }
+                    } catch (e) {
+                        console.warn(`Erreur lors de la lecture des données pour ${key}:`, e);
+                    }
+                }
+            }
+            
+            if (activeMatches.size > 0) {
+                console.log("Matchs actifs détectés:", Array.from(activeMatches));
+                
+                // Mettre à jour le statut dans l'interface
+                document.querySelectorAll('.match[data-match-id]').forEach(match => {
+                    const matchId = match.getAttribute('data-match-id');
+                    
+                    // Ne pas changer le statut des matchs terminés
+                    if (finishedMatches.has(matchId)) {
+                        return;
+                    }
+                    
+                    if (activeMatches.has(matchId)) {
+                        const statusEl = match.querySelector('.match-status');
+                        if (statusEl && statusEl.textContent !== 'En cours') {
+                            statusEl.textContent = 'En cours';
+                            statusEl.style.backgroundColor = '#fff3cd';
+                            statusEl.style.color = '#856404';
+                            match.setAttribute('data-status', 'en_cours');
+                            
+                            // Mettre à jour aussi dans tournamentState si disponible
+                            if (window.tournamentState && window.tournamentState.matches && window.tournamentState.matches[matchId]) {
+                                // Ne pas écraser un statut 'terminé' existant
+                                if (window.tournamentState.matches[matchId].status !== 'terminé') {
+                                    window.tournamentState.matches[matchId].status = 'en_cours';
+                                    if (typeof window.saveTournamentState === 'function') {
+                                        window.saveTournamentState();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Vérifier périodiquement les matchs actifs (réduire la fréquence pour éviter les conflits)
+        setInterval(checkActiveMatches, 3000);
+        
+        // Exécuter une première fois au chargement de la page
+        setTimeout(checkActiveMatches, 1000);
+    });
+</script>
+</body>
+</html>

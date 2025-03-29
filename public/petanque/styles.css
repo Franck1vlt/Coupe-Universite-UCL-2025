@@ -115,10 +115,11 @@ h1 {
 .match-wrapper {
     display: flex;
     flex-direction: column;
-    justify-content: center;
     position: relative;
     height: 100px;
     margin-bottom: 20px;
+    justify-content: center;
+    align-items: center;
 }
 
 .match {
@@ -606,7 +607,7 @@ button {
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 1px;
-    gap: 20px;
+    /* gap: 24px; */
 }
 
 .rank {
@@ -744,7 +745,7 @@ box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 overflow: hidden;
 }
 
-.ranking-row {display: grid;grid-template-columns: 0.5fr 2fr repeat(8, 1fr);padding: 15px;border-bottom: 1px solid #eee;align-items: center;}
+.ranking-row {display: flex;padding: 15px;border-bottom: 1px solid #eee;flex-direction: row;gap: 50px;align-items: center;justify-content: space-around;}
 
 .ranking-row.header {background: #000000;font-weight: bold;color: #ffffff;}
 
@@ -963,4 +964,79 @@ background-color: #cd7f32;
 .match[data-status="terminé"] .match-status {
     color: #155724;
     background-color: #d4edda;
+}
+
+/* Styles spécifiques pour les statuts de match */
+.match.en_cours, 
+.match[data-status="en_cours"],
+.match[data-status="en cours"] {
+    border: 2px solid #ffd700;
+    background: linear-gradient(to bottom, #fff3cd, #fefcf3);
+    animation: pulse 2s infinite;
+}
+
+.match.termine, 
+.match[data-status="terminé"],
+.match[data-status="termine"] {
+    background: linear-gradient(to bottom, #f0fff0, #e6ffe6);
+    border: 2px solid #4CAF50;
+}
+
+.match.a_venir, 
+.match[data-status="à_venir"],
+.match[data-status="a_venir"] {
+    border: 2px solid #e0e0e0;
+    background: linear-gradient(to bottom, #ffffff, #f5f5f5);
+}
+
+/* Statut du match */
+.match-status {
+    font-size: 0.8em;
+    padding: 2px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+.match.en_cours .match-status,
+.match[data-status="en_cours"] .match-status,
+.match[data-status="en cours"] .match-status {
+    background-color: #fff3cd;
+    color: #856404;
+    font-weight: bold;
+}
+
+.match.termine .match-status,
+.match[data-status="terminé"] .match-status,
+.match[data-status="termine"] .match-status {
+    background-color: #d4edda;
+    color: #155724;
+    font-weight: bold;
+}
+
+.match.a_venir .match-status,
+.match[data-status="à_venir"] .match-status,
+.match[data-status="a_venir"] .match-status {
+    background-color: #f0f0f0;
+    color: #666;
+}
+
+/* Ajouter après les styles existants */
+
+.connection-status {
+    position: fixed;
+    top: 20px;
+    right: 100px; /* À droite du bouton correction */
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: bold;
+    background-color: #fff3cd;
+    color: #856404;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+.connection-status.connected {
+    background-color: #d4edda;
+    color: #155724;
 }

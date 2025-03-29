@@ -5,6 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Classement Ambiance - Coupe UCL 2025</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Ajouter Socket.IO avant les autres scripts -->
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- Gestion du chargement conditionnel de Socket.IO -->
+    <script>
+        function loadSocketIO() {
+            return new Promise((resolve, reject) => {
+                fetch('/socket.io/socket.io.js', { method: 'HEAD' })
+                    .then(response => {
+                        if (response.ok) {
+                            const script = document.createElement('script');
+                            script.src = '/socket.io/socket.io.js';
+                            script.onload = () => resolve(true);
+                            script.onerror = () => reject();
+                            document.head.appendChild(script);
+                        } else {
+                            reject();
+                        }
+                    })
+                    .catch(reject);
+            });
+        }
+
+        // Essayer de charger Socket.IO
+        loadSocketIO().catch(error => {
+            console.warn('Mode hors-ligne activé:', error);
+            // Afficher une notification
+            document.addEventListener('DOMContentLoaded', () => {
+                const notice = document.createElement('div');
+                notice.style.position = 'fixed';
+                notice.style.top = '10px';
+                notice.style.right = '10px';
+                notice.style.background = '#fff3cd';
+                notice.style.color = '#856404';
+                notice.style.padding = '10px';
+                notice.style.borderRadius = '5px';
+                notice.textContent = 'Mode hors-ligne - Données locales uniquement';
+                document.body.appendChild(notice);
+            });
+        });
+    </script>
 </head>
 <body>
     <div class="container">

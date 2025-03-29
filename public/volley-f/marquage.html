@@ -51,19 +51,7 @@
 <body>
   <header>
     <h1>Volleyball Femmes - Table de marquage</h1>
-    <div id="connectionStatus" class="connection-status">
-        <span class="status-icon">⚪</span>
-        <span class="status-text">Vérification de la connexion...</span>
-        <span class="latency-indicator"></span>
-    </div>
-    <div id="matchStatusIndicator" style="position: absolute; top: 10px; right: 10px; background: #fff3cd; padding: 5px 10px; border-radius: 5px; font-weight: bold;">
-      Statut: En cours...
-    </div>
   </header>
-  <!-- Indicateur de connexion -->
-  <div id="connectionIndicator"></div>
-  <!-- Toast pour les notifications de connexion -->
-  <div id="connectionToast" class="connection-toast"></div>
   <main>
     <div class="gauche">
       <div class="parametres-match">
@@ -124,7 +112,10 @@
           <button onclick="location.href='volleyball.html'">Retour</button>
         </div>
         <div class="button-row2">
-          <button onclick="openScoreDisplay()">Spectateurs</button>
+          <button onclick="openScoreDisplay()" title="Affichage simple du score pour écran TV">Affichage Score</button>
+        </div>
+        <div class="button-row3">
+            <button onclick="window.open('split_screen.html', '_blank')" title="Affichage avancé avec statistiques">Écran Avancé</button>
         </div>
       </div>
     </div>
@@ -170,8 +161,6 @@
       </div>
     </div>
   </main>
-  <!-- Bouton de reconnexion manuel -->
-  <button id="reconnectButton" onclick="manualReconnect()">🔄 Reconnecter</button>
   <script>
     // Attendre que le DOM soit chargé avant d'initialiser
     document.addEventListener('DOMContentLoaded', function() {
@@ -241,17 +230,18 @@
             team2: document.getElementById('teamB').value,
             matchType: document.getElementById('matchType').textContent,
             matchId: new URLSearchParams(window.location.search).get('matchId'),
-            score1: 0,
-            score2: 0,
+            score1: document.getElementById('teamAScore').textContent || 0,
+            score2: document.getElementById('teamBScore').textContent || 0,
             yellowCards1: 0,
             yellowCards2: 0,
             redCards1: 0,
             redCards2: 0,
-            chrono: '00:00'
+            chrono: document.getElementById('gameChrono').textContent || '00:00',
+            server: server || 'A'
         }));
 
-        // Ouvrir la fenêtre d'affichage
-        const displayWindow = window.open('affichage_score.html', '_blank');
+        // Ouvrir la fenêtre d'affichage (avec identifiant unique pour éviter les doublons)
+        const displayWindow = window.open('affichage_score.html?display=simple', '_blank', 'scoreDisplay');
     }
 
     // Fonction pour mettre à jour les données en direct

@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Table de Marquage - Pétanque</title>
   <link rel="stylesheet" href="petanque.css">
+  <!-- Ajouter Socket.IO avant les scripts personnalisés -->
+  <script src="/socket.io/socket.io.js"></script>
   <script src="petanque.js" defer></script>
 </head>
 <body>
@@ -19,6 +21,7 @@
           <option>Team A</option>
           <option value="ESPOL">ESPOL</option>
           <option value="ESPAS-ESTICE">ESPAS-ESTICE</option>
+          <option value="ESSLIL">ESSLIL</option>
           <option value="FGES">FGES</option>
           <option value="FLD">FLD</option>
           <option value="FLSH">FLSH</option>
@@ -28,14 +31,16 @@
           <option value="IKPO">IKPO</option>
           <option value="ISTC">ISTC</option>
           <option value="JUNIA">JUNIA</option>
-          <option value="LIDD">LiDD</option>
+          <option value="LiDD">LiDD</option>
           <option value="USCHOOL">USCHOOL</option>
+          <option value="PIKTURA">PIKTURA</option>
         </select>
         <label for="teamB">Équipe B :</label>
         <select id="teamB" name="teamB" onchange="updateTeams()">
           <option>Team B</option>
           <option value="ESPOL">ESPOL</option>
           <option value="ESPAS-ESTICE">ESPAS-ESTICE</option>
+          <option value="ESSLIL">ESSLIL</option>
           <option value="FGES">FGES</option>
           <option value="FLD">FLD</option>
           <option value="FLSH">FLSH</option>
@@ -45,13 +50,15 @@
           <option value="IKPO">IKPO</option>
           <option value="ISTC">ISTC</option>
           <option value="JUNIA">JUNIA</option>
-          <option value="LIDD">LiDD</option>
+          <option value="LiDD">LiDD</option>
           <option value="USCHOOL">USCHOOL</option>
+          <option value="PIKTURA">PIKTURA</option>
         </select>
         <label for="matchType">Type de match :</label>
         <select id="matchTypeSelector" onchange="updateMatchType()">
           <option>Type de match</option>
-          <option value="Barrages">Barrages</option>
+          <option value="barrage">Barrages</option>
+          <option value="Barrage">Barrage</option>
           <option value="Quart de finale">Quart de finale</option>
           <option value="Demi-finale">Demi-finale</option>
           <option value="Petite Finale">Petite Finale</option>
@@ -72,6 +79,9 @@
         </div>
         <div class="button-row2">
           <button onclick="openScoreDisplay()">Spectateurs</button>
+        </div>
+        <div class="button-row2">
+          <button onclick="openSplitScreen()">Double Affichage</button>
         </div>
       </div>
     </div>
@@ -97,6 +107,8 @@
               <button onclick="addPoint('A')" class="control-button" accesskey="a">+</button>
             </div>
     
+            <div class="timer" id="gameChrono">00:00</div>
+
             <div class="points-control">
               <span class="points-label">Points :</span>
               <button onclick="subPoint('B')" class="control-button" accesskey="r">-</button>
@@ -105,10 +117,9 @@
           </div>
     
           <div class="bottom-controls">
-            <button id="cochonnetButton" onclick="toggleCochonnet()">
-                <span>Cochonnet: </span>
-                <span id="cochonnetTeam">Team A</span>
-            </button>
+            <button onclick="startChrono()">Start</button>
+            <button onclick="stopChrono()">Stop</button>
+            <button onclick="ChangeServer()">Service</button>
             <button onclick="resetGame()">End</button>
           </div>
             
@@ -198,24 +209,122 @@
         const displayWindow = window.open('affichage_score.html', '_blank');
     }
 
-    // Fonction pour mettre à jour les données en direct
-    function updateLiveData() {
-        const teamAScore = document.getElementById('teamAScore');
-        const teamBScore = document.getElementById('teamBScore');
-        const gameChrono = document.getElementById('gameChrono');
+    // Fonction améliorée pour updateTeams dans petanque.js
+// Remplacer la fonction existante par celle-ci
 
-        const liveData = {
-            score1: teamAScore ? teamAScore.textContent : 0,
-            score2: teamBScore ? teamBScore.textContent : 0,
-            chrono: gameChrono ? gameChrono.textContent : '00:00'
-        };
-
-        localStorage.setItem('liveMatchData', JSON.stringify({
-            ...JSON.parse(localStorage.getItem('liveMatchData') || '{}'),
-            ...liveData
-        }));
+function updateTeams() {
+    console.log('Mise à jour des équipes...');
+    
+    const teamA = document.getElementById('teamA');
+    const teamB = document.getElementById('teamB');
+    const teamAName = document.getElementById('teamAName');
+    const teamBName = document.getElementById('teamBName');
+    
+    if (teamA && teamB && teamAName && teamBName) {
+        // Obtenir la valeur sélectionnée et pas seulement la valeur
+        // La valeur d'un select peut être différente du texte affiché
+        const teamASelectedOption = teamA.options[teamA.selectedIndex];
+        const teamBSelectedOption = teamB.options[teamB.selectedIndex];
+        
+        const teamAValue = teamASelectedOption ? teamASelectedOption.value : 'Team A';
+        const teamBValue = teamBSelectedOption ? teamBSelectedOption.value : 'Team B';
+        
+        console.log(`Équipe A sélectionnée: ${teamAValue}`);
+        console.log(`Équipe B sélectionnée: ${teamBValue}`);
+        
+        // Mettre à jour les éléments d'affichage
+        teamAName.textContent = teamAValue;
+        teamBName.textContent = teamBValue;
+        
+        // Mettre à jour le localStorage immédiatement
+        updateLiveData();
+    } else {
+        console.error('Éléments d\'équipe non trouvés dans le DOM');
     }
+}
 
+// Fonction améliorée pour updateLiveData
+// Ajouter cette fonction à petanque.js si elle n'existe pas déjà
+
+function updateLiveData() {
+    const score1El = document.getElementById('teamAScore');
+    const score2El = document.getElementById('teamBScore');
+    const chronoEl = document.getElementById('gameChrono');
+    const matchId = new URLSearchParams(window.location.search).get('matchId');
+    
+    // Amélioration: explicitement ajouter le sport dans les données
+    const liveData = {
+        matchId: matchId,
+        team1: document.getElementById('teamAName').textContent,
+        team2: document.getElementById('teamBName').textContent,
+        matchType: document.getElementById('matchType').textContent,
+        score1: score1El ? score1El.textContent : 0,
+        score2: score2El ? score2El.textContent : 0,
+        chrono: chronoEl ? chronoEl.textContent : '00:00',
+        status: 'en_cours',
+        sport: 'petanque', // Identifiant explicite du sport
+        cochonnet: true // Marqueur spécifique à la pétanque pour aider la détection
+    };
+    
+    // Sauvegarder avec différentes clés pour assurer la compatibilité
+    localStorage.setItem('petanque_liveMatchData', JSON.stringify(liveData)); // Clé générique préfixée
+    
+    if (matchId) {
+        // Clé avec préfixe sport en début pour filtrage facile
+        localStorage.setItem(`petanque_liveMatchData_match${matchId}`, JSON.stringify(liveData));
+        
+        // Clé spécifique au sport
+        localStorage.setItem(`liveMatchData_petanque_match${matchId}`, JSON.stringify(liveData));
+        
+        // NE PAS utiliser la clé générique sans préfixe sport
+        // Cela peut causer des interférences
+    }
+    
+    console.log("Données pétanque mises à jour:", liveData);
+}
+
+// Modification pour le chargement initial 
+// À ajouter dans la fonction DOMContentLoaded dans marquage.html
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Code existant...
+        
+        // Ajouter ces lignes à la fin de votre fonction DOMContentLoaded
+        
+        // S'assurer que les équipes sont correctement configurées au démarrage
+        setTimeout(updateTeams, 500);
+        
+        // Ajouter des écouteurs d'événements pour les changements de sélection d'équipe
+        document.getElementById('teamA').addEventListener('change', function() {
+            console.log('Équipe A modifiée');
+            updateTeams();
+        });
+        
+        document.getElementById('teamB').addEventListener('change', function() {
+            console.log('Équipe B modifiée');
+            updateTeams();
+        });
+
+        // Mise à jour initiale
+        updateLiveData();
+        
+        // Observer les changements dans l'interface
+        const scoreboard = document.querySelector('.scoreboard');
+        if (scoreboard) {
+            const observer = new MutationObserver(updateLiveData);
+            observer.observe(scoreboard, { 
+                subtree: true, 
+                childList: true,
+                characterData: true,
+                characterDataOldValue: true
+            });
+        }
+        
+        // Mettre à jour toutes les secondes pour garantir la synchronisation
+        setInterval(updateLiveData, 1000);
+    });
+
+    
     // Ajouter l'observateur pour mettre à jour les données en direct
     const observer = new MutationObserver(updateLiveData);
     const scoreboard = document.querySelector('.scoreboard');
@@ -227,6 +336,104 @@
             characterDataOldValue: true
         });
     }
+
+    // Afficher le statut actuel du match
+    function updateStatusIndicator(status = 'en_cours') {
+      const indicator = document.getElementById('matchStatusIndicator');
+      if (!indicator) return;
+      
+      let text = 'Statut: ';
+      let bgColor = '';
+      let textColor = '';
+      
+      switch(status) {
+        case 'à_venir':
+          text += 'À venir';
+          bgColor = '#f0f0f0';
+          textColor = '#666';
+          break;
+        case 'en_cours':
+          text += 'En cours';
+          bgColor = '#fff3cd';
+          textColor = '#856404';
+          break;
+        case 'terminé':
+          text += 'Terminé';
+          bgColor = '#d4edda';
+          textColor = '#155724';
+          break;
+        default:
+          text += 'Inconnu';
+          bgColor = '#f8d7da';
+          textColor = '#721c24';
+      }
+      
+      indicator.textContent = text;
+      indicator.style.backgroundColor = bgColor;
+      indicator.style.color = textColor;
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialiser l'indicateur de statut
+      updateStatusIndicator('en_cours');
+      
+      // Mettre à jour le statut lorsque la page se charge
+      setTimeout(() => {
+        if (typeof updateMatchStatus === 'function') {
+          updateMatchStatus('en_cours');
+        }
+      }, 1000);
+    });
+
+    function openSplitScreen() {
+      // Récupérer les matchIds simultanés
+      const currentMatchId = new URLSearchParams(window.location.search).get('matchId');
+      let otherMatchId;
+      
+      // Détecter les paires de matchs simultanés
+      if (currentMatchId === '1') otherMatchId = '2';
+      else if (currentMatchId === '2') otherMatchId = '1';
+      else if (currentMatchId === '15') otherMatchId = '16';
+      else if (currentMatchId === '16') otherMatchId = '15';
+      else if (currentMatchId === '3') otherMatchId = '4';
+      else if (currentMatchId === '4') otherMatchId = '3';
+      else if (currentMatchId === '5') otherMatchId = '6';
+      else if (currentMatchId === '6') otherMatchId = '5';
+      else {
+        alert("Fonction disponible uniquement pour les matchs simultanés");
+        return;
+      }
+      
+      // Stocker les données du match actuel
+      const matchData = {
+        team1: document.getElementById('teamA').value,
+        team2: document.getElementById('teamB').value,
+        matchType: document.getElementById('matchType').textContent,
+        matchId: currentMatchId,
+        score1: document.getElementById('teamAScore').textContent,
+        score2: document.getElementById('teamBScore').textContent,
+        chrono: document.getElementById('gameChrono').textContent,
+        server: document.getElementById('ballIconA').style.visibility === 'visible' ? 'A' : 'B'
+      };
+      
+      localStorage.setItem('liveMatchData', JSON.stringify(matchData));
+      
+      // Générer un nom de salle basé sur les matchs
+      const roomName = `petanque_${Math.min(currentMatchId, otherMatchId)}_${Math.max(currentMatchId, otherMatchId)}`;
+      
+      // Ouvrir la page split-screen avec les deux matchIds et la salle pré-configurée
+      const splitWindow = window.open(`split-screen.html?match1=${currentMatchId}&match2=${otherMatchId}&room=${roomName}`, '_blank');
+    }
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialiser le match petanque si besoin
+        // ...existing code...
+
+        // Mettre à jour l'affichage à chaque action
+        // par exemple sur un bouton + ou - :
+        // myButton.addEventListener('click', updateDisplay);
+    });
   </script>
 </body>
 </html>

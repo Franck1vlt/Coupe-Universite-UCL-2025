@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Table de Marquage - Badminton</title>
+  <link rel="stylesheet" href="badminton.css">
+  <!-- Ajouter Socket.IO avant les scripts personnalisés -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="badminton.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>Badminton - Table de marquage</h1>
+  </header>
+  <main>
+    <div class="gauche">
+      <div class="parametres-match">
+        <label for="teamA">Équipe A :</label>
+        <select id="teamA" name="teamA" onchange="updateTeams()">
+          <option>Team A</option>
+          <option value="ESPOL">ESPOL</option>
+          <option value="ESPAS-ESTICE">ESPAS-ESTICE</option>
+          <option value="FGES">FGES</option>
+          <option value="FLD">FLD</option>
+          <option value="FLSH">FLSH</option>
+          <option value="FMMS">FMMS</option>
+          <option value="ICAM">ICAM</option>
+          <option value="IESEG">IESEG</option>
+          <option value="IKPO">IKPO</option>
+          <option value="ISTC">ISTC</option>
+          <option value="JUNIA">JUNIA</option>
+          <option value="LIDD">LiDD</option>
+          <option value="USCHOOL">USCHOOL</option>
+          <option value="PIKTURA">PIKTURA</option>
+          <option value="ESSLIL">ESSLIL</option>
+        </select>
+        <label for="teamB">Équipe B :</label>
+        <select id="teamB" name="teamB" onchange="updateTeams()">
+          <option>Team B</option>
+          <option value="ESPOL">ESPOL</option>
+          <option value="ESPAS-ESTICE">ESPAS-ESTICE</option>
+          <option value="FGES">FGES</option>
+          <option value="FLD">FLD</option>
+          <option value="FLSH">FLSH</option>
+          <option value="FMMS">FMMS</option>
+          <option value="ICAM">ICAM</option>
+          <option value="IESEG">IESEG</option>
+          <option value="IKPO">IKPO</option>
+          <option value="ISTC">ISTC</option>
+          <option value="JUNIA">JUNIA</option>
+          <option value="LIDD">LiDD</option>
+          <option value="USCHOOL">USCHOOL</option>
+          <option value="PIKTURA">PIKTURA</option>
+          <option value="ESSLIL">ESSLIL</option>
+        </select>
+        <label for="matchType">Type de match :</label>
+        <select id="matchTypeSelector" onchange="updateMatchType()">
+          <option>Type de match</option>
+          <option value="barrage">Barrages</option>
+          <option value="Barrage">Barrages</option>
+          <option value="classification_semifinal">Demi-finale de Classement</option>
+          <option value="classification_smallfinal">Place de 5ème</option>
+          <option value="classification_final">Place de 7ème</option>
+          <option value="Quart de finale">Quart de finale</option>
+          <option value="Demi-finale">Demi-finale</option>
+          <option value="Petite Finale">Petite Finale</option>
+          <option value="Finale">Finale</option>
+        </select>
+        <label for="matchGround">Terrain :</label>
+        <select id="matchGroundSelector">
+          <option>Terrain</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+      </div>
+      <div class="bouton_pied_page">
+        <div class="button-row1">
+          <button onclick="location.href='badminton.html'">Retour</button>
+        </div>
+        <div class="button-row2">
+          <button onclick="openScoreDisplay()">Spectateurs</button>
+        </div>
+        <div class="button-row3">
+          <button onclick="openSplitScreen()">Double Affichage</button>
+        </div>
+      </div>
+    </div>
+    <div class="droite">
+      <div class="scoreboard">
+        <div class="score-display">
+          <div class="team-line">
+            <span id="teamAName">Team A</span> 
+            <span id="teamBName">Team B</span>
+          </div>
+          <div class="score-line">
+            <img src="badminton.png" class="ball-icon" id="ballIconA" style="opacity: 0;" onerror="this.style.backgroundColor='#f5f5f5'; this.style.borderRadius='50%'; this.style.border='2px solid #333';">
+            <span id="teamAScore">0</span> - <span id="teamBScore">0</span>
+            <img src="badminton.png" class="ball-icon" id="ballIconB" style="opacity: 0;" onerror="this.style.backgroundColor='#f5f5f5'; this.style.borderRadius='50%'; this.style.border='2px solid #333';">
+          </div>
+          <div class="details-line">
+            <span id="matchType">Type de Match</span>
+          </div>
+          <div class="points-section">
+            <div class="points-control">
+              <span class="points-label">Points :</span>
+              <button onclick="subPoint('A')" class="control-button" accesskey="e">-</button>
+              <button onclick="addPoint('A')" class="control-button" accesskey="a">+</button>
+            </div>
+    
+            <div class="timer" id="gameChrono">00:00</div>
+
+            <div class="points-control">
+              <span class="points-label">Points :</span>
+              <button onclick="subPoint('B')" class="control-button" accesskey="r">-</button>
+              <button onclick="addPoint('B')" class="control-button" accesskey="z">+</button>
+            </div>
+          </div>
+    
+          <div class="bottom-controls">
+            <button onclick="startChrono()">Start</button>
+            <button onclick="stopChrono()">Stop</button>
+            <button onclick="ChangeServer()">Service</button>
+            <button onclick="resetGame()">End</button>
+          </div>
+            
+        </div>
+      </div>
+    </div>
+  </main>
+  <script>
+    // Attendre que le DOM soit chargé avant d'initialiser
+    document.addEventListener('DOMContentLoaded', function() {
+        // Récupérer les paramètres de l'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const team1Name = urlParams.get('team1');
+        const team2Name = urlParams.get('team2');
+        const matchType = urlParams.get('matchType');
+        const isCorrection = urlParams.get('correction') === 'true';
+
+        // Fonction pour convertir le matchType en texte affichable
+        function getMatchTypeDisplay(type) {
+            const matchTypes = {
+                'poule': 'Poule',
+                'Poule': 'Poule',
+                'barrage': 'Barrage',
+                'quarterfinal': 'Quart de finale',
+                'semifinal': 'Demi-finale',
+                'smallfinal': 'Petite Finale',
+                'final': 'Finale',
+                'Finale': 'Finale',
+                'classification_semifinal': 'Demi-finale de classement',
+                'classification_final': 'Place de 5ème',
+                'classification_smallfinal': 'Place de 7ème'
+            };
+            return matchTypes[type] || type;
+        }
+
+        // Initialiser les sélecteurs
+        if (team1Name) {
+            document.getElementById('teamA').value = team1Name;
+        }
+        if (team2Name) {
+            document.getElementById('teamB').value = team2Name;
+        }
+        
+        // Mettre à jour les noms affichés
+        document.getElementById('teamAName').textContent = team1Name || 'Team A';
+        document.getElementById('teamBName').textContent = team2Name || 'Team B';
+
+        // Mettre à jour le type de match
+        if (matchType) {
+            const displayMatchType = getMatchTypeDisplay(matchType);
+            document.getElementById('matchType').textContent = displayMatchType;
+        }
+
+        // Initialiser le terrain par défaut
+        document.getElementById('matchGroundSelector').value = '1';
+
+        if (isCorrection) {
+            // Pré-remplir les scores si c'est une correction
+            const score1 = parseInt(urlParams.get('score1')) || 0;
+            const score2 = parseInt(urlParams.get('score2')) || 0;
+            document.getElementById('teamAScore').textContent = score1;
+            document.getElementById('teamBScore').textContent = score2;
+        }
+
+        // Marquer immédiatement ce match comme "en_cours" dans localStorage
+        const matchId = new URLSearchParams(window.location.search).get('matchId');
+        if (matchId) {
+            // Récupérer les données existantes ou créer un nouvel objet
+            const liveData = JSON.parse(localStorage.getItem(`liveMatchData_match${matchId}`) || '{}');
+            
+            // Mettre à jour le statut
+            liveData.matchId = matchId;
+            liveData.status = 'en_cours';
+            liveData.team1 = document.getElementById('teamAName').textContent;
+            liveData.team2 = document.getElementById('teamBName').textContent;
+            liveData.score1 = document.getElementById('teamAScore').textContent;
+            liveData.score2 = document.getElementById('teamBScore').textContent;
+            liveData.matchType = document.getElementById('matchType').textContent;
+            
+            // Sauvegarder dans localStorage
+            localStorage.setItem(`liveMatchData_match${matchId}`, JSON.stringify(liveData));
+            
+            console.log(`Match ${matchId} marqué comme 'en_cours' dans localStorage`);
+            
+            // Également notifier le serveur après un court délai
+            setTimeout(() => {
+                if (typeof updateMatchStatus === 'function') {
+                    updateMatchStatus('en_cours');
+                }
+            }, 500);
+        }
+    });
+
+    function updateMatchType() {
+        const matchTypeSelector = document.getElementById('matchTypeSelector');
+        const matchType = matchTypeSelector.options[matchTypeSelector.selectedIndex].text;
+        document.getElementById('matchType').textContent = matchType;
+    }
+
+    function openScoreDisplay() {
+        // Stocker les données actuelles dans le localStorage
+        localStorage.setItem('liveMatchData', JSON.stringify({
+            team1: document.getElementById('teamA').value,
+            team2: document.getElementById('teamB').value,
+            matchType: document.getElementById('matchType').textContent,
+            matchId: new URLSearchParams(window.location.search).get('matchId'),
+            score1: 0,
+            score2: 0,
+            yellowCards1: 0,
+            yellowCards2: 0,
+            redCards1: 0,
+            redCards2: 0,
+            chrono: '00:00'
+        }));
+
+        // Ouvrir la fenêtre d'affichage
+        const displayWindow = window.open('affichage_score.html', '_blank');
+    }
+
+    // Fonction pour mettre à jour les données en direct - version améliorée
+    function updateLiveData() {
+        const teamAScore = document.getElementById('teamAScore');
+        const teamBScore = document.getElementById('teamBScore');
+        const gameChrono = document.getElementById('gameChrono');
+        const matchId = new URLSearchParams(window.location.search).get('matchId');
+        
+        // Récupérer l'état du serveur
+        let currentServer = window.server || 'A';
+        
+        const liveData = {
+            matchId: matchId,
+            score1: teamAScore ? teamAScore.textContent : 0,
+            score2: teamBScore ? teamBScore.textContent : 0,
+            chrono: gameChrono ? gameChrono.textContent : '00:00',
+            status: 'en_cours',
+            team1: document.getElementById('teamAName').textContent,
+            team2: document.getElementById('teamBName').textContent,
+            matchType: document.getElementById('matchType').textContent,
+            server: currentServer,
+            sport: 'badminton' // Identifiant explicite du sport
+        };
+        
+        // Sauvegarder avec différentes clés pour assurer la compatibilité
+        localStorage.setItem('liveMatchData', JSON.stringify(liveData)); // Clé générique
+        
+        if (matchId) {
+            // Format standard 
+            localStorage.setItem(`liveMatchData_match${matchId}`, JSON.stringify(liveData));
+            
+            // Nouveau format préfixé
+            localStorage.setItem(`badminton_liveMatchData_match${matchId}`, JSON.stringify(liveData));
+        }
+        
+        console.log("Données mises à jour:", liveData);
+    }
+    
+    // Mise à jour périodique pour garantir la synchronisation
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mise à jour initiale
+        updateLiveData();
+        
+        // Mettre à jour toutes les secondes
+        setInterval(updateLiveData, 1000);
+    });
+
+    // Ajouter l'observateur pour mettre à jour les données en direct
+    const observer = new MutationObserver(updateLiveData);
+    const scoreboard = document.querySelector('.scoreboard');
+    if (scoreboard) {
+        observer.observe(scoreboard, { 
+            subtree: true, 
+            childList: true,
+            characterData: true,
+            characterDataOldValue: true
+        });
+    }
+
+    // Afficher le statut actuel du match
+    function updateStatusIndicator(status = 'en_cours') {
+      const indicator = document.getElementById('matchStatusIndicator');
+      if (!indicator) return;
+      
+      let text = 'Statut: ';
+      let bgColor = '';
+      let textColor = '';
+      
+      switch(status) {
+        case 'à_venir':
+          text += 'À venir';
+          bgColor = '#f0f0f0';
+          textColor = '#666';
+          break;
+        case 'en_cours':
+          text += 'En cours';
+          bgColor = '#fff3cd';
+          textColor = '#856404';
+          break;
+        case 'terminé':
+          text += 'Terminé';
+          bgColor = '#d4edda';
+          textColor = '#155724';
+          break;
+        default:
+          text += 'Inconnu';
+          bgColor = '#f8d7da';
+          textColor = '#721c24';
+      }
+      
+      indicator.textContent = text;
+      indicator.style.backgroundColor = bgColor;
+      indicator.style.color = textColor;
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialiser l'indicateur de statut
+      updateStatusIndicator('en_cours');
+      
+      // Mettre à jour le statut lorsque la page se charge
+      setTimeout(() => {
+        if (typeof updateMatchStatus === 'function') {
+          updateMatchStatus('en_cours');
+        }
+      }, 1000);
+    });
+
+    function openSplitScreen() {
+      // Récupérer les matchIds simultanés
+      const currentMatchId = new URLSearchParams(window.location.search).get('matchId');
+      let otherMatchId;
+      
+      // Paires de matchs simultanés dans le tournoi de badminton
+      const simultaneousPairs = {
+        '1': '2',  // Barrages
+        '2': '1',
+        '3': '4',  // Quarts de finale
+        '4': '3',
+        '5': '6',
+        '6': '5',
+        '9': '10', // Demi-finales
+        '10': '9',
+        '7': '8',  // Demi-finales de classement
+        '8': '7',
+        '11': '12', // Matchs de classement
+        '12': '11',
+        '13': '14', // Finale et petite finale
+        '14': '13'
+      };
+      
+      otherMatchId = simultaneousPairs[currentMatchId];
+      
+      if (!otherMatchId) {
+        alert("Impossible de déterminer le match simultané. Veuillez sélectionner manuellement les matchs.");
+        // Ouvrir l'écran de sélection sans paramètres pré-définis
+        window.open('split-screen.html', '_blank');
+        return;
+      }
+      
+      // Stocker les données du match actuel
+      const matchData = {
+        team1: document.getElementById('teamA').value,
+        team2: document.getElementById('teamB').value,
+        matchType: document.getElementById('matchType').textContent,
+        matchId: currentMatchId,
+        score1: document.getElementById('teamAScore').textContent,
+        score2: document.getElementById('teamBScore').textContent,
+        chrono: document.getElementById('gameChrono').textContent,
+        status: 'en_cours'
+      };
+      
+      localStorage.setItem(`liveMatchData_match${currentMatchId}`, JSON.stringify(matchData));
+      
+      // Ouvrir la page split-screen avec les deux matchIds
+      window.open(`split-screen.html?match1=${currentMatchId}&match2=${otherMatchId}`, '_blank');
+    }
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialiser le match badminton si besoin
+        // ...existing code...
+
+        // Mettre à jour l'affichage à chaque action
+        // par exemple sur un bouton + ou - :
+        // myButton.addEventListener('click', updateDisplay);
+    });
+  </script>
+  <script>
+    // ...existing code...
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // ...existing code...
+        
+        // Initialiser l'état du service au chargement
+        const ballIconA = document.getElementById('ballIconA');
+        const ballIconB = document.getElementById('ballIconB');
+        
+        // Cacher les deux indicateurs au départ en utilisant opacity
+        if (ballIconA) ballIconA.style.opacity = '0';
+        if (ballIconB) ballIconB.style.opacity = '0';
+        
+        // Définir un serveur par défaut
+        window.server = 'A'; // Valeur par défaut
+        
+        // Initialiser le service à A et rendre son icône visible
+        setTimeout(() => {
+            setService('A');
+            console.log("Service initialisé à A");
+        }, 500);
+        
+        // Mettre à jour les données initiales avec le serveur
+        const matchId = new URLSearchParams(window.location.search).get('matchId');
+        if (matchId) {
+            const liveData = JSON.parse(localStorage.getItem(`liveMatchData_match${matchId}`) || '{}');
+            liveData.server = window.server;
+            liveData.matchId = matchId;
+            localStorage.setItem(`liveMatchData_match${matchId}`, JSON.stringify(liveData));
+            
+            // Aussi dans la clé générique
+            localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+            
+            console.log("Données initiales avec serveur:", liveData);
+        }
+    });
+    
+    // Fonction explicite pour activer le service d'une équipe spécifique
+    function setServer(team) {
+        window.server = team;
+        
+        const ballIconA = document.getElementById('ballIconA');
+        const ballIconB = document.getElementById('ballIconB');
+        
+        if (ballIconA && ballIconB) {
+            // Utiliser opacity au lieu de visibility
+            ballIconA.style.opacity = team === 'A' ? '1' : '0';
+            ballIconB.style.opacity = team === 'B' ? '1' : '0';
+        }
+        
+        // Mettre à jour les données
+        updateLiveData();
+        
+        console.log(`Service défini à l'équipe ${team} (utilisant opacity)`);
+    }
+    
+    // Fonction pour mettre à jour les données en direct - ajout du serveur
+    function updateLiveData() {
+        const teamAScore = document.getElementById('teamAScore');
+        const teamBScore = document.getElementById('teamBScore');
+        const gameChrono = document.getElementById('gameChrono');
+        const matchId = new URLSearchParams(window.location.search).get('matchId');
+        const ballIconA = document.getElementById('ballIconA');
+        const ballIconB = document.getElementById('ballIconB');
+        
+        // Déterminer le serveur actuel
+        let currentServer = window.server;
+        if (ballIconA && ballIconB) {
+            if (ballIconA.style.opacity === '1') currentServer = 'A';
+            else if (ballIconB.style.opacity === '1') currentServer = 'B';
+        }
+
+        const liveData = {
+            matchId: matchId,
+            score1: teamAScore ? teamAScore.textContent : 0,
+            score2: teamBScore ? teamBScore.textContent : 0,
+            chrono: gameChrono ? gameChrono.textContent : '00:00',
+            status: 'en_cours',
+            team1: document.getElementById('teamAName').textContent,
+            team2: document.getElementById('teamBName').textContent,
+            matchType: document.getElementById('matchType').textContent,
+            server: currentServer
+        };
+
+        // Sauvegarder avec les deux clés
+        localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+        if (matchId) {
+            localStorage.setItem(`liveMatchData_match${matchId}`, JSON.stringify(liveData));
+        }
+        
+        console.log("Données mises à jour avec serveur:", liveData);
+    }
+    
+    // Fonction explicite pour définir le service
+    function setService(team) {
+        console.log(`Définition du service pour l'équipe ${team}`);
+        window.server = team;
+        
+        const ballIconA = document.getElementById('ballIconA');
+        const ballIconB = document.getElementById('ballIconB');
+        
+        if (ballIconA && ballIconB) {
+            // Réinitialiser les deux icônes
+            ballIconA.style.opacity = '0';
+            ballIconB.style.opacity = '0';
+            
+            // Activer la bonne icône
+            if (team === 'A') {
+                ballIconA.style.opacity = '1';
+            } else if (team === 'B') {
+                ballIconB.style.opacity = '1';
+            }
+        }
+        
+        // Mettre à jour les données en direct avec le serveur
+        updateLiveDataWithServer(team);
+    }
+    
+    // Fonction pour mettre à jour ChangeServer (appelée par le bouton Service)
+    function ChangeServer() {
+        // Alterner entre A et B
+        const newServer = window.server === 'A' ? 'B' : 'A';
+        setService(newServer);
+        
+        console.log(`Service changé à l'équipe ${newServer}`);
+    }
+    
+    // Fonction spécifique pour mettre à jour les données avec le serveur
+    function updateLiveDataWithServer(serverTeam) {
+        const matchId = new URLSearchParams(window.location.search).get('matchId');
+        
+        const liveData = {
+            matchId: matchId,
+            score1: document.getElementById('teamAScore').textContent,
+            score2: document.getElementById('teamBScore').textContent,
+            chrono: document.getElementById('gameChrono').textContent,
+            status: 'en_cours',
+            team1: document.getElementById('teamAName').textContent,
+            team2: document.getElementById('teamBName').textContent,
+            matchType: document.getElementById('matchType').textContent,
+            server: serverTeam  // Crucial - garder la valeur du serveur
+        };
+        
+        console.log("Mise à jour des données avec serveur:", liveData);
+        
+        // Sauvegarder les données avec les deux clés
+        localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+        if (matchId) {
+            localStorage.setItem(`liveMatchData_match${matchId}`, JSON.stringify(liveData));
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // ...existing code...
+        
+        // Initialiser le service à A par défaut
+        window.server = 'A';
+        setService(window.server);
+        
+        // ...existing code...
+    });
+</script>
+</body>
+</html>

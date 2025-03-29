@@ -20,51 +20,53 @@
         .score-board {
             text-align: center;
             width: 100%;
-            padding: 20px;
+            padding: 1.25rem;
         }
 
         .teams {
             display: flex;
             justify-content: space-around;
-            font-size: 5em;
-            margin: 20px 0;
+            font-size: 5rem;
+            margin: 1.25rem 0;
             font-weight: bold;
         }
 
         .score-container {
-            font-size: 12em;
+            font-size: 15rem;
             font-weight: bold;
-            margin: 40px 0;
+            margin: 4.5rem 0;
         }
 
+        img#ballIconA {}
+
         .ball-icon {
-            width: 50px;
-            height: 50px;
+            width: 3rem;
+            height: 3rem;
             vertical-align: middle;
         }
 
         .ball-icon-table {
-            width: 20px;
-            height: 20px;
-            margin-right: 20px;
-            margin-left: 20px;
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 1.25rem;
+            margin-left: 1.25rem;
         }
 
         .score-divider {
-            margin: 0 40px;
+            margin: 0 2.5rem;
             color: #000000;
         }
 
         .match-info {
-            font-size: 3em;
-            margin: 30px 0;
+            font-size: 6rem;
+            margin: 1.875rem 0;
         }
 
         .remaining-time {
             background-color: #000000;
-            padding: 10px 20px;
-            border-radius: 10px;
-            margin-right: 20px;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.625rem;
+            margin-right: 1.25rem;
             color: red
         }
 
@@ -73,9 +75,9 @@
         }
 
         .team-logo {
-            width: 80px;
-            height: 80px;
-            margin: 0 20px;
+            width: 20rem;
+            height: 20rem;
+            margin: 0 1.25rem;
             object-fit: contain;
         }
 
@@ -88,6 +90,31 @@
             0% { transform: scale(1); }
             50% { transform: scale(1.2); }
             100% { transform: scale(1); }
+        }
+        
+        /* Styles pour le mode split-screen */
+        @media (max-width: 600px) {
+            .teams {
+                font-size: 3rem;
+            }
+            
+            .score-container {
+                font-size: 8rem;
+            }
+            
+            .match-info {
+                font-size: 2rem;
+            }
+            
+            .ball-icon {
+                width: 2rem;
+                height: 2rem;
+            }
+            
+            .team-logo {
+                width: 4rem;
+                height: 4rem;
+            }
         }
     </style>
 </head>
@@ -105,66 +132,343 @@
         </div>
         
         <div class="score-container">
-            <img src="cochonnet.png" alt="Cochonnet Icon" class="ball-icon" id="ballIconB" style="visibility: hidden;">
+            <img src="cochonnet.png" class="ball-icon" id="ballIconB" style="visibility: hidden;">
             <span id="teamBScore">0</span>
             <span class="score-divider">-</span>
             <span id="teamAScore">0</span>
-            <img src="cochonnet.png" alt="Cochonnet Icon" class="ball-icon" id="ballIconA" style="visibility: hidden;">
+            <img src="cochonnet.png" class="ball-icon" id="ballIconA" style="visibility: hidden;">
         </div>
         
         <div class="match-info">
+            <span class="remaining-time" id="gameChrono">00:00</span>
             <span class="match-type" id="matchType"></span>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Constante pour identifier ce sport - NE JAMAIS CHANGER
+            const SPORT = 'petanque';
+            const STORAGE_PREFIX = `${SPORT}_`;
+            
+            // Purger les données non pertinentes dès le chargement
+            function purgeNonRelevantData() {
+                console.log("Nettoyage des données non pertinentes au démarrage...");
+                // Supprimer toute donnée générique qui pourrait causer des conflits
+                if (urlParams.get('cleanMode') === 'true') {
+                    localStorage.removeItem('liveMatchData');
+                    console.log("Clé générique 'liveMatchData' supprimée pour éviter les conflits");
+                }
+                
+                // Créer et utiliser la clé spécifique au sport immédiatement
+                const defaultKey = `${STORAGE_PREFIX}liveMatchData`;
+                if (!localStorage.getItem(defaultKey)) {
+                    localStorage.setItem(defaultKey, JSON.stringify({
+                        team1: 'TEAM A',
+                        team2: 'TEAM B',
+                        score1: '0',
+                        score2: '0',
+                        matchType: 'Pétanque'
+                    }));
+                    console.log(`Clé spécifique au sport '${defaultKey}' initialisée`);
+                }
+            }
+            
+            // Vérifier si on est dans une iframe (pour le split screen)
+            const isInIframe = window.location !== window.parent.location;
+            
+            // Obtenir l'ID de l'iframe ou utiliser le paramètre 'match' de l'URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const matchParam = urlParams.get('match');
+            const sportParam = urlParams.get('sport');
+            const iframeId = isInIframe ? (window.name || `match${matchParam}`) : '';
+            
+            // Exécuter le nettoyage si demandé
+            if (urlParams.get('cleanMode') === 'true') {
+                purgeNonRelevantData();
+            }
+            
+            // Bloquer explicitement tout traitement de données badminton
+            const blockBadminton = true; // toujours actif
+            
+            // Vérification critique - ne pas charger des données d'un autre sport
+            if (sportParam && sportParam !== SPORT) {
+                console.error(`ERREUR: Ce tableau est pour ${SPORT} mais le paramètre sport est ${sportParam}`);
+                document.body.innerHTML = `<div style="color:red;font-size:24px;text-align:center;padding:20px;">
+                    Erreur de configuration: Ce tableau est pour la pétanque mais est utilisé pour ${sportParam}.
+                </div>`;
+                return; // Stopper l'exécution
+            }
+            
+            console.log(`Mode: ${isInIframe ? 'iframe' : 'standalone'}, Sport: ${SPORT}, ID: ${iframeId}, Match: ${matchParam}`);
+            
+            // Fonction pour vérifier si une clé appartient à ce sport (renforcement)
+            function isSportSpecificKey(key) {
+                // Bloquer explicitement toute clé contenant "badminton"
+                if (blockBadminton && (key.includes('badminton') || key.includes('badminton_'))) {
+                    return false;
+                }
+                
+                return key.startsWith(STORAGE_PREFIX) || 
+                       key.includes(`_${SPORT}_`) || 
+                       (key === 'liveMatchData' && !urlParams.get('strictMode'));
+            }
+            
             function updateDisplay() {
-                const matchData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
+                console.log("Mise à jour de l'affichage...");
+                
+                // Identifier correctement la source des données
+                const storageKey = urlParams.get('storageKey');
+                let matchData = {};
+                let dataSourceKey = '';
+                
+                // Priorité 1: Utiliser storageKey explicite s'il est fourni
+                if (storageKey && localStorage.getItem(storageKey)) {
+                    if (!isSportSpecificKey(storageKey) && urlParams.get('strictMode') === 'true') {
+                        console.warn(`Clé ${storageKey} ignorée car elle n'appartient pas au sport ${SPORT}`);
+                    } else {
+                        dataSourceKey = storageKey;
+                        matchData = JSON.parse(localStorage.getItem(storageKey) || '{}');
+                        console.log(`Utilisation de la clé explicite: ${storageKey}`);
+                    }
+                }
+                
+                // Priorité 2: Utiliser l'ID de match spécifique s'il est fourni
+                if ((!dataSourceKey || Object.keys(matchData).length === 0) && matchParam) {
+                    // Essayer toutes les combinaisons possibles de clés spécifiques au sport
+                    const possibleKeys = [
+                        `${STORAGE_PREFIX}match${matchParam}`,
+                        `${STORAGE_PREFIX}liveMatchData_match${matchParam}`,
+                        `liveMatchData_${SPORT}_match${matchParam}`
+                    ];
+                    
+                    for (const key of possibleKeys) {
+                        if (localStorage.getItem(key)) {
+                            dataSourceKey = key;
+                            matchData = JSON.parse(localStorage.getItem(key) || '{}');
+                            console.log(`Utilisation de la clé spécifique au match: ${dataSourceKey}`);
+                            break;
+                        }
+                    }
+                }
+                
+                // Priorité 3: Clé générique spécifique au sport
+                if (!dataSourceKey || Object.keys(matchData).length === 0) {
+                    const genericKey = `${STORAGE_PREFIX}liveMatchData`;
+                    if (localStorage.getItem(genericKey)) {
+                        dataSourceKey = genericKey;
+                        matchData = JSON.parse(localStorage.getItem(genericKey) || '{}');
+                        console.log(`Utilisation de la clé générique pour ${SPORT}`);
+                    }
+                }
+                
+                // Priorité 4 (dernier recours): clé générique - UNIQUEMENT SI NON STRICT
+                if ((!dataSourceKey || Object.keys(matchData).length === 0) && urlParams.get('strictMode') !== 'true') {
+                    dataSourceKey = 'liveMatchData';
+                    matchData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
+                    console.log('Fallback à la clé générique liveMatchData (déprécié)');
+                }
+                
+                console.log(`Source de données finale: ${dataSourceKey}`, matchData);
+                
+                // Vérification critique - si les données ressemblent à un match de badminton, les ignorer
+                if (matchData && typeof matchData === 'object') {
+                    // Détection d'un match de badminton
+                    const isBadmintonMatch = matchData.sets || 
+                                            (matchData.matchType && matchData.matchType.toLowerCase().includes('badminton'));
+                    
+                    if (isBadmintonMatch && blockBadminton) {
+                        console.warn(`Données ignorées car elles semblent être un match de badminton`);
+                        matchData = {}; // Réinitialiser les données
+                        
+                        // Supprimer cette entrée si elle est dans une clé générique
+                        if (dataSourceKey === 'liveMatchData') {
+                            localStorage.removeItem('liveMatchData');
+                            console.log("Clé générique 'liveMatchData' supprimée car elle contenait des données de badminton");
+                        }
+                    }
+                }
                 
                 // Mise à jour des équipes et du type de match
-                document.getElementById('teamAName').textContent = matchData.team1 || 'TEAM A';
-                document.getElementById('teamBName').textContent = matchData.team2 || 'TEAM B';
-                document.getElementById('matchType').textContent = matchData.matchType || 'Match en cours';
+                const teamAName = document.getElementById('teamAName');
+                const teamBName = document.getElementById('teamBName');
+                const matchType = document.getElementById('matchType');
+                
+                // Vérification et débogage des noms d'équipes
+                console.log("Noms d'équipes reçus:", {
+                    team1: matchData.team1,
+                    team2: matchData.team2
+                });
+                
+                if (teamAName) {
+                    teamAName.textContent = matchData.team1 || 'TEAM A';
+                    console.log(`Nom d'équipe A défini à: ${teamAName.textContent}`);
+                }
+                
+                if (teamBName) {
+                    teamBName.textContent = matchData.team2 || 'TEAM B';
+                    console.log(`Nom d'équipe B défini à: ${teamBName.textContent}`);
+                }
+                
+                if (matchType) {
+                    matchType.textContent = matchData.matchType || 'Match en cours';
+                }
                 
                 // Correction des chemins des logos
                 const logoA = document.getElementById('logoA');
                 const logoB = document.getElementById('logoB');
                 
-                if (matchData.team1) {
+                if (logoA && matchData.team1) {
                     logoA.src = `../img/${matchData.team1}.png`;
-                    logoA.onerror = () => logoA.src = '../img/default.png';
+                    logoA.onerror = () => {
+                        console.log(`Logo non trouvé pour ${matchData.team1}, utilisation du logo par défaut`);
+                        logoA.src = '../img/default.png';
+                    };
                 }
                 
-                if (matchData.team2) {
+                if (logoB && matchData.team2) {
                     logoB.src = `../img/${matchData.team2}.png`;
-                    logoB.onerror = () => logoB.src = '../img/default.png';
+                    logoB.onerror = () => {
+                        console.log(`Logo non trouvé pour ${matchData.team2}, utilisation du logo par défaut`);
+                        logoB.src = '../img/default.png';
+                    };
                 }
                 
                 // Mise à jour des scores
-                document.getElementById('teamAScore').textContent = matchData.score1 || '0';
-                document.getElementById('teamBScore').textContent = matchData.score2 || '0';
+                const teamAScore = document.getElementById('teamAScore');
+                const teamBScore = document.getElementById('teamBScore');
+                
+                if (teamAScore) teamAScore.textContent = matchData.score1 || '0';
+                if (teamBScore) teamBScore.textContent = matchData.score2 || '0';
                 
                 // Mise à jour du chronomètre
-                document.getElementById('gameChrono').textContent = matchData.chrono || '00:00';
+                const gameChrono = document.getElementById('gameChrono');
+                if (gameChrono) gameChrono.textContent = matchData.chrono || '00:00';
 
                 // Mise à jour du serveur
-                const ballIconA = document.getElementById('ballIconA');
-                const ballIconB = document.getElementById('ballIconB');
-                if (matchData.cochonnet === 'A') {
-                    ballIconA.style.visibility = 'visible';
-                    ballIconB.style.visibility = 'hidden';
-                } else if (matchData.cochonnet === 'B') {
-                    ballIconA.style.visibility = 'hidden';
-                    ballIconB.style.visibility = 'visible';
+                if (matchData.server && (matchData.server === 'A' || matchData.server === 'B')) {
+                    console.log(`Serveur: ${matchData.server}`);
+                    
+                    const ballIconA = document.getElementById('ballIconA');
+                    const ballIconB = document.getElementById('ballIconB');
+                    
+                    if (ballIconA && ballIconB) {
+                        ballIconA.style.visibility = matchData.server === 'A' ? 'visible' : 'hidden';
+                        ballIconB.style.visibility = matchData.server === 'B' ? 'visible' : 'hidden';
+                    }
                 }
             }
-
+            
+            // Initialiser l'affichage avec une priorité accrue pour les données spécifiques à la pétanque
+            if (matchParam) {
+                const specificKey = `${STORAGE_PREFIX}match${matchParam}`;
+                const matchDataStr = localStorage.getItem(specificKey);
+                
+                if (!matchDataStr && urlParams.get('createMode') === 'true') {
+                    // Créer une entrée spécifique pour ce match s'il n'existe pas
+                    const initialData = {
+                        team1: 'TEAM A',
+                        team2: 'TEAM B', 
+                        score1: '0',
+                        score2: '0',
+                        matchType: `Pétanque Match #${matchParam}`
+                    };
+                    localStorage.setItem(specificKey, JSON.stringify(initialData));
+                    console.log(`Nouvelle entrée créée pour le match ${matchParam}: ${specificKey}`);
+                }
+            }
+            
             // Mise à jour initiale
             updateDisplay();
 
             // Mise à jour toutes les 100ms
             setInterval(updateDisplay, 100);
+            
+            // Ajouter un écouteur pour les événements de stockage pour filtrer d'autres sports
+            window.addEventListener('storage', function(event) {
+                // Ignorer TOUT événement de badminton sans exception
+                if (event.key && (event.key.includes('badminton') || event.key.includes('badminton_'))) {
+                    console.log(`Événement de stockage explicitement bloqué (badminton): ${event.key}`);
+                    return;
+                }
+                
+                // Traiter l'événement uniquement s'il est pertinent pour notre affichage
+                if (event.key && (isSportSpecificKey(event.key) || event.key === 'liveMatchData')) {
+                    console.log(`Mise à jour du stockage détectée: ${event.key}`);
+                    updateDisplay();
+                }
+            });
+            
+            // Écouter les messages du parent pour le mode iframe
+            window.addEventListener('message', function(event) {
+                if (event.data.type === 'updateMatchData') {
+                    const matchId = urlParams.get('match') || 'inconnu';
+                    const position = urlParams.get('position') || 'inconnue';
+                    
+                    // Vérification explicite du type de sport
+                    if (event.data.sport === 'badminton') {
+                        console.warn(`Message explicitement bloqué: sport badminton`);
+                        return;
+                    }
+                    
+                    // Ignorer les mises à jour si le sport ne correspond pas
+                    if (event.data.sport && event.data.sport !== SPORT) {
+                        console.warn(`Message ignoré: sport ${event.data.sport} != ${SPORT}`);
+                        return;
+                    }
+                    
+                    console.log(`[${SPORT} Match #${matchId} - Position ${position}] Réception de mise à jour:`, event.data.data);
+                    
+                    // Vérification du contenu des données pour bloquer les matchs de badminton
+                    if (event.data.data && typeof event.data.data === 'object') {
+                        if (event.data.data.sets || 
+                            (event.data.data.matchType && event.data.data.matchType.toLowerCase().includes('badminton'))) {
+                            console.warn(`Message bloqué: contenu détecté comme étant un match de badminton`);
+                            return;
+                        }
+                    }
+                    
+                    // Créer une clé de stockage garantie unique pour ce sport et ce match
+                    let storageKey;
+                    if (matchParam) {
+                        storageKey = `${STORAGE_PREFIX}match${matchParam}`;
+                    } else if (isInIframe && iframeId) {
+                        storageKey = `${STORAGE_PREFIX}iframe_${iframeId}`;
+                    } else {
+                        storageKey = `${STORAGE_PREFIX}liveMatchData`;
+                    }
+                    
+                    // Stocker également avec l'ancienne convention pour rétrocompatibilité
+                    const legacyKey = isInIframe ? `liveMatchData_${iframeId}` : 'liveMatchData';
+                    
+                    console.log(`Stockage des données avec la clé principale: ${storageKey}`);
+                    localStorage.setItem(storageKey, JSON.stringify(event.data.data));
+                    
+                    // En mode non-strict, mettre à jour aussi la clé legacy
+                    if (urlParams.get('strictMode') !== 'true') {
+                        console.log(`Stockage des données avec la clé legacy: ${legacyKey}`);
+                        localStorage.setItem(legacyKey, JSON.stringify(event.data.data));
+                    }
+                    
+                    // Garantir que les données stockées contiennent un marqueur explicite du sport
+                    if (event.data.data) {
+                        event.data.data.sportType = SPORT; // Ajouter un marqueur explicite
+                    }
+                    
+                    updateDisplay();
+                }
+            });
+            
+            // Pour le débogage - afficher toutes les clés de stockage
+            console.log(`--- TABLEAU DE SCORE PÉTANQUE ---`);
+            console.log(`Mode: ${isInIframe ? 'iframe' : 'standalone'}, Match: ${matchParam || 'non spécifié'}`);
+            console.log(`Options: strictMode=${urlParams.get('strictMode') || 'false'}, cleanMode=${urlParams.get('cleanMode') || 'false'}`);
+            console.log(`Blockage badminton: ${blockBadminton ? 'ACTIVÉ' : 'DÉSACTIVÉ'}`);
+            console.log("Clés de stockage existantes:");
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                console.log(`${key} - Pertinent pour ${SPORT}: ${isSportSpecificKey(key)}`);
+            }
         });
     </script>
 </body>

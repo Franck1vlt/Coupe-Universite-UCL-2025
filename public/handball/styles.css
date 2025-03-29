@@ -132,7 +132,13 @@ h1 {
     position: relative;
     padding-bottom: 25px;
     width: 300px; /* Added standard width */
-    height: 120px; /* Added standard height */
+    /* height: 120px; */ /* Added standard height */
+}
+
+.match:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    border-color: var(--highlight-color);
 }
 
 .match::before {
@@ -185,7 +191,7 @@ h1 {
 .team {
     padding: 8px 12px;
     display: flex;
-    justify-content: space-evenly;
+    justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
@@ -195,37 +201,30 @@ h1 {
 }
 
 .team.winner {
-    background-color: transparent; /* Supprime le fond vert */
-    color: inherit; /* Rétablit la couleur de texte par défaut */
-    font-weight: normal;
+    background-color: rgba(39, 174, 96, 0.2); /* Vert clair pour les gagnants */
+    font-weight: bold;
+    border-left: 4px solid #27ae60;
 }
 
 .team.loser {
-    background-color: transparent; /* Supprime le fond rouge */
-    color: inherit; /* Rétablit la couleur de texte par défaut */
-    font-weight: normal;
+    background-color: rgba(231, 76, 60, 0.1); /* Rouge clair pour les perdants */
+    opacity: 0.85;
+}
+
+.team.draw {
+    background-color: rgba(243, 156, 18, 0.1); /* Orange clair pour les matchs nuls */
 }
 
 .team.winner .score {
-    background-color: #4CAF50; /* Fond vert pour le score gagnant */
-    color: white;
-    font-weight: bold;
-    padding: 4px 8px;
-    border-radius: 4px;
-    min-width: 24px;
-    display: inline-block;
-    text-align: center;
+    background-color: rgba(39, 174, 96, 0.3);
 }
 
 .team.loser .score {
-    background-color: #F44336; /* Fond rouge pour le score perdant */
-    color: white;
-    font-weight: bold;
-    padding: 4px 8px;
-    border-radius: 4px;
-    min-width: 24px;
-    display: inline-block;
-    text-align: center;
+    background-color: rgba(231, 76, 60, 0.2);
+}
+
+.team.draw .score {
+    background-color: rgba(243, 156, 18, 0.2);
 }
 
 .team-logo {
@@ -263,6 +262,17 @@ h1 {
     padding: 4px 8px;
     border-radius: 4px;
     display: inline-block;
+}
+
+.team .score {
+    display: inline-block;
+    min-width: 30px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.2em;
+    padding: 5px;
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
 .connector {
@@ -600,7 +610,7 @@ button {
 
 .ranking-row.header {
     background-color: var(--highlight-color);
-    /* color: white; */
+    color: white;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -656,9 +666,11 @@ button {
 }
 
 .classification-container .round {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+    justify-content: center;
 }
 
 /* CSS */
@@ -696,8 +708,10 @@ button {
 }
 
 .classification-container {
+    display: flex;
     width: 100%;
     padding: 20px;
+    justify-content: center;
 }
 
 .classification-matches {
@@ -744,12 +758,16 @@ box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 overflow: hidden;
 }
 
-.ranking-row {display: grid;grid-template-columns: 0.5fr 2fr repeat(8, 1fr);padding: 15px;border-bottom: 1px solid #eee;align-items: center;}
+.ranking-row {display: flex;padding: 15px;border-bottom: 1px solid #eee;align-items: center;justify-content: space-around;}
 
 .ranking-row.header {background: #000000;font-weight: bold;color: #ffffff;}
 
 .name {
-    color: #000000;
+    color: white;
+}
+
+.ranking-row:hover {
+background: #f8f9fa;
 }
 
 .rank {
@@ -862,7 +880,7 @@ background-color: #cd7f32;
 .match-time {
     font-size: 0.9em;
     color: #ffffff;
-    background-color: #3F51B5;
+    background-color: rgba(255, 0, 0, 0.8);
     padding: 2px 8px;
     border-radius: 5px;
     font-weight: bold;
@@ -877,45 +895,73 @@ background-color: #cd7f32;
     color: #666;
 }
 
-.qualified {
-    background-color: rgba(76, 175, 80, 0.1);
-    font-weight: bold;
+/* Ajout des styles spécifiques pour les matchs de classement */
+.match[data-match-type="classification_semifinal"],
+.match[data-match-type="classification_final"] {
+    background: rgba(255, 255, 255, 0.07);
 }
 
-.draw {
-    background-color: #FFA500 !important; /* Orange pour les matchs nuls */
-    color: white !important;
+/* Status pour les matchs de classement */
+.match[data-match-type^="classification"].en-cours {
+    background-color: #fff3e0;
+    animation: pulse 2s infinite;
+    border: 2px solid #ff9800;
 }
 
-.score.draw {
-    font-weight: bold;
-    background-color: rgba(255, 140, 0, 0.2); /* Fond légèrement orangé */
+.match[data-match-type^="classification"].termine {
+    background-color: #e8f5e9;
+    border: 2px solid #4caf50;
 }
 
-
-.match.disabled {
-    pointer-events: none;
-    cursor: not-allowed !important;
-    opacity: 0.6;
+/* Ajuster l'affichage du statut pour les matchs de classement */
+.match[data-match-type^="classification"] .match-status {
+    font-size: 0.8em;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background-color: rgba(0, 0, 0, 0.1);
 }
 
-.match.disabled:hover {
-    background-color: inherit;
+/* Styles pour les statuts de match - tous les formats possibles */
+
+.match.en-cours, .match.en_cours {
+    animation: pulse 2s infinite;
+    border: 2px solid #ff9800;
 }
 
-.match .team {
+.match.terminé, .match.termine, .match.terminé, .match.termine {
+    border: 2px solid #4caf50;
+}
+
+/* Styles spécifiques pour les matchs de classement */
+#classification-phase .match-info-container {
+    position: absolute;
+    top: 25px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
+    flex-direction: column;
     align-items: center;
+    gap: 4px;
+    z-index: 10;
+    background: transparent;
 }
 
-.match .team .team-name {
-    order: 1;
-    margin-right: auto;
+#classification-phase .match-status {
+    background-color: #f0f0f0;
+    color: #666;
+    font-size: 0.8em;
+    padding: 2px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
 }
 
-.match .team .score {
-    order: 2;
-    margin-left: 10px;
+#classification-phase .match[data-status="en_cours"] .match-status {
+    background-color: #fff3cd;
+    color: #856404;
+    animation: pulse 2s infinite;
+}
+
+#classification-phase .match[data-status="terminé"] .match-status {
+    background-color: #d4edda;
+    color: #155724;
 }

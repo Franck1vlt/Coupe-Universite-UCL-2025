@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Affichage Double Match - Pétanque</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background-color: #5D4037;
+            color: white;
+            padding: 8px 16px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        
+        header h1 {
+            margin: 0;
+            font-size: 1.2em;
+        }
+        
+        .split-container {
+            display: flex;
+            flex: 1;
+            width: 100%;
+            border-top: 2px solid #8D6E63;
+        }
+        
+        .match-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+            border-right: 2px solid #8D6E63;
+        }
+        
+        .match-container:last-child {
+            border-right: none;
+        }
+        
+        .match-header {
+            padding: 8px;
+            background-color: #795548;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .match-content {
+            flex: 1;
+            position: relative;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .match-footer {
+            padding: 4px;
+            background-color: #795548;
+            color: white;
+            font-size: 0.9em;
+            text-align: center;
+        }
+        
+        /* Styles pour le sélecteur de matchs */
+        .selector-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 800px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            padding: 20px;
+            z-index: 1001;
+            display: none;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .selector-panel h2 {
+            text-align: center;
+            margin-top: 0;
+            color: #5D4037;
+        }
+        
+        .match-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .match-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .match-card:hover {
+            border-color: #8D6E63;
+            background-color: #f5f5f5;
+        }
+        
+        .match-card.selected {
+            border-color: #8D6E63;
+            background-color: #EFEBE9;
+        }
+        
+        .match-card h3 {
+            margin: 0 0 10px 0;
+            color: #5D4037;
+        }
+        
+        .match-card p {
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+        
+        .match-card .teams {
+            font-weight: bold;
+        }
+        
+        .selector-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .selector-actions button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .btn-apply {
+            background-color: #795548;
+            color: white;
+        }
+        
+        .btn-cancel {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        /* Bouton flottant pour ouvrir le sélecteur */
+        .floating-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #795548;
+            color: white;
+            border: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0; /* Commence invisible */
+            transition: opacity 0.3s ease;
+        }
+        
+        body:hover .floating-button {
+            opacity: 1; /* Devient visible au survol du corps */
+        }
+        
+        .floating-button:hover {
+            background-color: #8D6E63;
+        }
+        
+        /* Overlay semi-transparent */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: none;
+        }
+        
+        /* Groupe de terrains */
+        .court-group {
+            padding: 5px 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            background-color: #EFEBE9;
+        }
+        
+        .court-group h3 {
+            margin-top: 10px;
+            color: #5D4037;
+        }
+        
+        /* Badge pour identifier les matchs en cours */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: 5px;
+        }
+        
+        .status-badge.active {
+            background-color: #4caf50;
+            color: white;
+        }
+        
+        .status-badge.finished {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .status-badge.upcoming {
+            background-color: #ff9800;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Pétanque - Matchs en cours</h1>
+        </header>
+        
+        <div class="split-container">
+            <div class="match-container" id="match1Container">
+                <div class="match-header" id="match1Header">Match 1</div>
+                <div class="match-content">
+                    <iframe src="about:blank" id="match1Frame" name="match1Frame"></iframe>
+                </div>
+                <div class="match-footer" id="match1Footer">Terrain 1</div>
+            </div>
+            
+            <div class="match-container" id="match2Container">
+                <div class="match-header" id="match2Header">Match 2</div>
+                <div class="match-content">
+                    <iframe src="about:blank" id="match2Frame" name="match2Frame"></iframe>
+                </div>
+                <div class="match-footer" id="match2Footer">Terrain 2</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bouton flottant pour ouvrir le sélecteur (masqué par défaut, visible au survol) -->
+    <button class="floating-button" id="openSelector">⚙️</button>
+    
+    <!-- Overlay semi-transparent -->
+    <div class="overlay" id="overlay"></div>
+    
+    <!-- Panneau de sélection des matchs -->
+    <div class="selector-panel" id="selectorPanel">
+        <h2>Sélection des matchs à afficher</h2>
+        
+        <div class="match-list" id="matchList">
+            <!-- Les matchs seront chargés dynamiquement ici -->
+        </div>
+        
+        <div class="selector-actions">
+            <button class="btn-cancel" id="cancelSelection">Annuler</button>
+            <button class="btn-apply" id="applySelection">Appliquer</button>
+        </div>
+    </div>
+    
+    <script>
+        // Variables globales
+        let tournamentState = null;
+        let selectedMatches = [];
+        let displayedMatches = {
+            left: null,
+            right: null
+        };
+        
+        // Générer des identifiants uniques pour chaque côté de l'écran
+        const uniqueIds = {
+            match1: `petanque_match1_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            match2: `petanque_match2_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+        };
+        
+        // Préfixe pour stocker les données dans le localStorage
+        const STORAGE_PREFIX = 'petanque_';
+        
+        // Paires de matchs simultanés dans le tournoi de pétanque (mise à jour selon le nouveau format)
+        const simultaneousMatches = [
+            // Barrages
+            ['1', '2'],    // Premier groupe de barrages
+            ['15', '16'],  // Deuxième groupe de barrages
+            // Quarts de finale
+            ['3', '4'],    // Premiers quarts
+            ['5', '6'],    // Deuxièmes quarts
+            // Demi-finales
+            ['9', '10'],   // Demi-finales
+            // Matchs de classement
+            ['13', '14']   // Petite finale et finale
+        ];
+        
+        // Conversion des types de match en libellés plus lisibles
+        function getMatchTypeDisplay(type) {
+            const matchTypes = {
+                'poule': 'Match de poule',
+                'barrage': 'Barrage',
+                'quarterfinal': 'Quart de finale',
+                'semifinal': 'Demi-finale',
+                'smallfinal': 'Petite Finale',
+                'final': 'Finale'
+            };
+            return matchTypes[type] || type;
+        }
+        
+        // Fonction pour charger l'état du tournoi
+        function loadTournamentState() {
+            // Essayer d'abord avec le nouveau format (préfixé)
+            let savedState = localStorage.getItem(`${STORAGE_PREFIX}TournamentState`);
+            
+            // Si pas trouvé, essayer avec l'ancien format (non préfixé) pour compatibilité
+            if (!savedState) {
+                savedState = localStorage.getItem('petanqueTournamentState');
+                console.log('Chargement depuis l\'ancienne clé petanqueTournamentState');
+            }
+            
+            if (savedState) {
+                try {
+                    tournamentState = JSON.parse(savedState);
+                    console.log('État du tournoi de pétanque chargé avec succès:', tournamentState);
+                    return tournamentState;
+                } catch (error) {
+                    console.error('Erreur lors du chargement de l\'état du tournoi:', error);
+                }
+            }
+            
+            console.warn('Aucun état du tournoi de pétanque trouvé dans localStorage');
+            
+            // État initial du tournoi (au cas où il n'existe pas encore dans localStorage)
+            tournamentState = {
+              matches: {
+                // Barrages (matchIds 1 à 2, 15 à 16)
+                1: {
+                  matchType: 'barrage',
+                  team1: 'ESSLIL',
+                  team2: 'USCHOOL',
+                  score1: null,
+                  score2: null,
+                  status: 'à_venir',
+                  winner: null,
+                  loser: null,
+                  nextMatchWin: 3,  // Le gagnant va en QF1
+                  nextMatchLose: null,
+                  time: '9:30'
+                },
+                2: {
+                  matchType: 'barrage',
+                  team1: 'LiDD',
+                  team2: 'FLD',
+                  score1: null,
+                  score2: null,
+                  status: 'à_venir',
+                  winner: null,
+                  loser: null,
+                  nextMatchWin: 4,  // Le gagnant va en QF2
+                  nextMatchLose: null,
+                  time: '9:30'
+                },
+                15: {
+                  matchType: 'barrage',
+                  team1: 'ESPAS-ESTICE',
+                  team2: 'ESPOL',
+                  score1: null,
+                  score2: null,
+                  status: 'à_venir',
+                  winner: null,
+                  loser: null,
+                  nextMatchWin: 5,  // Le gagnant va en QF3
+                  nextMatchLose: null,
+                  time: '10:15'
+                },
+                16: {
+                  matchType: 'barrage',
+                  team1: 'PIKTURA',
+                  team2: 'FLSH',
+                  score1: null,
+                  score2: null,
+                  status: 'à_venir',
+                  winner: null,
+                  loser: null,
+                  nextMatchWin: 6,  // Le gagnant va en QF4
+                  nextMatchLose: null,
+                  time: '10:15'
+                },
+                // Quarts de finale (matchIds 3 à 6)
+                3: {  // QF1
+                  matchType: 'quarterfinal',
+                  team1: 'FMMS',
+                  team2: null, // Gagnant Barrage 1
+                  score1: null,
+                  score2: null,
+                  status: 'à_venir',
+                  winner: null,
+                  loser: null,
+                  nextMatchWin: 9,  // Le gagnant va en DF1
+                  nextMatchLose: null,
+                  time: '11:15'
+                },
+                4: {  // QF2
+                  matchType: 'quarterfinal', 
+                  team1: 'FGES',
+                  team2: null, // Gagnant Barrage 2
+                  score1: null,
+                  score2: null,
+                  status: 'à_venir',
+                  winner: null,
+                  loser: null,
+                  nextMatchWin: 9,  // Le gagnant va en DF1
+                  nextMatchLose: null,
+                  time: '11:30'
+                },
+                5: {  // QF3
+                  matchType: 'quarterfinal',
+                  team1: null, // Gagnant Barrage 3
+                  team2: 'IKPO',
+                  score1: null,
+                  score2: null,
+                  status: 'à_venir',
+                  winner: null,
+                  loser: null,
+                  nextMatchWin: 10,  // Le gagnant va en DF2
+                  nextMatchLose: null,
+                  time: '12:15'
+                },
+                6: {  // QF4
+                  matchType: 'quarterfinal',
+                  team1: 'ICAM',
+                  team2: null, // Gagnant Barrage 4
+                  score1: null,
+                  score2: null,
+                  status: 'à_venir',
+                  winner: null,
+                  loser: null,
+                  nextMatchWin: 10,  // Le gagnant va en DF2
+                  nextMatchLose: null,
+                  time: '12:30'
+                },
+                // Demi-finales principales
+                9: {
+                  matchType: 'semifinal',
+                  team1: null, // Gagnant QF1
+                  team2: null, // Gagnant QF2
+                  score1: null,
+                  score2: null,
+                  status: 'à_venir',
+                  winner: null,
+                  loser: null,
+                  nextMatchWin: 14,  // Gagnant va en finale
+                  nextMatchLose: 13,  // Perdant va en petite finale
+                  time: '13:45'
+                },
+                10: {
+                  matchType: 'semifinal',
+                  team1: null, // Gagnant QF3
+                  team2: null, // Gagnant QF4
+                  score1: null,
+                  score2: null,
+                  status: 'à_venir',
+                  winner: null,
+                  loser: null,
+                  nextMatchWin: 14,  // Gagnant va en finale
+                  nextMatchLose: 13,  // Perdant va en petite finale
+                  time: '14:15'
+                },
+                // Matchs pour les médailles
+                13: { // Petite finale 3ème place
+                  matchType: 'smallfinal',
+                  team1: null, // Perdant SF 1
+                  team2: null, // Perdant SF 2
+                  score1: null,
+                  score2: null,
+                  status: 'à_venir',
+                  winner: null,
+                  loser: null,
+                  time: '15:15'
+                },
+                14: { // Finale 1ère place
+                  matchType: 'final',
+                  team1: null, // Gagnant SF 1
+                  team2: null, // Gagnant SF 2
+                  score1: null,
+                  score2: null,
+                  status: 'à_venir',
+                  winner: null,
+                  loser: null,
+                  time: '16:00'
+                }
+              }
+            };
+            
+            return tournamentState;
+        }
+        
+        // Fonction pour générer la liste des matchs disponibles
+        function populateMatchList() {
+            const matchList = document.getElementById('matchList');
+            matchList.innerHTML = '';
+            
+            if (!tournamentState || !tournamentState.matches) {
+                matchList.innerHTML = '<p>Aucun match disponible. Veuillez revenir à la page principale.</p>';
+                return;
+            }
+            
+            // Organiser les matchs par paires simultanées
+            simultaneousMatches.forEach(pair => {
+                const match1 = tournamentState.matches[pair[0]];
+                const match2 = tournamentState.matches[pair[1]];
+                
+                if (match1 && match2) {
+                    const pairContainer = document.createElement('div');
+                    pairContainer.className = 'court-group';
+                    
+                    // Déterminer le type de phase pour le titre du groupe
+                    let phaseTitle = "Matchs simultanés";
+                    if (match1.matchType === 'barrage') {
+                        phaseTitle = "Barrages";
+                    } else if (match1.matchType === 'quarterfinal') {
+                        phaseTitle = "Quarts de finale";
+                    } else if (match1.matchType === 'semifinal') {
+                        phaseTitle = "Demi-finales";
+                    } else if (match1.matchType === 'final' || match1.matchType === 'smallfinal') {
+                        phaseTitle = "Phase finale";
+                    }
+                    
+                    pairContainer.innerHTML = `<h3>${phaseTitle} (${match1.time})</h3>`;
+                    
+                    // Créer la carte pour le premier match
+                    const card1 = createMatchCard(pair[0], match1);
+                    
+                    // Créer la carte pour le deuxième match
+                    const card2 = createMatchCard(pair[1], match2);
+                    
+                    pairContainer.appendChild(card1);
+                    pairContainer.appendChild(card2);
+                    
+                    matchList.appendChild(pairContainer);
+                }
+            });
+            
+            // Alternative : si aucune paire n'a été trouvée, afficher tous les matchs individuels
+            if (matchList.children.length === 0) {
+                const allMatchesContainer = document.createElement('div');
+                allMatchesContainer.className = 'court-group';
+                allMatchesContainer.innerHTML = `
+                    <h3>Tous les matchs disponibles</h3>
+                `;
+                
+                Object.entries(tournamentState.matches).forEach(([matchId, matchData]) => {
+                    const card = createMatchCard(matchId, matchData);
+                    allMatchesContainer.appendChild(card);
+                });
+                
+                matchList.appendChild(allMatchesContainer);
+            }
+            
+            // Fonction pour créer une carte de match
+            function createMatchCard(matchId, matchData) {
+                const card = document.createElement('div');
+                card.className = 'match-card';
+                card.dataset.matchId = matchId;
+                
+                // Vérifier si ce match est déjà affiché
+                if ((displayedMatches.left && displayedMatches.left.id === matchId) || 
+                    (displayedMatches.right && displayedMatches.right.id === matchId)) {
+                    card.classList.add('selected');
+                }
+                
+                // Déterminer le statut du match
+                let statusText = 'À venir';
+                let statusClass = 'upcoming';
+                
+                if (matchData.status === 'terminé') {
+                    statusText = 'Terminé';
+                    statusClass = 'finished';
+                } else if (matchData.status === 'en_cours') {
+                    statusText = 'En cours';
+                    statusClass = 'active';
+                }
+                
+                const team1 = matchData.team1 || 'Équipe 1';
+                const team2 = matchData.team2 || 'Équipe 2';
+                const matchType = getMatchTypeDisplay(matchData.matchType);
+                
+                card.innerHTML = `
+                    <h3>${matchType} <span class="status-badge ${statusClass}">${statusText}</span></h3>
+                    <p class="teams">${team1} vs ${team2}</p>
+                    <p>Match #${matchId}</p>
+                `;
+                
+                // Ajouter un écouteur d'événements pour la sélection
+                card.addEventListener('click', function() {
+                    this.classList.toggle('selected');
+                    
+                    const matchId = this.dataset.matchId;
+                    const index = selectedMatches.indexOf(matchId);
+                    
+                    if (index === -1) {
+                        // Limiter à deux sélections maximum
+                        if (selectedMatches.length < 2) {
+                            selectedMatches.push(matchId);
+                        } else {
+                            alert('Vous ne pouvez sélectionner que deux matchs maximum.');
+                            this.classList.remove('selected');
+                        }
+                    } else {
+                        selectedMatches.splice(index, 1);
+                    }
+                    
+                    console.log('Matchs sélectionnés:', selectedMatches);
+                });
+                
+                return card;
+            }
+        }
+        
+        // Fonction pour appliquer la sélection
+        function applyMatchSelection() {
+            if (selectedMatches.length !== 2) {
+                alert('Veuillez sélectionner exactement deux matchs.');
+                return;
+            }
+            
+            // Récupérer les données des matchs sélectionnés
+            const match1 = tournamentState.matches[selectedMatches[0]];
+            const match2 = tournamentState.matches[selectedMatches[1]];
+            
+            if (!match1 || !match2) {
+                alert('Erreur: Données de match non disponibles.');
+                return;
+            }
+            
+            // Mettre à jour les iframes et les en-têtes
+            updateMatchDisplay(1, selectedMatches[0], match1);
+            updateMatchDisplay(2, selectedMatches[1], match2);
+            
+            // Fermer le sélecteur
+            closeSelector();
+        }
+        
+        // Fonction pour mettre à jour l'affichage d'un match
+        function updateMatchDisplay(position, matchId, matchData) {
+            const header = document.getElementById(`match${position}Header`);
+            const footer = document.getElementById(`match${position}Footer`);
+            const iframe = document.getElementById(`match${position}Frame`);
+            const frameContainer = document.getElementById(`match${position}Container`);
+            
+            if (frameContainer) {
+                frameContainer.classList.add('loading');
+            }
+            
+            // Mettre à jour l'en-tête avec les noms d'équipes
+            const team1 = matchData.team1 || 'Équipe 1';
+            const team2 = matchData.team2 || 'Équipe 2';
+            header.textContent = `${team1} vs ${team2}`;
+            
+            // Mettre à jour le pied de page avec le type de match
+            const matchType = getMatchTypeDisplay(matchData.matchType);
+            footer.textContent = `${matchType} - Match #${matchId}`;
+            
+            // Créer un identifiant unique pour ce côté/position de l'écran avec préfixe sport
+            const storageKey = `${STORAGE_PREFIX}splitScreen_${uniqueIds['match' + position]}_match${matchId}`;
+            
+            // Récupérer les données du serveur (qui a le cochonnet)
+            let serverInfo = 'none';
+            try {
+                const matchSpecificData = JSON.parse(localStorage.getItem(`liveMatchData_petanque_match${matchId}`) || '{}');
+                if (matchSpecificData.server) {
+                    serverInfo = matchSpecificData.server;
+                } else {
+                    const globalData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
+                    if (globalData.server) {
+                        serverInfo = globalData.server;
+                    }
+                }
+            } catch (error) {
+                console.warn('Erreur lors de la récupération du service:', error);
+            }
+            
+            // Stocker les données du match dans le localStorage avec la clé unique
+            const matchLiveData = {
+                team1: matchData.team1,
+                team2: matchData.team2,
+                matchType: getMatchTypeDisplay(matchData.matchType),
+                matchId: matchId,
+                score1: matchData.score1 || 0,
+                score2: matchData.score2 || 0,
+                chrono: '00:00',
+                status: matchData.status || 'en_cours',
+                sport: 'petanque',
+                server: serverInfo
+            };
+            
+            localStorage.setItem(storageKey, JSON.stringify(matchLiveData));
+            
+            // Mettre à jour les variables de suivi des matches affichés
+            displayedMatches[position === 1 ? 'left' : 'right'] = { 
+                id: matchId, 
+                data: matchData,
+                storageKey: storageKey
+            };
+            
+            // Construire l'URL avec tous les paramètres nécessaires
+            const iframeUrl = `affichage_score.html?match=${matchId}&splitScreen=true&storageKey=${encodeURIComponent(storageKey)}&position=${position}&sport=petanque`;
+            
+            // Créer un gestionnaire d'événements pour détecter quand l'iframe est chargée
+            iframe.onload = function() {
+                console.log(`Iframe ${position} chargée avec succès`);
+                if (frameContainer) {
+                    frameContainer.classList.remove('loading');
+                }
+                
+                try {
+                    iframe.contentWindow.postMessage({
+                        type: 'updateMatchData',
+                        data: matchLiveData
+                    }, '*');
+                } catch (e) {
+                    console.warn(`Impossible d'envoyer un message à l'iframe ${position}:`, e);
+                }
+            };
+            
+            iframe.src = iframeUrl;
+            iframe.name = `petanqueSplitScreenFrame${position}`;
+            
+            console.log(`Match ${matchId} chargé dans l'iframe ${position} avec la clé de stockage ${storageKey}`);
+        }
+        
+        function openSelector() {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('selectorPanel').style.display = 'block';
+            
+            loadTournamentState();
+            
+            selectedMatches = [];
+            if (displayedMatches.left && displayedMatches.left.id) {
+                selectedMatches.push(displayedMatches.left.id);
+            }
+            if (displayedMatches.right && displayedMatches.right.id) {
+                selectedMatches.push(displayedMatches.right.id);
+            }
+            
+            populateMatchList();
+        }
+        
+        function closeSelector() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('selectorPanel').style.display = 'none';
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const match1Param = urlParams.get('match1');
+            const match2Param = urlParams.get('match2');
+            
+            tournamentState = loadTournamentState();
+            
+            document.getElementById('openSelector').addEventListener('click', openSelector);
+            document.getElementById('cancelSelection').addEventListener('click', closeSelector);
+            document.getElementById('applySelection').addEventListener('click', applyMatchSelection);
+            document.getElementById('overlay').addEventListener('click', closeSelector);
+            
+            if (match1Param && match2Param && tournamentState) {
+                selectedMatches = [match1Param, match2Param];
+                const match1 = tournamentState.matches[match1Param];
+                const match2 = tournamentState.matches[match2Param];
+                
+                if (match1 && match2) {
+                    updateMatchDisplay(1, match1Param, match1);
+                    updateMatchDisplay(2, match2Param, match2);
+                }
+            }
+            
+            window.addEventListener('storage', function(event) {
+                try {
+                    console.log("Pétanque split-screen: événement storage détecté:", event.key);
+                    
+                    if (event.key && (event.key.includes('badminton') || event.key.includes('badminton_'))) {
+                        console.log('Pétanque: Ignoré événement badminton', event.key);
+                        return;
+                    }
+                    
+                    if (event.key && event.key.startsWith(`${STORAGE_PREFIX}splitScreen_`)) {
+                        return;
+                    }
+                    
+                    // Pour les clés spécifiques au match (avec ID match explicite)
+                    if (event.key && event.newValue && 
+                        (event.key.startsWith(`${STORAGE_PREFIX}liveMatchData_match`) || 
+                         event.key.startsWith('liveMatchData_petanque_match') ||
+                         event.key.startsWith('liveMatchData_match'))) {
+                        
+                        // Extraire l'ID du match de la clé
+                        let matchId;
+                        if (event.key.startsWith(`${STORAGE_PREFIX}`)) {
+                            matchId = event.key.replace(`${STORAGE_PREFIX}liveMatchData_match`, '');
+                        } else if (event.key.startsWith('liveMatchData_petanque_match')) {
+                            matchId = event.key.replace('liveMatchData_petanque_match', '');
+                        } else {
+                            matchId = event.key.replace('liveMatchData_match', '');
+                        }
+                        
+                        // Valider que matchId est un ID valide
+                        if (!matchId || isNaN(parseInt(matchId))) {
+                            console.warn('ID de match invalide extrait:', matchId);
+                            return;
+                        }
+                        
+                        const newData = JSON.parse(event.newValue);
+                        
+                        // Vérifier si c'est un sport différent
+                        if (newData.sport && newData.sport !== 'petanque') {
+                            console.log(`Pétanque: Ignore données pour sport ${newData.sport}`);
+                            return;
+                        }
+                        
+                        // Mettre à jour UNIQUEMENT l'iframe correspondant à ce match
+                        if (displayedMatches.left && displayedMatches.left.id === matchId) {
+                            updateMatchInIframe('left', matchId, newData);
+                        } else if (displayedMatches.right && displayedMatches.right.id === matchId) {
+                            updateMatchInIframe('right', matchId, newData);
+                        } else {
+                            console.log(`Aucune iframe n'affiche le match ${matchId}, mise à jour ignorée`);
+                        }
+                    }
+                    
+                    // REMPLACER tout le bloc suivant par un traitement plus strict de liveMatchData
+                    if (event.key === 'liveMatchData' && event.newValue) {
+                        try {
+                            const liveData = JSON.parse(event.newValue);
+                            
+                            // Vérifier si c'est bien des données pétanque
+                            if (liveData.sport && liveData.sport !== 'petanque') {
+                                console.log('Pétanque: Ignoré données non-pétanque', liveData.sport);
+                                return;
+                            }
+                            
+                            // CRITIQUE: Vérifier si on a un ID de match
+                            if (!liveData.matchId) {
+                                console.warn('Données sans matchId ignorées');
+                                return;
+                            }
+                            
+                            // Mettre à jour UNIQUEMENT l'iframe correspondant à ce match
+                            if (displayedMatches.left && displayedMatches.left.id === liveData.matchId) {
+                                console.log(`Mise à jour iframe gauche avec données matchId=${liveData.matchId}, serveur=${liveData.server}`);
+                                updateMatchInIframe('left', liveData.matchId, liveData);
+                            } else if (displayedMatches.right && displayedMatches.right.id === liveData.matchId) {
+                                console.log(`Mise à jour iframe droite avec données matchId=${liveData.matchId}, serveur=${liveData.server}`);
+                                updateMatchInIframe('right', liveData.matchId, liveData);
+                            } else {
+                                console.log(`Données liveMatchData pour match ${liveData.matchId} non affiché, ignorées`);
+                            }
+                        } catch (e) {
+                            console.warn('Erreur lors du traitement des données liveMatchData:', e);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erreur lors de la mise à jour des données:', error);
+                }
+            });
+            
+            // Nouvelle fonction utilitaire pour mettre à jour les données d'un match dans une iframe
+            function updateMatchInIframe(position, matchId, newData) {
+                const side = position === 'left' ? 'match1' : 'match2';
+                const iframe = document.getElementById(`${side}Frame`);
+                const storageKey = displayedMatches[position].storageKey;
+                
+                // Obtenir les données actuelles
+                const currentData = JSON.parse(localStorage.getItem(storageKey) || '{}');
+                
+                // Vérification explicite pour le service
+                if (newData.server && newData.matchId === matchId) {
+                    currentData.server = newData.server;
+                    console.log(`Service mis à jour pour ${side} (match ${matchId}): ${newData.server}`);
+                }
+                
+                // Fusionner les données avec priorité aux nouvelles données
+                const updatedData = { ...currentData, ...newData };
+                localStorage.setItem(storageKey, JSON.stringify(updatedData));
+                
+                // Tenter d'envoyer les données mises à jour à l'iframe
+                try {
+                    if (iframe && iframe.contentWindow) {
+                        iframe.contentWindow.postMessage({
+                            type: 'updateMatchData',
+                            data: updatedData,
+                            timestamp: new Date().getTime()
+                        }, '*');
+                        console.log(`Message envoyé à l'iframe ${side} pour mise à jour`);
+                    }
+                } catch (e) {
+                    console.warn(`Impossible d'envoyer un message à l'iframe ${side}:`, e);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

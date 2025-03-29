@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Affichage Double Match - Volley F</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background-color: #1a237e;
+            color: white;
+            padding: 8px 16px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        
+        header h1 {
+            margin: 0;
+            font-size: 1.2em;
+        }
+        
+        .split-container {
+            display: flex;
+            flex: 1;
+            width: 100%;
+            border-top: 2px solid #3949ab;
+        }
+        
+        .match-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+            border-right: 2px solid #3949ab;
+        }
+        
+        .match-container:last-child {
+            border-right: none;
+        }
+        
+        .match-header {
+            padding: 8px;
+            background-color: #303f9f;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .match-content {
+            flex: 1;
+            position: relative;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .match-footer {
+            padding: 4px;
+            background-color: #303f9f;
+            color: white;
+            font-size: 0.9em;
+            text-align: center;
+        }
+        
+        /* Styles pour le sélecteur de matchs */
+        .selector-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 800px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            padding: 20px;
+            z-index: 1001;
+            display: none;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .selector-panel h2 {
+            text-align: center;
+            margin-top: 0;
+            color: #303f9f;
+        }
+        
+        .match-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .match-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .match-card:hover {
+            border-color: #3949ab;
+            background-color: #f5f5f5;
+        }
+        
+        .match-card.selected {
+            border-color: #3949ab;
+            background-color: #e8eaf6;
+        }
+        
+        .match-card h3 {
+            margin: 0 0 10px 0;
+            color: #303f9f;
+        }
+        
+        .match-card p {
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+        
+        .match-card .teams {
+            font-weight: bold;
+        }
+        
+        .selector-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .selector-actions button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .btn-apply {
+            background-color: #3949ab;
+            color: white;
+        }
+        
+        .btn-cancel {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        /* Bouton flottant pour ouvrir le sélecteur */
+        .floating-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #303f9f;
+            color: white;
+            border: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0; /* Commence invisible */
+            transition: opacity 0.3s ease;
+        }
+        
+        body:hover .floating-button {
+            opacity: 1; /* Devient visible au survol du corps */
+        }
+        
+        .floating-button:hover {
+            background-color: #3949ab;
+        }
+        
+        /* Overlay semi-transparent */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: none;
+        }
+        
+        /* Groupe de terrains */
+        .court-group {
+            padding: 5px 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            background-color: #e8eaf6;
+        }
+        
+        .court-group h3 {
+            margin-top: 10px;
+            color: #303f9f;
+        }
+        
+        /* Badge pour identifier les matchs en cours */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: 5px;
+        }
+        
+        .status-badge.active {
+            background-color: #4caf50;
+            color: white;
+        }
+        
+        .status-badge.finished {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .status-badge.upcoming {
+            background-color: #ff9800;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Volley Femmes - Matchs en cours</h1>
+        </header>
+        
+        <div class="split-container">
+            <div class="match-container" id="match1Container">
+                <div class="match-header" id="match1Header">Match 1</div>
+                <div class="match-content">
+                    <iframe src="about:blank" id="match1Frame" name="match1Frame"></iframe>
+                </div>
+                <div class="match-footer" id="match1Footer">Terrain 1</div>
+            </div>
+            
+            <div class="match-container" id="match2Container">
+                <div class="match-header" id="match2Header">Match 2</div>
+                <div class="match-content">
+                    <iframe src="about:blank" id="match2Frame" name="match2Frame"></iframe>
+                </div>
+                <div class="match-footer" id="match2Footer">Terrain 2</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bouton flottant pour ouvrir le sélecteur (masqué par défaut, visible au survol) -->
+    <button class="floating-button" id="openSelector">⚙️</button>
+    
+    <!-- Overlay semi-transparent -->
+    <div class="overlay" id="overlay"></div>
+    
+    <!-- Panneau de sélection des matchs -->
+    <div class="selector-panel" id="selectorPanel">
+        <h2>Sélection des matchs à afficher</h2>
+        
+        <div class="match-list" id="matchList">
+            <!-- Les matchs seront chargés dynamiquement ici -->
+        </div>
+        
+        <div class="selector-actions">
+            <button class="btn-cancel" id="cancelSelection">Annuler</button>
+            <button class="btn-apply" id="applySelection">Appliquer</button>
+        </div>
+    </div>
+    
+    <script>
+        // Variables globales
+        let tournamentState = null;
+        let selectedMatches = [];
+        let displayedMatches = {
+            left: null,
+            right: null
+        };
+        
+        // Générer des identifiants uniques pour chaque côté de l'écran
+        const uniqueIds = {
+            match1: `volley-f_match1_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            match2: `volley-f_match2_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+        };
+        
+        // Préfixe pour stocker les données dans le localStorage
+        const STORAGE_PREFIX = 'volley-f_';
+        
+        // Paires de matchs simultanés dans le tournoi de volley-f
+        const simultaneousMatches = [
+            // Quarts de finale
+            ['2', '3'],
+            ['4', '5'],
+            // Demi-finales principales
+            ['6', '7'],
+            // Matchs de classement
+            ['8', '9'],
+            // Finale et petite finale
+            ['10', '11']
+        ];
+        
+        // Conversion des types de match en libellés plus lisibles
+        function getMatchTypeDisplay(type) {
+            const matchTypes = {
+                'barrage': 'Barrage',
+                'quarterfinal': 'Quart de finale',
+                'semifinal': 'Demi-finale',
+                'smallfinal': 'Petite Finale',
+                'final': 'Finale',
+                'classification_semifinal': 'Demi-finale de classement',
+                'classification_final': 'Place de 5ème',
+                'classification_smallfinal': 'Place de 7ème'
+            };
+            return matchTypes[type] || type;
+        }
+        
+        // Fonction pour charger l'état du tournoi
+        function loadTournamentState() {
+            // Essayer d'abord avec le nouveau format (préfixé)
+            let savedState = localStorage.getItem(`${STORAGE_PREFIX}TournamentState`);
+            
+            // Si pas trouvé, essayer avec l'ancien format (non préfixé) pour compatibilité
+            if (!savedState) {
+                savedState = localStorage.getItem('volleyFTournamentState');
+                console.log('Chargement depuis l\'ancienne clé volleyFTournamentState');
+            }
+            
+            if (savedState) {
+                try {
+                    tournamentState = JSON.parse(savedState);
+                    console.log('État du tournoi chargé avec succès:', tournamentState);
+                    return tournamentState;
+                } catch (error) {
+                    console.error('Erreur lors du chargement de l\'état du tournoi:', error);
+                }
+            }
+            
+            console.warn('Aucun état du tournoi trouvé dans localStorage');
+            return null;
+        }
+        
+        // Fonction pour générer la liste des matchs disponibles
+        function populateMatchList() {
+            const matchList = document.getElementById('matchList');
+            matchList.innerHTML = '';
+            
+            if (!tournamentState || !tournamentState.matches) {
+                matchList.innerHTML = '<p>Aucun match disponible. Veuillez revenir à la page principale.</p>';
+                return;
+            }
+            
+            // Organiser les matchs par paires simultanées
+            simultaneousMatches.forEach(pair => {
+                const match1 = tournamentState.matches[pair[0]];
+                const match2 = tournamentState.matches[pair[1]];
+                
+                if (match1 && match2) {
+                    const pairContainer = document.createElement('div');
+                    pairContainer.className = 'court-group';
+                    pairContainer.innerHTML = `
+                        <h3>Matchs simultanés</h3>
+                    `;
+                    
+                    // Créer la carte pour le premier match
+                    const card1 = createMatchCard(pair[0], match1);
+                    
+                    // Créer la carte pour le deuxième match
+                    const card2 = createMatchCard(pair[1], match2);
+                    
+                    pairContainer.appendChild(card1);
+                    pairContainer.appendChild(card2);
+                    
+                    matchList.appendChild(pairContainer);
+                }
+            });
+            
+            // Fonction pour créer une carte de match
+            function createMatchCard(matchId, matchData) {
+                const card = document.createElement('div');
+                card.className = 'match-card';
+                card.dataset.matchId = matchId;
+                
+                // Vérifier si ce match est déjà affiché
+                if ((displayedMatches.left && displayedMatches.left.id === matchId) || 
+                    (displayedMatches.right && displayedMatches.right.id === matchId)) {
+                    card.classList.add('selected');
+                }
+                
+                // Déterminer le statut du match
+                let statusText = 'À venir';
+                let statusClass = 'upcoming';
+                
+                if (matchData.status === 'terminé') {
+                    statusText = 'Terminé';
+                    statusClass = 'finished';
+                } else if (matchData.status === 'en_cours') {
+                    statusText = 'En cours';
+                    statusClass = 'active';
+                }
+                
+                const team1 = matchData.team1 || 'Équipe 1';
+                const team2 = matchData.team2 || 'Équipe 2';
+                const matchType = getMatchTypeDisplay(matchData.matchType);
+                
+                card.innerHTML = `
+                    <h3>${matchType} <span class="status-badge ${statusClass}">${statusText}</span></h3>
+                    <p class="teams">${team1} vs ${team2}</p>
+                    <p>Match #${matchId}</p>
+                `;
+                
+                // Ajouter un écouteur d'événements pour la sélection
+                card.addEventListener('click', function() {
+                    this.classList.toggle('selected');
+                    
+                    const matchId = this.dataset.matchId;
+                    const index = selectedMatches.indexOf(matchId);
+                    
+                    if (index === -1) {
+                        // Limiter à deux sélections maximum
+                        if (selectedMatches.length < 2) {
+                            selectedMatches.push(matchId);
+                        } else {
+                            alert('Vous ne pouvez sélectionner que deux matchs maximum.');
+                            this.classList.remove('selected');
+                        }
+                    } else {
+                        selectedMatches.splice(index, 1);
+                    }
+                    
+                    console.log('Matchs sélectionnés:', selectedMatches);
+                });
+                
+                return card;
+            }
+        }
+        
+        // Fonction pour appliquer la sélection
+        function applyMatchSelection() {
+            if (selectedMatches.length !== 2) {
+                alert('Veuillez sélectionner exactement deux matchs.');
+                return;
+            }
+            
+            // Récupérer les données des matchs sélectionnés
+            const match1 = tournamentState.matches[selectedMatches[0]];
+            const match2 = tournamentState.matches[selectedMatches[1]];
+            
+            if (!match1 || !match2) {
+                alert('Erreur: Données de match non disponibles.');
+                return;
+            }
+            
+            // Mettre à jour les iframes et les en-têtes
+            updateMatchDisplay(1, selectedMatches[0], match1);
+            updateMatchDisplay(2, selectedMatches[1], match2);
+            
+            // Fermer le sélecteur
+            closeSelector();
+        }
+        
+        // Fonction pour mettre à jour l'affichage d'un match
+        function updateMatchDisplay(position, matchId, matchData) {
+            const header = document.getElementById(`match${position}Header`);
+            const footer = document.getElementById(`match${position}Footer`);
+            const iframe = document.getElementById(`match${position}Frame`);
+            const frameContainer = document.getElementById(`match${position}Container`);
+            
+            if (frameContainer) {
+                frameContainer.classList.add('loading');
+            }
+            
+            // Mettre à jour l'en-tête avec les noms d'équipes
+            const team1 = matchData.team1 || 'Équipe 1';
+            const team2 = matchData.team2 || 'Équipe 2';
+            header.textContent = `${team1} vs ${team2}`;
+            
+            // Mettre à jour le pied de page avec le type de match
+            const matchType = getMatchTypeDisplay(matchData.matchType);
+            footer.textContent = `${matchType} - Match #${matchId}`;
+            
+            // Créer un identifiant unique pour ce côté/position de l'écran
+            const storageKey = `${STORAGE_PREFIX}splitScreen_${uniqueIds['match' + position]}_match${matchId}`;
+            
+            // Stocker les données du match dans le localStorage avec la clé unique
+            const matchLiveData = {
+                team1: matchData.team1,
+                team2: matchData.team2,
+                matchType: getMatchTypeDisplay(matchData.matchType),
+                matchId: matchId,
+                score1: matchData.score1 || 0,
+                score2: matchData.score2 || 0,
+                chrono: '00:00',
+                status: matchData.status || 'en_cours',
+                server: 'A',  // Valeur par défaut
+                sport: 'volley-f'  // Identifiant de sport
+            };
+            
+            localStorage.setItem(storageKey, JSON.stringify(matchLiveData));
+            
+            // Mettre à jour les variables de suivi des matches affichés
+            displayedMatches[position === 1 ? 'left' : 'right'] = { 
+                id: matchId, 
+                data: matchData,
+                storageKey: storageKey
+            };
+            
+            // Construire l'URL avec tous les paramètres nécessaires
+            const iframeUrl = `affichage_score.html?match=${matchId}&splitScreen=true&storageKey=${encodeURIComponent(storageKey)}&position=${position}`;
+            
+            // Créer un gestionnaire d'événements pour détecter quand l'iframe est chargée
+            iframe.onload = function() {
+                console.log(`Iframe ${position} chargée avec succès`);
+                if (frameContainer) {
+                    frameContainer.classList.remove('loading');
+                }
+                
+                // Tenter d'envoyer un message à l'iframe pour s'assurer qu'elle a les bonnes données
+                try {
+                    iframe.contentWindow.postMessage({
+                        type: 'updateMatchData',
+                        data: matchLiveData
+                    }, '*');
+                } catch (e) {
+                    console.warn(`Impossible d'envoyer un message à l'iframe ${position}:`, e);
+                }
+            };
+            
+            // Définir la source de l'iframe
+            iframe.src = iframeUrl;
+            
+            // S'assurer que chaque iframe a un nom unique
+            iframe.name = `splitScreenFrame${position}`;
+            
+            console.log(`Match ${matchId} chargé dans l'iframe ${position} avec la clé de stockage ${storageKey}`);
+        }
+        
+        // Fonctions pour gérer l'ouverture/fermeture du sélecteur
+        function openSelector() {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('selectorPanel').style.display = 'block';
+            
+            // Recharger l'état du tournoi à chaque ouverture
+            loadTournamentState();
+            
+            // Réinitialiser la sélection basée sur ce qui est actuellement affiché
+            selectedMatches = [];
+            if (displayedMatches.left && displayedMatches.left.id) {
+                selectedMatches.push(displayedMatches.left.id);
+            }
+            if (displayedMatches.right && displayedMatches.right.id) {
+                selectedMatches.push(displayedMatches.right.id);
+            }
+            
+            // Remplir la liste des matchs
+            populateMatchList();
+        }
+        
+        function closeSelector() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('selectorPanel').style.display = 'none';
+        }
+        
+        // Initialisation au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Charger les matchs depuis l'URL si disponibles
+            const urlParams = new URLSearchParams(window.location.search);
+            const match1Param = urlParams.get('match1');
+            const match2Param = urlParams.get('match2');
+            
+            // Charger l'état du tournoi
+            tournamentState = loadTournamentState();
+            
+            // Initialiser les écouteurs d'événements
+            document.getElementById('openSelector').addEventListener('click', openSelector);
+            document.getElementById('cancelSelection').addEventListener('click', closeSelector);
+            document.getElementById('applySelection').addEventListener('click', applyMatchSelection);
+            document.getElementById('overlay').addEventListener('click', closeSelector);
+            
+            // Si des matchs sont spécifiés dans l'URL, les afficher
+            if (match1Param && match2Param && tournamentState) {
+                selectedMatches = [match1Param, match2Param];
+                const match1 = tournamentState.matches[match1Param];
+                const match2 = tournamentState.matches[match2Param];
+                
+                if (match1 && match2) {
+                    updateMatchDisplay(1, match1Param, match1);
+                    updateMatchDisplay(2, match2Param, match2);
+                }
+            }
+            
+            // Écouter les mises à jour de matchs depuis les pages de marquage
+            window.addEventListener('storage', function(event) {
+                try {
+                    console.log("Volley F split-screen: événement storage détecté:", event.key);
+                    
+                    // IMPORTANT: Ignorer TOUS les événements liés à la pétanque
+                    if (event.key && (
+                        event.key.includes('petanque') || 
+                        event.key.includes('petanque_') ||
+                        event.key.includes('cochonnet')
+                    )) {
+                        console.log('Volley F: Ignoré événement pétanque', event.key);
+                        return;
+                    }
+                    
+                    // Ignorer les événements provenant de nos propres clés
+                    if (event.key && event.key.startsWith(`${STORAGE_PREFIX}splitScreen_`)) {
+                        console.log('Volley F: Ignoré événement de notre propre split-screen');
+                        return;
+                    }
+                    
+                    // Vérification: l'événement doit avoir une valeur
+                    if (!event.newValue) {
+                        console.log('Volley F: Ignoré événement sans données');
+                        return;
+                    }
+                    
+                    // Essayer de parser les données pour vérifier le sport
+                    try {
+                        const data = JSON.parse(event.newValue);
+                        
+                        // Vérifier explicitement si c'est du volley f (filtre par propriété sport)
+                        if (data.sport && data.sport !== 'volley-f') {
+                            console.log(`Volley F: Ignoré données du sport ${data.sport}`);
+                            return;
+                        }
+                        
+                        // Pour les données sans propriété sport, chercher d'autres indices
+                        if (!data.sport) {
+                            // Vérifier des propriétés spécifiques à la pétanque
+                            if (data.cochonnet || event.key.includes('cochonnet')) {
+                                console.log('Volley F: Ignoré données pétanque (détection par propriétés)');
+                                return;
+                            }
+                        }
+                    } catch (error) {
+                        console.log('Volley F: Erreur lors du parsing des données', error);
+                        return; // Ignorer en cas d'erreur de parsing
+                    }
+                    
+                    // Maintenant, traiter spécifiquement les événements volley F
+                    // Préfixé ou générique (sans préfixe de sport)
+                    if (event.key.startsWith(`${STORAGE_PREFIX}liveMatchData_match`) || 
+                        event.key.startsWith('liveMatchData_match')) {
+                        
+                        // Extraire l'identifiant du match
+                        let matchId;
+                        if (event.key.startsWith(`${STORAGE_PREFIX}`)) {
+                            matchId = event.key.replace(`${STORAGE_PREFIX}liveMatchData_match`, '');
+                        } else {
+                            matchId = event.key.replace('liveMatchData_match', '');
+                        }
+                        
+                        const newData = JSON.parse(event.newValue);
+                        console.log(`Mise à jour volley F pour match ${matchId}:`, newData);
+                        
+                        // Mettre à jour l'iframe correspondante si le match est affiché
+                        if (displayedMatches.left && displayedMatches.left.id === matchId) {
+                            const storageKey = displayedMatches.left.storageKey;
+                            const currentData = JSON.parse(localStorage.getItem(storageKey) || '{}');
+                            const updatedData = { ...currentData, ...newData };
+                            localStorage.setItem(storageKey, JSON.stringify(updatedData));
+                            console.log(`Mise à jour des données pour l'iframe de gauche (match ${matchId})`);
+                            
+                            // Envoyer également un message direct à l'iframe
+                            try {
+                                const leftFrame = document.getElementById('match1Frame');
+                                if (leftFrame && leftFrame.contentWindow) {
+                                    leftFrame.contentWindow.postMessage({
+                                        type: 'updateMatchData',
+                                        data: updatedData
+                                    }, '*');
+                                }
+                            } catch (e) {
+                                console.warn("Impossible d'envoyer un message à l'iframe gauche:", e);
+                            }
+                        }
+                        
+                        if (displayedMatches.right && displayedMatches.right.id === matchId) {
+                            const storageKey = displayedMatches.right.storageKey;
+                            const currentData = JSON.parse(localStorage.getItem(storageKey) || '{}');
+                            const updatedData = { ...currentData, ...newData };
+                            localStorage.setItem(storageKey, JSON.stringify(updatedData));
+                            console.log(`Mise à jour des données pour l'iframe de droite (match ${matchId})`);
+                            
+                            // Envoyer également un message direct à l'iframe
+                            try {
+                                const rightFrame = document.getElementById('match2Frame');
+                                if (rightFrame && rightFrame.contentWindow) {
+                                    rightFrame.contentWindow.postMessage({
+                                        type: 'updateMatchData',
+                                        data: updatedData
+                                    }, '*');
+                                }
+                            } catch (e) {
+                                console.warn("Impossible d'envoyer un message à l'iframe droite:", e);
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Volley F: Erreur lors de la mise à jour des données:', error);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
