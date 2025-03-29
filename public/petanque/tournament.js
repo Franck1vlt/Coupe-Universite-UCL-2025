@@ -216,13 +216,13 @@ let tournamentState = {
 
 // Fonction pour sauvegarder l'état du tournoi
 function saveTournamentState() {
-    localStorage.setItem('petanqueTournamentState', JSON.stringify(tournamentState));
-    localStorage.setItem('lastUpdate', new Date().toISOString());
+    localStorage.setItem('petanque_TournamentState', JSON.stringify(tournamentState));
+    localStorage.setItem('petanque_lastUpdate', new Date().toISOString());
 }
 
 // Fonction pour charger l'état du tournoi
 function loadTournamentState() {
-    const savedState = localStorage.getItem('petanqueTournamentState');
+    const savedState = localStorage.getItem('petanque_TournamentState');
     if (savedState) {
         try {
             const newState = JSON.parse(savedState);
@@ -1081,201 +1081,201 @@ function updateRankingDisplay() {
 
 // Fonction pour réinitialiser le tournoi
 function resetTournament() {
-    if (!confirm('Voulez-vous vraiment réinitialiser le tournoi ? Toutes les données seront effacées.')) {
-      return;
+    if (!confirm("Voulez-vous vraiment réinitialiser le tournoi? Tous les scores et résultats seront perdus.")) {
+        return;
     }
     
-    console.log("Réinitialisation du tournoi de pétanque");
+    console.log("Réinitialisation du tournoi de pétanque...");
     
-    // Supprimer les données locales
-    // Supprimer les données locales
-    localStorage.removeItem('petanqueTournamentState');
-    localStorage.removeItem('petanquePoints');
-    localStorage.removeItem('lastUpdate');
-    
-    // Réinitialiser l'état en mémoire à l'état initial
-    tournamentState = {
-      matches: {
-        // Barrages
-        1: {
-          matchType: 'barrage',
-          team1: 'ESSLIL',
-          team2: 'USCHOOL',
-          score1: null,
-          score2: null,
-          status: 'à_venir',
-          winner: null,
-          loser: null,
-          nextMatchWin: 3,
-          nextMatchLose: null,
-          time: '9:30'
-        },
-        2: {
-          matchType: 'barrage',
-          team1: 'LiDD',
-          team2: 'FLD',
-          score1: null,
-          score2: null,
-          status: 'à_venir',
-          winner: null,
-          loser: null,
-          nextMatchWin: 4,
-          nextMatchLose: null,
-          time: '9:30'
-        },
-        15: {
-          matchType: 'barrage',
-          team1: 'ESPAS-ESTICE',
-          team2: 'ESPOL',
-          score1: null,
-          score2: null,
-          status: 'à_venir',
-          winner: null,
-          loser: null,
-          nextMatchWin: 5,
-          nextMatchLose: null,
-          time: '10:15'
-        },
-        16: {
-          matchType: 'barrage',
-          team1: 'PIKTURA',
-          team2: 'FLSH',
-          score1: null,
-          score2: null,
-          status: 'à_venir',
-          winner: null,
-          loser: null,
-          nextMatchWin: 6,
-          nextMatchLose: null,
-          time: '10:15'
-        },
-        // Quarts de finale
-        3: {
-          matchType: 'quarterfinal',
-          team1: 'FMMS',
-          team2: null,
-          score1: null,
-          score2: null,
-          status: 'à_venir',
-          winner: null,
-          loser: null,
-          nextMatchWin: 9,
-          nextMatchLose: null,
-          time: '11:15'
-        },
-        4: {
-          matchType: 'quarterfinal', 
-          team1: 'FGES',
-          team2: null,
-          score1: null,
-          score2: null,
-          status: 'à_venir',
-          winner: null,
-          loser: null,
-          nextMatchWin: 9,
-          nextMatchLose: null,
-          time: '11:30'
-        },
-        5: {
-          matchType: 'quarterfinal',
-          team1: null,
-          team2: 'IKPO',
-          score1: null,
-          score2: null,
-          status: 'à_venir',
-          winner: null,
-          loser: null,
-          nextMatchWin: 10,
-          nextMatchLose: null,
-          time: '12:15'
-        },
-        6: {
-          matchType: 'quarterfinal',
-          team1: 'ICAM',
-          team2: null,
-          score1: null,
-          score2: null,
-          status: 'à_venir',
-          winner: null,
-          loser: null,
-          nextMatchWin: 10,
-          nextMatchLose: null,
-          time: '12:30'
-        },
-        // Demi-finales
-        9: {
-          matchType: 'semifinal',
-          team1: null,
-          team2: null,
-          score1: null,
-          score2: null,
-          status: 'à_venir',
-          winner: null,
-          loser: null,
-          nextMatchWin: 14,
-          nextMatchLose: 13,
-          time: '13:45'
-        },
-        10: {
-          matchType: 'semifinal',
-          team1: null,
-          team2: null,
-          score1: null,
-          score2: null,
-          status: 'à_venir',
-          winner: null,
-          loser: null,
-          nextMatchWin: 14,
-          nextMatchLose: 13,
-          time: '14:15'
-        },
-        // Matchs finaux
-        13: {
-          matchType: 'smallfinal',
-          team1: null,
-          team2: null,
-          score1: null,
-          score2: null,
-          status: 'à_venir',
-          winner: null,
-          loser: null,
-          time: '15:15'
-        },
-        14: {
-          matchType: 'final',
-          team1: null,
-          team2: null,
-          score1: null,
-          score2: null,
-          status: 'à_venir',
-          winner: null,
-          loser: null,
-          time: '16:00'
+    // Récupérer toutes les clés localStorage liées à la pétanque
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (
+            key.startsWith('petanque_') || 
+            key.includes('petanqueTournamentState') || 
+            key.includes('cochonnet') ||
+            key.includes('petanqueMatch')
+        )) {
+            keysToRemove.push(key);
         }
-      }
-    };
-  
-  // Notifier le serveur si disponible
-  if (socket && socketConnected) {
-    socket.emit('reset_tournament', {
-      sport: 'petanque',
-      state: tournamentState,
-      timestamp: new Date().toISOString()
+    }
+    
+    // Supprimer toutes les clés identifiées
+    keysToRemove.forEach(key => {
+        console.log(`Suppression de la clé: ${key}`);
+        localStorage.removeItem(key);
     });
-    console.log('Notification de réinitialisation envoyée au serveur');
-  }
-  
-  // Mettre à jour l'UI
-  updateUI();
-  
-  // Revenir à l'onglet de qualification
-  const phaseSelect = document.getElementById('phaseSelect');
-  if (phaseSelect) {
-    phaseSelect.value = 'qualification-phase';
-    phaseSelect.dispatchEvent(new Event('change'));
-  }
-  
-  alert('Tournoi réinitialisé avec succès');
+    
+    // Réinitialiser l'état du tournoi avec l'état initial
+    tournamentState = {
+        matches: {
+            // Réinitialiser tous les matchs avec leur état initial
+            1: {
+                matchType: 'barrage',
+                team1: 'ESSLIL',
+                team2: 'USCHOOL',
+                score1: null,
+                score2: null,
+                status: 'à_venir',
+                winner: null,
+                loser: null,
+                nextMatchWin: 3,
+                nextMatchLose: null,
+                time: '9:30'
+            },
+            2: {
+                matchType: 'barrage',
+                team1: 'LiDD',
+                team2: 'FLD',
+                score1: null,
+                score2: null,
+                status: 'à_venir',
+                winner: null,
+                loser: null,
+                nextMatchWin: 4,
+                nextMatchLose: null,
+                time: '9:30'
+            },
+            15: {
+                matchType: 'barrage',
+                team1: 'ESPAS-ESTICE',
+                team2: 'ESPOL',
+                score1: null,
+                score2: null,
+                status: 'à_venir',
+                winner: null,
+                loser: null,
+                nextMatchWin: 5,
+                nextMatchLose: null,
+                time: '10:15'
+            },
+            16: {
+                matchType: 'barrage',
+                team1: 'PIKTURA',
+                team2: 'FLSH',
+                score1: null,
+                score2: null,
+                status: 'à_venir',
+                winner: null,
+                loser: null,
+                nextMatchWin: 6,
+                nextMatchLose: null,
+                time: '10:15'
+            },
+            3: {
+                matchType: 'quarterfinal',
+                team1: 'FMMS',
+                team2: null,
+                score1: null,
+                score2: null,
+                status: 'à_venir',
+                winner: null,
+                loser: null,
+                nextMatchWin: 9,
+                nextMatchLose: null,
+                time: '11:15'
+            },
+            4: {
+                matchType: 'quarterfinal',
+                team1: 'FGES',
+                team2: null,
+                score1: null,
+                score2: null,
+                status: 'à_venir',
+                winner: null,
+                loser: null,
+                nextMatchWin: 9,
+                nextMatchLose: null,
+                time: '11:30'
+            },
+            5: {
+                matchType: 'quarterfinal',
+                team1: null,
+                team2: 'IKPO',
+                score1: null,
+                score2: null,
+                status: 'à_venir',
+                winner: null,
+                loser: null,
+                nextMatchWin: 10,
+                nextMatchLose: null,
+                time: '12:15'
+            },
+            6: {
+                matchType: 'quarterfinal',
+                team1: 'ICAM',
+                team2: null,
+                score1: null,
+                score2: null,
+                status: 'à_venir',
+                winner: null,
+                loser: null,
+                nextMatchWin: 10,
+                nextMatchLose: null,
+                time: '12:30'
+            },
+            9: {
+                matchType: 'semifinal',
+                team1: null,
+                team2: null,
+                score1: null,
+                score2: null,
+                status: 'à_venir',
+                winner: null,
+                loser: null,
+                nextMatchWin: 14,
+                nextMatchLose: 13,
+                time: '13:45'
+            },
+            10: {
+                matchType: 'semifinal',
+                team1: null,
+                team2: null,
+                score1: null,
+                score2: null,
+                status: 'à_venir',
+                winner: null,
+                loser: null,
+                nextMatchWin: 14,
+                nextMatchLose: 13,
+                time: '14:15'
+            },
+            13: {
+                matchType: 'smallfinal',
+                team1: null,
+                team2: null,
+                score1: null,
+                score2: null,
+                status: 'à_venir',
+                winner: null,
+                loser: null,
+                time: '15:15'
+            },
+            14: {
+                matchType: 'final',
+                team1: null,
+                team2: null,
+                score1: null,
+                score2: null,
+                status: 'à_venir',
+                winner: null,
+                loser: null,
+                time: '16:00'
+            }
+        }
+    };
+    
+    // Mettre à jour l'interface utilisateur
+    updateUI();
+    
+    // Notifier l'utilisateur
+    alert("Le tournoi a été réinitialisé avec succès.");
+    
+    // Actualiser la page après un court délai
+    setTimeout(() => {
+        window.location.reload();
+    }, 500);
 }
 
 // Exposer les fonctions globales
@@ -1510,7 +1510,7 @@ function addMatchClickHandlers() {
   });
 }
 
-// Fonction de navigation vers la page de marquage des scores
+// Fonction pour naviguer vers la page de marquage des scores
 function navigateToScoring(matchId) {
   try {
     const matchData = tournamentState.matches[matchId];
@@ -1527,6 +1527,7 @@ function navigateToScoring(matchId) {
     params.append('matchType', matchData.matchType);
     params.append('score1', matchData.score1 !== null ? matchData.score1 : '');
     params.append('score2', matchData.score2 !== null ? matchData.score2 : '');
+    params.append('sport', 'petanque');  // Ajouter explicitement le sport
     
     // Rediriger vers la page de marquage
     window.location.href = `marquage.html?${params.toString()}`;

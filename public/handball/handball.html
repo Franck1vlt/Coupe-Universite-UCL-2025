@@ -8,6 +8,8 @@
   <!-- Important: Charger Socket.io avant les scripts qui l'utilisent -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="handball-sync.js"></script>
+  <script src="handball-sync-init.js"></script>
+  <script src="../tournament.js"></script>
   <style>
     .correction-button {
       position: fixed;
@@ -367,7 +369,7 @@
       <button class="reset-button" id="resetTournamentBtn" onclick="resetTournament()" style="background-color: #e74c3c; color: white; margin-right: 10px;">
         <span style="font-weight: bold;">Réinitialiser le tournoi</span>
       </button>
-      <button onclick="simulateTournament()">Simuler la compétition</button>
+      <!--<button onclick="simulateTournament()">Simuler la compétition</button>-->
       <button class="back-button" onclick="window.location.href='../index.html'">Retour</button>
     </div>
   </div>

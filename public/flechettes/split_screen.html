@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Affichage Double Match - Badminton</title>
+    <title>Affichage Double Match - Fléchettes</title>
     <style>
         body {
             margin: 0;
@@ -21,7 +21,7 @@
         }
         
         header {
-            background-color: #1a237e;
+            background-color: #1b5e20;
             color: white;
             padding: 8px 16px;
             text-align: center;
@@ -35,28 +35,60 @@
         }
         
         .split-container {
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
             flex: 1;
             width: 100%;
-            border-top: 2px solid #3949ab;
+            height: calc(100vh - 40px); /* Ajustement pour l'en-tête */
         }
         
         .match-container {
-            flex: 1;
             display: flex;
             flex-direction: column;
-            height: 100%;
-            position: relative;
-            border-right: 2px solid #3949ab;
+            border: 2px solid #388e3c;
+            overflow: hidden;
         }
         
-        .match-container:last-child {
-            border-right: none;
+        #match1Container {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        #match2Container {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        #match3Container {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        #match4Container {
+            grid-column: 2;
+            grid-row: 2;
+        }
+
+        /* Mode 2 écrans */
+        .two-screens #match1Container {
+            grid-column: 1;
+            grid-row: 1 / span 2;
+        }
+
+        .two-screens #match2Container {
+            grid-column: 2;
+            grid-row: 1 / span 2;
+        }
+
+        .two-screens #match3Container,
+        .two-screens #match4Container {
+            display: none;
         }
         
         .match-header {
             padding: 8px;
-            background-color: #303f9f;
+            background-color: #388e3c;
             color: white;
             font-weight: bold;
             text-align: center;
@@ -65,23 +97,25 @@
         .match-content {
             flex: 1;
             position: relative;
+            overflow: hidden;
+            height: 47vh;
         }
         
         iframe {
             width: 100%;
             height: 100%;
             border: none;
+            display: block;
         }
         
         .match-footer {
             padding: 4px;
-            background-color: #303f9f;
+            background-color: #388e3c;
             color: white;
             font-size: 0.9em;
             text-align: center;
         }
         
-        /* Styles pour le sélecteur de matchs */
         .selector-panel {
             position: fixed;
             top: 50%;
@@ -102,7 +136,7 @@
         .selector-panel h2 {
             text-align: center;
             margin-top: 0;
-            color: #303f9f;
+            color: #2e7d32;
         }
         
         .match-list {
@@ -121,18 +155,18 @@
         }
         
         .match-card:hover {
-            border-color: #3949ab;
+            border-color: #43a047;
             background-color: #f5f5f5;
         }
         
         .match-card.selected {
-            border-color: #3949ab;
-            background-color: #e8eaf6;
+            border-color: #43a047;
+            background-color: #e8f5e9;
         }
         
         .match-card h3 {
             margin: 0 0 10px 0;
-            color: #303f9f;
+            color: #2e7d32;
         }
         
         .match-card p {
@@ -160,7 +194,7 @@
         }
         
         .btn-apply {
-            background-color: #3949ab;
+            background-color: #43a047;
             color: white;
         }
         
@@ -169,7 +203,6 @@
             color: #333;
         }
         
-        /* Bouton flottant pour ouvrir le sélecteur */
         .floating-button {
             position: fixed;
             bottom: 20px;
@@ -177,7 +210,7 @@
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background-color: #303f9f;
+            background-color: #2e7d32;
             color: white;
             border: none;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
@@ -187,19 +220,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            opacity: 0; /* Commence invisible */
+            opacity: 0;
             transition: opacity 0.3s ease;
         }
         
         body:hover .floating-button {
-            opacity: 1; /* Devient visible au survol du corps */
+            opacity: 1;
         }
         
         .floating-button:hover {
-            background-color: #3949ab;
+            background-color: #43a047;
         }
         
-        /* Overlay semi-transparent */
         .overlay {
             position: fixed;
             top: 0;
@@ -211,20 +243,18 @@
             display: none;
         }
         
-        /* Groupe de terrains */
         .court-group {
             padding: 5px 15px;
             margin-bottom: 15px;
             border-radius: 4px;
-            background-color: #e8eaf6;
+            background-color: #e8f5e9;
         }
         
         .court-group h3 {
             margin-top: 10px;
-            color: #303f9f;
+            color: #2e7d32;
         }
         
-        /* Badge pour identifier les matchs en cours */
         .status-badge {
             display: inline-block;
             padding: 3px 8px;
@@ -252,7 +282,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Badminton - Matchs en cours</h1>
+            <h1>Fléchettes - Matchs en cours</h1>
         </header>
         
         <div class="split-container">
@@ -261,7 +291,7 @@
                 <div class="match-content">
                     <iframe src="about:blank" id="match1Frame" name="match1Frame"></iframe>
                 </div>
-                <div class="match-footer" id="match1Footer">Terrain 1</div>
+                <div class="match-footer" id="match1Footer"></div>
             </div>
             
             <div class="match-container" id="match2Container">
@@ -269,7 +299,23 @@
                 <div class="match-content">
                     <iframe src="about:blank" id="match2Frame" name="match2Frame"></iframe>
                 </div>
-                <div class="match-footer" id="match2Footer">Terrain 2</div>
+                <div class="match-footer" id="match2Footer"></div>
+            </div>
+
+            <div class="match-container" id="match3Container">
+                <div class="match-header" id="match3Header">Match 3</div>
+                <div class="match-content">
+                    <iframe src="about:blank" id="match3Frame" name="match3Frame"></iframe>
+                </div>
+                <div class="match-footer" id="match3Footer"></div>
+            </div>
+
+            <div class="match-container" id="match4Container">
+                <div class="match-header" id="match4Header">Match 4</div>
+                <div class="match-content">
+                    <iframe src="about:blank" id="match4Frame" name="match4Frame"></iframe>
+                </div>
+                <div class="match-footer" id="match4Footer"></div>
             </div>
         </div>
     </div>
@@ -305,28 +351,25 @@
         
         // Générer des identifiants uniques pour chaque côté de l'écran
         const uniqueIds = {
-            match1: `badminton_match1_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-            match2: `badminton_match2_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+            match1: `flechettes_match1_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            match2: `flechettes_match2_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            match3: `flechettes_match3_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            match4: `flechettes_match4_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
         };
         
         // Préfixe pour stocker les données dans le localStorage
-        const STORAGE_PREFIX = 'badminton_';
+        const STORAGE_PREFIX = 'flechettes_';
         
-        // Paires de matchs simultanés dans le tournoi de badminton
+        // Paires de matchs simultanés dans le tournoi de flechettes
         const simultaneousMatches = [
-            // Matchs de barrage
-            ['1', '2'],
-            // Quarts de finale
-            ['3', '4'],
-            ['5', '6'],
-            // Demi-finales principales
-            ['9', '10'],
-            // Demi-finales de classement
-            ['7', '8'],
-            // Matchs de classement
-            ['11', '12'],
-            // Finale et petite finale
-            ['13', '14']
+            [1, 2, 3, 4],
+            [5, 6, 7, 8],
+            [9, 10, 11, 12],
+            [13, 14, 15, 16],
+            [17, 18],
+            [19, 20],
+            [21, 23],
+            [22, 24]
         ];
         
         // Conversion des types de match en libellés plus lisibles
@@ -351,8 +394,8 @@
             
             // Si pas trouvé, essayer avec l'ancien format (non préfixé) pour compatibilité
             if (!savedState) {
-                savedState = localStorage.getItem('badmintonTournamentState');
-                console.log('Chargement depuis l\'ancienne clé badmintonTournamentState');
+                savedState = localStorage.getItem('flechettesTournamentState');
+                console.log('Chargement depuis l\'ancienne clé flechettesournamentState');
             }
             
             if (savedState) {
@@ -379,31 +422,62 @@
                 return;
             }
             
-            // Organiser les matchs par paires simultanées
-            simultaneousMatches.forEach(pair => {
-                const match1 = tournamentState.matches[pair[0]];
-                const match2 = tournamentState.matches[pair[1]];
+            // Organiser les matchs par groupes définis dans simultaneousMatches
+            // Récupérer la liste des matchs simultanés depuis la page principale, ou utiliser la définition locale
+            let matchGroups = window.simultaneousMatches || [
+                [1, 2, 3, 4],     // 4 matchs simultanés
+                [5, 6, 7, 8],    // 4 matchs simultanés
+                [9, 10, 11, 12],   // 4 matchs simultanés
+                [13, 14, 15, 16],         // 2 matchs simultanés
+                [17, 18],         // 2 matchs simultanés
+                [19, 20],         // 2 matchs simultanés (classification + semifinal)
+                [21, 23],         // 2 matchs simultanés (classification + semifinal)
+                [22, 24],         // 2 matchs simultanés (final_5th + bronze_final)
+            ];
+            
+            // Parcourir chaque groupe de matchs
+            matchGroups.forEach((group, groupIndex) => {
+                // Filtrer les matchs existants pour ce groupe
+                const validMatches = group.filter(matchId => tournamentState.matches[matchId]);
                 
-                if (match1 && match2) {
-                    const pairContainer = document.createElement('div');
-                    pairContainer.className = 'court-group';
-                    pairContainer.innerHTML = `
-                        <h3>Matchs simultanés</h3>
-                    `;
+                // Ne créer le groupe que s'il y a au moins un match valide
+                if (validMatches.length > 0) {
+                    const groupContainer = document.createElement('div');
+                    groupContainer.className = 'court-group';
                     
-                    // Créer la carte pour le premier match
-                    const card1 = createMatchCard(pair[0], match1);
+                    // Déterminer un titre approprié pour le groupe
+                    let groupTitle = 'Matchs simultanés';
                     
-                    // Créer la carte pour le deuxième match
-                    const card2 = createMatchCard(pair[1], match2);
+                    // Pour les phases finales, donner un nom plus descriptif
+                    if (groupIndex >= 5) {
+                        if (groupIndex === 8) {
+                            groupTitle = 'Finales';
+                        } else if (groupIndex === 7) {
+                            groupTitle = 'Matchs pour 3ème et 5ème place';
+                        } else if (groupIndex >= 5) {
+                            groupTitle = 'Demi-finales';
+                        }
+                    } else {
+                        groupTitle = `Groupe de matchs ${groupIndex + 1}`;
+                    }
                     
-                    pairContainer.appendChild(card1);
-                    pairContainer.appendChild(card2);
+                    groupContainer.innerHTML = `<h3>${groupTitle}</h3>`;
                     
-                    matchList.appendChild(pairContainer);
+                    // Créer une carte pour chaque match valide dans ce groupe
+                    validMatches.forEach(matchId => {
+                        const match = tournamentState.matches[matchId];
+                        if (match) {
+                            const card = createMatchCard(matchId, match);
+                            groupContainer.appendChild(card);
+                        }
+                    });
+                    
+                    matchList.appendChild(groupContainer);
                 }
             });
-            
+
+
+
             // Fonction pour créer une carte de match
             function createMatchCard(matchId, matchData) {
                 const card = document.createElement('div');
@@ -411,8 +485,8 @@
                 card.dataset.matchId = matchId;
                 
                 // Vérifier si ce match est déjà affiché
-                if ((displayedMatches.left && displayedMatches.left.id === matchId) || 
-                    (displayedMatches.right && displayedMatches.right.id === matchId)) {
+                const isDisplayed = selectedMatches.includes(matchId.toString());
+                if (isDisplayed) {
                     card.classList.add('selected');
                 }
                 
@@ -430,7 +504,28 @@
                 
                 const team1 = matchData.team1 || 'Équipe 1';
                 const team2 = matchData.team2 || 'Équipe 2';
-                const matchType = getMatchTypeDisplay(matchData.matchType);
+                
+                // Déterminer le type de match à afficher
+                let matchType = matchData.matchType || '';
+                
+                // Convertir les types de match en libellés plus lisibles
+                if (matchType.includes('poule_a')) {
+                    matchType = 'Poule A';
+                } else if (matchType.includes('poule_b')) {
+                    matchType = 'Poule B';
+                } else if (matchType === 'semifinal') {
+                    matchType = 'Demi-finale';
+                } else if (matchType === 'final') {
+                    matchType = 'Finale';
+                } else if (matchType === 'bronze_final') {
+                    matchType = 'Petite Finale';
+                } else if (matchType === 'final_5th') {
+                    matchType = 'Match 5ème place';
+                } else if (matchType === 'final_7th') {
+                    matchType = 'Match 7ème place';
+                } else if (matchType === 'classif_semifinal') {
+                    matchType = 'Demi-finale classement';
+                }
                 
                 card.innerHTML = `
                     <h3>${matchType} <span class="status-badge ${statusClass}">${statusText}</span></h3>
@@ -440,19 +535,19 @@
                 
                 // Ajouter un écouteur d'événements pour la sélection
                 card.addEventListener('click', function() {
-                    this.classList.toggle('selected');
+                    const currentSelected = document.querySelectorAll('.match-card.selected');
                     
+                    if (!this.classList.contains('selected') && currentSelected.length >= 4) {
+                        alert('Vous ne pouvez sélectionner que 4 matchs maximum.');
+                        return;
+                    }
+
+                    this.classList.toggle('selected');
                     const matchId = this.dataset.matchId;
                     const index = selectedMatches.indexOf(matchId);
                     
                     if (index === -1) {
-                        // Limiter à deux sélections maximum
-                        if (selectedMatches.length < 2) {
-                            selectedMatches.push(matchId);
-                        } else {
-                            alert('Vous ne pouvez sélectionner que deux matchs maximum.');
-                            this.classList.remove('selected');
-                        }
+                        selectedMatches.push(matchId);
                     } else {
                         selectedMatches.splice(index, 1);
                     }
@@ -466,28 +561,50 @@
         
         // Fonction pour appliquer la sélection
         function applyMatchSelection() {
-            if (selectedMatches.length !== 2) {
-                alert('Veuillez sélectionner exactement deux matchs.');
+            const selectedCards = document.querySelectorAll('.match-card.selected');
+            const selectedCount = selectedCards.length;
+
+            if (selectedCount === 0) {
+                alert('Veuillez sélectionner au moins un match.');
                 return;
             }
             
-            // Récupérer les données des matchs sélectionnés
-            const match1 = tournamentState.matches[selectedMatches[0]];
-            const match2 = tournamentState.matches[selectedMatches[1]];
-            
-            if (!match1 || !match2) {
-                alert('Erreur: Données de match non disponibles.');
+            if (selectedCount > 4) {
+                alert('Vous ne pouvez pas sélectionner plus de 4 matchs.');
                 return;
             }
+
+            // Appliquer la classe pour le mode 2 écrans si nécessaire
+            document.querySelector('.split-container').classList.toggle('two-screens', selectedCount <= 2);
+
+            // Mettre à jour les matchs
+            selectedMatches = Array.from(selectedCards).map(card => card.dataset.matchId);
             
-            // Mettre à jour les iframes et les en-têtes
-            updateMatchDisplay(1, selectedMatches[0], match1);
-            updateMatchDisplay(2, selectedMatches[1], match2);
+            // Réinitialiser tous les conteneurs
+            for (let i = 1; i <= 4; i++) {
+                const container = document.getElementById(`match${i}Container`);
+                const iframe = document.getElementById(`match${i}Frame`);
+                iframe.src = 'about:blank';
+                container.style.display = 'block';
+            }
             
-            // Fermer le sélecteur
+            // Afficher les matchs sélectionnés
+            for (let i = 0; i < selectedCount; i++) {
+                const matchId = selectedMatches[i];
+                const match = tournamentState.matches[matchId];
+                if (match) {
+                    updateMatchDisplay(i + 1, matchId, match);
+                }
+            }
+
+            // Cacher les conteneurs non utilisés
+            for (let i = selectedCount + 1; i <= 4; i++) {
+                document.getElementById(`match${i}Container`).style.display = 'none';
+            }
+
             closeSelector();
         }
-        
+
         // Fonction pour mettre à jour l'affichage d'un match
         function updateMatchDisplay(position, matchId, matchData) {
             const header = document.getElementById(`match${position}Header`);
@@ -502,11 +619,15 @@
             // Mettre à jour l'en-tête avec les noms d'équipes
             const team1 = matchData.team1 || 'Équipe 1';
             const team2 = matchData.team2 || 'Équipe 2';
-            header.textContent = `${team1} vs ${team2}`;
+            if (header) {
+                header.textContent = `${team1} vs ${team2}`;
+            }
             
             // Mettre à jour le pied de page avec le type de match
-            const matchType = getMatchTypeDisplay(matchData.matchType);
-            footer.textContent = `${matchType} - Match #${matchId}`;
+            if (footer) {
+                const matchType = getMatchTypeDisplay(matchData.matchType);
+                footer.textContent = `${matchType} - Match #${matchId}`;
+            }
             
             // Créer un identifiant unique pour ce côté/position de l'écran
             const storageKey = `${STORAGE_PREFIX}splitScreen_${uniqueIds['match' + position]}_match${matchId}`;
@@ -522,7 +643,7 @@
                 chrono: '00:00',
                 status: matchData.status || 'en_cours',
                 server: 'A',  // Valeur par défaut
-                sport: 'badminton'  // Identifiant de sport
+                sport: 'flechettes'  // Identifiant de sport
             };
             
             localStorage.setItem(storageKey, JSON.stringify(matchLiveData));
@@ -574,15 +695,32 @@
             
             // Réinitialiser la sélection basée sur ce qui est actuellement affiché
             selectedMatches = [];
-            if (displayedMatches.left && displayedMatches.left.id) {
-                selectedMatches.push(displayedMatches.left.id);
-            }
-            if (displayedMatches.right && displayedMatches.right.id) {
-                selectedMatches.push(displayedMatches.right.id);
+            
+            // Récupérer tous les matchs actuellement affichés (jusqu'à 4)
+            for (let i = 1; i <= 4; i++) {
+                const container = document.getElementById(`match${i}Container`);
+                const frame = document.getElementById(`match${i}Frame`);
+                
+                if (container && container.style.display !== 'none' && frame.src !== 'about:blank') {
+                    // Extraire l'ID du match de l'URL de l'iframe
+                    const url = new URL(frame.src);
+                    const matchId = url.searchParams.get('match');
+                    if (matchId) {
+                        selectedMatches.push(matchId);
+                    }
+                }
             }
             
             // Remplir la liste des matchs
             populateMatchList();
+            
+            // Marquer les matchs actuellement affichés comme sélectionnés
+            selectedMatches.forEach(matchId => {
+                const card = document.querySelector(`.match-card[data-match-id="${matchId}"]`);
+                if (card) {
+                    card.classList.add('selected');
+                }
+            });
         }
         
         function closeSelector() {
@@ -621,7 +759,7 @@
             // Écouter les mises à jour de matchs depuis les pages de marquage
             window.addEventListener('storage', function(event) {
                 try {
-                    console.log("Badminton split-screen: événement storage détecté:", event.key);
+                    console.log("Flechettes split-screen: événement storage détecté:", event.key);
                     
                     // IMPORTANT: Ignorer TOUS les événements liés à la pétanque
                     if (event.key && (
@@ -629,19 +767,19 @@
                         event.key.includes('petanque_') ||
                         event.key.includes('cochonnet')
                     )) {
-                        console.log('Badminton: Ignoré événement pétanque', event.key);
+                        console.log('Flechettes: Ignoré événement pétanque', event.key);
                         return;
                     }
                     
                     // Ignorer les événements provenant de nos propres clés
                     if (event.key && event.key.startsWith(`${STORAGE_PREFIX}splitScreen_`)) {
-                        console.log('Badminton: Ignoré événement de notre propre split-screen');
+                        console.log('Flechettes: Ignoré événement de notre propre split-screen');
                         return;
                     }
                     
                     // Vérification: l'événement doit avoir une valeur
                     if (!event.newValue) {
-                        console.log('Badminton: Ignoré événement sans données');
+                        console.log('Flechettes: Ignoré événement sans données');
                         return;
                     }
                     
@@ -649,9 +787,9 @@
                     try {
                         const data = JSON.parse(event.newValue);
                         
-                        // Vérifier explicitement si c'est du badminton (filtre par propriété sport)
-                        if (data.sport && data.sport !== 'badminton') {
-                            console.log(`Badminton: Ignoré données du sport ${data.sport}`);
+                        // Vérifier explicitement si c'est du flechettes (filtre par propriété sport)
+                        if (data.sport && data.sport !== 'flechettes') {
+                            console.log(`Flechettes: Ignoré données du sport ${data.sport}`);
                             return;
                         }
                         
@@ -659,16 +797,16 @@
                         if (!data.sport) {
                             // Vérifier des propriétés spécifiques à la pétanque
                             if (data.cochonnet || event.key.includes('cochonnet')) {
-                                console.log('Badminton: Ignoré données pétanque (détection par propriétés)');
+                                console.log('Flechettes: Ignoré données pétanque (détection par propriétés)');
                                 return;
                             }
                         }
                     } catch (error) {
-                        console.log('Badminton: Erreur lors du parsing des données', error);
+                        console.log('Flechettes: Erreur lors du parsing des données', error);
                         return; // Ignorer en cas d'erreur de parsing
                     }
                     
-                    // Maintenant, traiter spécifiquement les événements badminton
+                    // Maintenant, traiter spécifiquement les événements fléchettes
                     // Préfixé ou générique (sans préfixe de sport)
                     if (event.key.startsWith(`${STORAGE_PREFIX}liveMatchData_match`) || 
                         event.key.startsWith('liveMatchData_match')) {
@@ -682,53 +820,40 @@
                         }
                         
                         const newData = JSON.parse(event.newValue);
-                        console.log(`Mise à jour badminton pour match ${matchId}:`, newData);
+                        console.log(`Mise à jour fléchettes pour match ${matchId}:`, newData);
                         
                         // Mettre à jour l'iframe correspondante si le match est affiché
-                        if (displayedMatches.left && displayedMatches.left.id === matchId) {
-                            const storageKey = displayedMatches.left.storageKey;
-                            const currentData = JSON.parse(localStorage.getItem(storageKey) || '{}');
-                            const updatedData = { ...currentData, ...newData };
-                            localStorage.setItem(storageKey, JSON.stringify(updatedData));
-                            console.log(`Mise à jour des données pour l'iframe de gauche (match ${matchId})`);
+                        for (let i = 1; i <= 4; i++) {
+                            const container = document.getElementById(`match${i}Container`);
+                            const frame = document.getElementById(`match${i}Frame`);
                             
-                            // Envoyer également un message direct à l'iframe
-                            try {
-                                const leftFrame = document.getElementById('match1Frame');
-                                if (leftFrame && leftFrame.contentWindow) {
-                                    leftFrame.contentWindow.postMessage({
-                                        type: 'updateMatchData',
-                                        data: updatedData
-                                    }, '*');
+                            if (container && container.style.display !== 'none') {
+                                const url = new URL(frame.src);
+                                const displayedMatchId = url.searchParams.get('match');
+                                
+                                if (displayedMatchId === matchId) {
+                                    const storageKey = url.searchParams.get('storageKey');
+                                    if (storageKey) {
+                                        const currentData = JSON.parse(localStorage.getItem(storageKey) || '{}');
+                                        const updatedData = { ...currentData, ...newData };
+                                        localStorage.setItem(storageKey, JSON.stringify(updatedData));
+                                        console.log(`Mise à jour des données pour l'iframe ${i} (match ${matchId})`);
+                                        
+                                        try {
+                                            frame.contentWindow.postMessage({
+                                                type: 'updateMatchData',
+                                                data: updatedData
+                                            }, '*');
+                                        } catch (e) {
+                                            console.warn(`Impossible d'envoyer un message à l'iframe ${i}:`, e);
+                                        }
+                                    }
                                 }
-                            } catch (e) {
-                                console.warn("Impossible d'envoyer un message à l'iframe gauche:", e);
-                            }
-                        }
-                        
-                        if (displayedMatches.right && displayedMatches.right.id === matchId) {
-                            const storageKey = displayedMatches.right.storageKey;
-                            const currentData = JSON.parse(localStorage.getItem(storageKey) || '{}');
-                            const updatedData = { ...currentData, ...newData };
-                            localStorage.setItem(storageKey, JSON.stringify(updatedData));
-                            console.log(`Mise à jour des données pour l'iframe de droite (match ${matchId})`);
-                            
-                            // Envoyer également un message direct à l'iframe
-                            try {
-                                const rightFrame = document.getElementById('match2Frame');
-                                if (rightFrame && rightFrame.contentWindow) {
-                                    rightFrame.contentWindow.postMessage({
-                                        type: 'updateMatchData',
-                                        data: updatedData
-                                    }, '*');
-                                }
-                            } catch (e) {
-                                console.warn("Impossible d'envoyer un message à l'iframe droite:", e);
                             }
                         }
                     }
                 } catch (error) {
-                    console.error('Badminton: Erreur lors de la mise à jour des données:', error);
+                    console.error('Flechettes: Erreur lors de la mise à jour des données:', error);
                 }
             });
         });

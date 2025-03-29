@@ -700,12 +700,17 @@ function sendLiveUpdate() {
         teamBName: document.getElementById('teamBName').textContent,
         teamAScore: matchData.teamA.score,
         teamBScore: matchData.teamB.score,
+        score1: matchData.teamA.score,  // Ajout pour compatibilité avec les deux affichages
+        score2: matchData.teamB.score,  // Ajout pour compatibilité avec les deux affichages
+        team1: document.getElementById('teamAName').textContent,  // Ajout pour compatibilité
+        team2: document.getElementById('teamBName').textContent,  // Ajout pour compatibilité
         chrono: document.getElementById('gameChrono').textContent,
         server: server // Variable de l'équipe qui sert
     };
     
-    // Mettre à jour le localStorage
+    // Mettre à jour les deux formats de localStorage pour compatibilité avec les deux affichages
     localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+    localStorage.setItem('liveMatchData_volleyF', JSON.stringify(liveData));
     
     // Envoyer via WebSocket si connecté
     if (socket && socketConnected && !isUpdating) {

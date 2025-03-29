@@ -1096,6 +1096,35 @@ function resetTournament() {
     }
   };
 
+  // Ajouter cette fonction pour permettre la navigation vers la page de marquage
+
+function navigateToScoring(matchId) {
+  try {
+    const matchData = tournamentState.matches[matchId];
+    if (!matchData) {
+      console.error(`Match avec ID ${matchId} non trouvé`);
+      return;
+    }
+    
+    // Créer les paramètres de l'URL
+    const params = new URLSearchParams({
+      matchId: matchId,
+      team1: matchData.team1,
+      team2: matchData.team2,
+      matchType: matchData.matchType,
+      score1: matchData.score1 || '0',
+      score2: matchData.score2 || '0'
+    });
+    
+    // Rediriger vers la page de marquage
+    window.location.href = `marquage.html?${params.toString()}`;
+    
+  } catch (error) {
+    console.error('Erreur lors de la navigation vers la page de marquage:', error);
+    alert('Une erreur est survenue lors de la navigation vers la page de marquage');
+  }
+}
+
     // Exposer les fonctions pour les utiliser dans le HTML
     window.simulateMatch = simulateMatch;
     window.simulateTournament = simulateTournament;
@@ -1104,3 +1133,4 @@ function resetTournament() {
     window.updatePouleStandings = updatePouleStandings;
     window.updateRankingDisplay = updateRankingDisplay;
     window.navigateToScoring = navigateToScoring;
+    window.updatePouleStandings = updateGroupStandings;

@@ -3,7 +3,7 @@
  */
 
 // Variables pour les chronos
-let gameSeconds = 9 * 60; // 1 minute en secondes (modifié de 9 minutes)
+let gameSeconds = 9 * 60; // 9 minutes en secondes
 let gameMilli = 0; // Millisecondes pour le chrono principal
 let shotClockSeconds = 24;
 let shotClockMilli = 0; // Millisecondes pour le shot clock
@@ -28,11 +28,120 @@ document.addEventListener('DOMContentLoaded', function() {
     if (matchId) {
         updateMatchStatus(matchId, 'en_cours');
     }
-    
-    // Remplacer les gestionnaires d'événements clavier
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keyup', handleKeyUp);
 });
+
+// Nouvelle fonction pour stocker une donnée spécifique de basket
+function storeBasketLiveData(key, value) {
+    const currentData = JSON.parse(localStorage.getItem('basket_liveMatchData') || '{}');
+    currentData[key] = value;
+    localStorage.setItem('basket_liveMatchData', JSON.stringify(currentData));
+}
+
+// Nouvelle fonction pour stocker toutes les données du match de basket
+function storeBasketSpecificData() {
+    try {
+        // Récupérer les équipes depuis l'interface
+        const team1 = document.getElementById('teamAName')?.textContent || 'BASKET A';
+        const team2 = document.getElementById('teamBName')?.textContent || 'BASKET B';
+        
+        // Récupérer les scores
+        const score1 = document.getElementById('teamAScore')?.textContent || '0';
+        const score2 = document.getElementById('teamBScore')?.textContent || '0';
+        
+        // Récupérer les temps
+        const gameTimer = document.getElementById('gameTimer')?.textContent || '00:00.0';
+        const shotClock = document.getElementById('shotClock')?.textContent || '24.0';
+        const period = document.getElementById('period')?.textContent || 'MT1';
+        
+        // Former l'objet de données
+        const basketData = {
+            team1,
+            team2,
+            score1,
+            score2,
+            gameTimer,
+            shotClock,
+            period,
+            sport: 'basket',
+            status: 'en_cours',
+            terrainId: 9,
+            position: 2  // Position sur le terrain (2ème partie)
+        };
+        
+        // Stocker avec des clés spécifiques pour le basket
+        localStorage.setItem('basket_liveMatchData', JSON.stringify(basketData));
+        localStorage.setItem('basket_currentMatch', JSON.stringify(basketData));
+        
+        // Dupliquer dans liveMatchData pour maintenir la compatibilité
+        localStorage.setItem('liveMatchData', JSON.stringify(basketData));
+        
+        console.log('Données du match de basket stockées:', basketData);
+    } catch (error) {
+        console.error('Erreur lors du stockage des données de basket:', error);
+    }
+}
+
+// Mettre à jour les données du match en direct
+function updateLiveDataWithBodet() {
+    try {
+        const liveData = {
+            score1: document.getElementById('teamAScore')?.textContent || '0',
+            score2: document.getElementById('teamBScore')?.textContent || '0',
+            gameTimer: document.getElementById('gameTimer')?.textContent || '00:00.0',
+            shotClock: document.getElementById('shotClock')?.textContent || '24.0',
+            period: document.getElementById('period')?.textContent || 'MT1'
+        };
+        
+        // Mettre à jour le localStorage avec les données actuelles
+        const currentData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
+        localStorage.setItem('liveMatchData', JSON.stringify({
+            ...currentData,
+            ...liveData
+        }));
+    } catch (error) {
+        console.error('Erreur lors de la mise à jour des données en direct:', error);
+    }
+}
+
+// Fonction de test pour simuler la réception de données du BODET
+function testBodetData() {
+    // Exemple de données basé sur l'image que vous avez partagée
+    const testData = `{
+        "ClockType": 0,
+        "IsClockRunning": true,
+        "MatchStatus": 0,
+        "IsKlaxonRunning": false,
+        "Time": "8:59",
+        "Period": 1,
+        "HomeTimeout": 0,
+        "AwayTimeout": 0,
+        "Id": "Bodet18",
+        "HomeScore": 0,
+        "AwayScore": 2,
+        "Id": "Bodet30",
+        "Id": "Bodet50",
+        "ShotclockTime": 24,
+        "IsShotclockRunning": true,
+        "IsShotclockKlaxon": false,
+        "IsShotclockHidden": false,
+        "IsTenth": false
+    }`;
+    
+    processBodetData(testData);
+}
+
+// Initialiser la connexion WebSocket quand le DOM est chargé
+document.addEventListener('DOMContentLoaded', function() {
+    // Connexion WebSocket au BODET
+    const socket = setupWebSocket();
+    
+    // Pour tester sans connexion WebSocket réelle, décommentez la ligne suivante
+    // testBodetData();
+    
+    // Mettre à jour les données toutes les secondes au cas où
+    setInterval(updateLiveDataWithBodet, 1000);
+});
+    
 
 // Fonctions de gestion du chrono
 function startTimers() {
@@ -50,6 +159,7 @@ function stopTimers() {
     isTimerRunning = false;
 }
 
+// Remplacement de updateGameTimer pour des mises à jour plus fluides
 function updateGameTimer() {
     // Décrémenter les millisecondes de 100 à chaque appel
     gameMilli -= 100;
@@ -71,6 +181,19 @@ function updateGameTimer() {
     displayGameTime();
     // Appel explicite pour mettre à jour les données en direct
     updateLiveData();
+
+    // Émettre un événement spécifique juste pour le chrono
+    const timerEvent = new CustomEvent('basketball-timer-update', { 
+        detail: {
+            gameTimer: document.getElementById('gameTimer')?.textContent || '00:00.0',
+            gameSeconds: gameSeconds,
+            gameMilli: gameMilli,
+            timestamp: Date.now()
+        },
+        bubbles: true,
+        cancelable: true
+    });
+    document.dispatchEvent(timerEvent);
 }
 
 function updateShotClock() {
@@ -260,6 +383,7 @@ function setShotClock(seconds) {
     displayShotClock();
 }
 
+// Amélioration de la fonction displayGameTime pour un affichage plus précis
 function displayGameTime() {
     const minutes = Math.floor(gameSeconds / 60);
     const seconds = gameSeconds % 60;
@@ -269,12 +393,13 @@ function displayGameTime() {
     const timerElement = document.getElementById('gameTimer');
     
     if (timerElement) {
-        // Revenir au comportement original - toujours afficher au format minutes:secondes.millisecondes
-        timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${millis}`;
+        // Format standard: MM:SS.m
+        const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${millis}`;
+        timerElement.textContent = formattedTime;
         
         // Mise à jour directe du localStorage après chaque affichage du temps
         const currentData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
-        currentData.gameTimer = timerElement.textContent;
+        currentData.gameTimer = formattedTime;
         
         // Ajouter les valeurs brutes des chronomètres pour que la page d'affichage puisse faire ses propres calculs
         currentData.gameTimeInSeconds = gameSeconds + (gameMilli / 1000);
@@ -301,6 +426,46 @@ function displayShotClock() {
 function addSecond() {
     gameSeconds++;
     displayGameTime();
+}
+
+// Mise à jour des données en direct
+function updateLiveData() {
+    try {
+        const liveData = {
+            score1: document.getElementById('teamAScore')?.textContent || '0',
+            score2: document.getElementById('teamBScore')?.textContent || '0',
+            gameTimer: document.getElementById('gameTimer')?.textContent || '00:00.0',
+            shotClock: document.getElementById('shotClock')?.textContent || '24.0',
+            period: document.getElementById('period')?.textContent || 'MT1',
+            team1: document.getElementById('teamAName')?.textContent || 'BASKET A',
+            team2: document.getElementById('teamBName')?.textContent || 'BASKET B',
+            sport: 'basket',
+            status: 'en_cours',
+            terrainId: 9,
+            position: 2,
+            timestamp: Date.now()
+        };
+        
+        // 1. Mettre à jour le localStorage (pour compatibilité)
+        const currentData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
+        localStorage.setItem('liveMatchData', JSON.stringify({
+            ...currentData,
+            ...liveData
+        }));
+        
+        // 2. Émettre un événement personnalisé pour une mise à jour en temps réel
+        const basketEvent = new CustomEvent('basketball-update', { 
+            detail: liveData,
+            bubbles: true,
+            cancelable: true
+        });
+        document.dispatchEvent(basketEvent);
+        
+        // 3. Stocker aussi les données spécifiques au basket
+        storeBasketSpecificData();
+    } catch (error) {
+        console.error('Erreur lors de la mise à jour des données en direct:', error);
+    }
 }
 
 function playBuzzer() {
@@ -369,28 +534,6 @@ function togglePeriod() {
         displayShotClock();
         
         updateLiveData();
-    }
-}
-
-// Mise à jour des données en direct
-function updateLiveData() {
-    try {
-        const liveData = {
-            score1: document.getElementById('teamAScore')?.textContent || '0',
-            score2: document.getElementById('teamBScore')?.textContent || '0',
-            gameTimer: document.getElementById('gameTimer')?.textContent || '00:00.0',
-            shotClock: document.getElementById('shotClock')?.textContent || '24.0',
-            period: document.getElementById('period')?.textContent || 'MT1'
-        };
-        
-        // Mettre à jour le localStorage
-        const currentData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
-        localStorage.setItem('liveMatchData', JSON.stringify({
-            ...currentData,
-            ...liveData
-        }));
-    } catch (error) {
-        console.error('Erreur lors de la mise à jour des données en direct:', error);
     }
 }
 
@@ -537,12 +680,10 @@ function resetGame() {
     });
 }
 
-// Code à ajouter à votre fichier basketball.js existant ou à inclure dans un nouveau script
-
 // Configuration de la connexion WebSocket
 function setupWebSocket() {
     // Remplacez par l'URL de votre serveur WebSocket BODET
-    const socket = new WebSocket('ws://votre-serveur-websocket');
+    const socket = new WebSocket('ws://127.0.0.1:4002/scorelink');
     
     socket.onopen = function(e) {
         console.log('Connexion WebSocket BODET établie');
@@ -570,7 +711,7 @@ function setupWebSocket() {
     return socket;
 }
 
-// Traitement des données reçues du BODET
+// Traitement des données reçues du BODET (FONCTION CORRIGÉE)
 function processBodetData(data) {
     try {
         // Analyser les données JSON
@@ -583,122 +724,161 @@ function processBodetData(data) {
             parsedData = data;
         }
         
+        console.log('Données BODET traitées:', parsedData);
+        
         // Mise à jour des scores
         if (parsedData.HomeScore !== undefined) {
             document.getElementById('teamAScore').textContent = parsedData.HomeScore;
+            
+            // Stocker aussi avec une clé spécifique au basket pour live_scores.js
+            storeBasketLiveData('score1', parsedData.HomeScore);
         }
         
         if (parsedData.AwayScore !== undefined) {
             document.getElementById('teamBScore').textContent = parsedData.AwayScore;
+            
+            // Stocker aussi avec une clé spécifique au basket pour live_scores.js
+            storeBasketLiveData('score2', parsedData.AwayScore);
         }
         
-        // Mise à jour du chronomètre de jeu
-        if (parsedData.Time) {
-            // Le format attendu est "MM:SS.ms" pour votre interface
-            // Le BODET envoie probablement "MM:SS"
-            const timeStr = parsedData.Time;
-            // Ajouter .0 si nécessaire pour correspondre au format de votre interface
+        // CORRECTION AMÉLIORÉE: Mise à jour du chronomètre de jeu
+        if (parsedData.Time !== undefined) {
+            let timeValue = parsedData.Time;
+            
+            // Convertir en chaîne pour le traitement uniforme
+            let timeStr = String(timeValue).trim();
+            
+            // DÉTECTION AMÉLIORÉE : Vérifier si c'est un format court de minutes
+            // Cas 1: Format numérique (ex: 4.0, 5, 8.5)
+            if (typeof timeValue === 'number' || !isNaN(parseFloat(timeStr))) {
+                // Si c'est un nombre ET qu'il n'y a pas de ":" ET qu'il est inférieur à 60
+                // Alors c'est probablement des minutes, pas des secondes
+                if (!timeStr.includes(':') && parseFloat(timeStr) < 60) {
+                    console.log('Format minutes détecté:', timeStr);
+                    // Convertir en format minutes:secondes
+                    timeStr = `${Math.floor(parseFloat(timeStr))}:00`;
+                    if (!timeStr.includes('.')) {
+                        timeStr += '.0';
+                    }
+                }
+            }
+            
+            // Cas 2: Format texte sans deux-points (ex: "4.0", "5")
+            if (timeStr.includes('.') && !timeStr.includes(':')) {
+                const parts = timeStr.split('.');
+                // Convertir en format MM:SS.m
+                timeStr = `${parts[0].padStart(2, '0')}:00.${parts[1]}`;
+            } else if (!timeStr.includes(':') && !timeStr.includes('.')) {
+                // Format simple (ex: "4", "5") - convertir en minutes
+                timeStr = `${timeStr.padStart(2, '0')}:00.0`;
+            }
+            
+            // Ajouter .0 si nécessaire pour compléter le format MM:SS.m
             const formattedTime = timeStr.includes('.') ? timeStr : timeStr + '.0';
+            
+            console.log('Format de temps traité:', timeValue, '→', formattedTime);
             document.getElementById('gameTimer').textContent = formattedTime;
+            
+            // Mise à jour des variables internes
+            if (formattedTime.includes(':')) {
+                const timeParts = formattedTime.split(':');
+                const minutes = parseInt(timeParts[0]);
+                const secondsPart = timeParts[1].split('.');
+                const seconds = parseInt(secondsPart[0]);
+                const millis = parseInt(secondsPart[1] || '0');
+                
+                gameSeconds = (minutes * 60) + seconds;
+                gameMilli = millis * 100;
+            } else {
+                // Au cas où le format ne serait pas MM:SS.m malgré nos corrections
+                const secondsPart = formattedTime.split('.');
+                gameSeconds = parseInt(secondsPart[0]);
+                gameMilli = parseInt(secondsPart[1] || '0') * 100;
+            }
         }
         
-        // Mise à jour du chronomètre des 24 secondes
+        // CORRECTION: Mise à jour du chronomètre des 24 secondes
         if (parsedData.ShotclockTime !== undefined) {
-            // Le format attendu est "SS.ms" pour votre interface
-            const shotClockValue = parsedData.ShotclockTime;
-            // Ajouter .0 si nécessaire
+            let shotClockValue = parsedData.ShotclockTime;
+            
+            // Vérifier si c'est une valeur numérique
+            if (typeof shotClockValue === 'number' || !isNaN(parseFloat(shotClockValue))) {
+                shotClockValue = parseFloat(shotClockValue);
+                
+                // Traitement spécial pour les valeurs négatives (de -150 à -160)
+                if (shotClockValue < 0) {
+                    console.log('Valeur négative détectée pour le shotClock:', shotClockValue);
+                    
+                    // Conversion des valeurs négatives [-150, -160] vers [10, 0]
+                    if (shotClockValue <= -150 && shotClockValue >= -160) {
+                        // Nouvelle formule corrigée
+                        shotClockValue = 10 - Math.abs(shotClockValue + 150);
+                        console.log('Conversion en valeur positive:', shotClockValue);
+                        
+                        // S'assurer que la valeur reste dans la plage [0, 10]
+                        if (shotClockValue < 0) shotClockValue = 0;
+                        if (shotClockValue > 10) shotClockValue = 10;
+                    } else {
+                        // Pour toute autre valeur négative, utiliser 0
+                        shotClockValue = 0;
+                    }
+                }
+            }
+            
+            // Formater pour l'affichage (ajouter .0 si nécessaire)
             const formattedShotClock = String(shotClockValue).includes('.') ? 
                 String(shotClockValue) : 
                 String(shotClockValue) + '.0';
+                
             document.getElementById('shotClock').textContent = formattedShotClock;
+            
+            // Mettre à jour les variables internes
+            const shotClockParts = formattedShotClock.split('.');
+            shotClockSeconds = parseInt(shotClockParts[0]);
+            shotClockMilli = parseInt(shotClockParts[1] || '0') * 100;
         }
         
         // Mise à jour de la période
         if (parsedData.Period !== undefined) {
-            // Dans votre interface, la période est affichée comme "MT1" ou "MT2"
-            const period = parseInt(parsedData.Period);
+            let periodValue;
             
-            // Basculer le toggle si nécessaire
-            const periodToggle = document.getElementById('periodToggle');
-            if (period === 1 && periodToggle.checked) {
-                periodToggle.checked = false;
-                // Déclencher l'événement change pour appeler togglePeriod() si nécessaire
-                periodToggle.dispatchEvent(new Event('change'));
-            } else if (period === 2 && !periodToggle.checked) {
-                periodToggle.checked = true;
-                // Déclencher l'événement change pour appeler togglePeriod() si nécessaire
-                periodToggle.dispatchEvent(new Event('change'));
+            // La période peut être envoyée comme un nombre ou une chaîne
+            if (typeof parsedData.Period === 'string') {
+                // Convertir en nombre en supprimant les espaces
+                periodValue = parseInt(parsedData.Period.trim());
+            } else {
+                periodValue = parseInt(parsedData.Period);
             }
             
-            // Alternativement, mettre à jour directement le texte
-            document.getElementById('period').textContent = `MT${period}`;
+            // S'assurer que la période est un nombre valide (1 ou 2)
+            if (!isNaN(periodValue) && (periodValue === 1 || periodValue === 2)) {
+                // Basculer le toggle si nécessaire
+                const periodToggle = document.getElementById('periodToggle');
+                if (periodToggle) {
+                    if (periodValue === 1 && periodToggle.checked) {
+                        periodToggle.checked = false;
+                        periodToggle.dispatchEvent(new Event('change'));
+                    } else if (periodValue === 2 && !periodToggle.checked) {
+                        periodToggle.checked = true;
+                        periodToggle.dispatchEvent(new Event('change'));
+                    }
+                }
+                
+                // Mise à jour directe du texte
+                const periodText = document.getElementById('period');
+                if (periodText) {
+                    periodText.textContent = `MT${periodValue}`;
+                }
+            }
         }
         
-        // Mettre à jour les données en temps réel pour l'affichage public
+        // Mettre à jour les données en temps réel
         updateLiveData();
+        
+        // Stocker également les données avec une clé spécifique pour le basket
+        storeBasketSpecificData();
         
     } catch (error) {
         console.error('Erreur lors du traitement des données BODET:', error);
     }
 }
-
-// Mettre à jour les données du match en direct
-function updateLiveDataWithBodet() {
-    try {
-        const liveData = {
-            score1: document.getElementById('teamAScore')?.textContent || '0',
-            score2: document.getElementById('teamBScore')?.textContent || '0',
-            gameTimer: document.getElementById('gameTimer')?.textContent || '00:00.0',
-            shotClock: document.getElementById('shotClock')?.textContent || '24.0',
-            period: document.getElementById('period')?.textContent || 'MT1'
-        };
-        
-        // Mettre à jour le localStorage avec les données actuelles
-        const currentData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
-        localStorage.setItem('liveMatchData', JSON.stringify({
-            ...currentData,
-            ...liveData
-        }));
-    } catch (error) {
-        console.error('Erreur lors de la mise à jour des données en direct:', error);
-    }
-}
-
-// Fonction de test pour simuler la réception de données du BODET
-function testBodetData() {
-    // Exemple de données basé sur l'image que vous avez partagée
-    const testData = `{
-        "ClockType": 0,
-        "IsClockRunning": true,
-        "MatchStatus": 0,
-        "IsKlaxonRunning": false,
-        "Time": "8:59",
-        "Period": 1,
-        "HomeTimeout": 0,
-        "AwayTimeout": 0,
-        "Id": "Bodet18",
-        "HomeScore": 0,
-        "AwayScore": 2,
-        "Id": "Bodet30",
-        "Id": "Bodet50",
-        "ShotclockTime": 24,
-        "IsShotclockRunning": true,
-        "IsShotclockKlaxon": false,
-        "IsShotclockHidden": false,
-        "IsTenth": false
-    }`;
-    
-    processBodetData(testData);
-}
-
-// Initialiser la connexion WebSocket quand le DOM est chargé
-document.addEventListener('DOMContentLoaded', function() {
-    // Connexion WebSocket au BODET
-    const socket = setupWebSocket();
-    
-    // Pour tester sans connexion WebSocket réelle, décommentez la ligne suivante
-    // testBodetData();
-    
-    // Mettre à jour les données toutes les secondes au cas où
-    setInterval(updateLiveDataWithBodet, 1000);
-});

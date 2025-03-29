@@ -445,13 +445,20 @@ async function resetGame() {
     }
 }
 
-// Fonction de mise à jour de l'affichage
+// Fonction de mise à jour de l'affichage - plus spécifique à chaque match
 async function updateDisplay() {
     document.getElementById('teamAScore').textContent = matchData.teamA.score;
     document.getElementById('teamBScore').textContent = matchData.teamB.score;
 
+    // Récupérer l'ID du match actuel - CRUCIAL pour la spécificité
+    const matchId = new URLSearchParams(window.location.search).get('matchId');
+    if (!matchId) {
+        console.warn("Pas d'ID de match trouvé dans l'URL");
+        return;
+    }
+
     const liveData = {
-        matchId: new URLSearchParams(window.location.search).get('matchId'),
+        matchId: matchId,
         team1: document.getElementById('teamAName').textContent,
         team2: document.getElementById('teamBName').textContent,
         matchType: document.getElementById('matchType').textContent,
@@ -459,22 +466,21 @@ async function updateDisplay() {
         score2: matchData.teamB.score,
         chrono: document.getElementById('gameChrono').textContent,
         status: 'en_cours',
-        server: document.getElementById('ballIconA').style.visibility === 'visible' ? 'A' : 'B'
+        server: document.getElementById('ballIconA').style.visibility === 'visible' ? 'A' : 'B',
+        sport: 'petanque',
+        timestamp: Date.now()
     };
 
-    // Sauvegarder en localStorage
-    localStorage.setItem('liveMatchData', JSON.stringify(liveData));
-
-    // Mettre à jour l'objet petanqueMatchData
-    petanqueMatchData.teamA.score = matchData.teamA.score;
-    petanqueMatchData.teamB.score = matchData.teamB.score;
-    petanqueMatchData.chrono = document.getElementById('gameChrono').textContent;
+    // Toujours sauvegarder dans les clés spécifiques au match
+    localStorage.setItem(`liveMatchData_petanque_match${matchId}`, JSON.stringify(liveData));
+    localStorage.setItem(`petanque_liveMatchData_match${matchId}`, JSON.stringify(liveData));
+    localStorage.setItem(`liveMatchData_match${matchId}`, JSON.stringify(liveData));
     
-    // Sauvegarder en localStorage
-    localStorage.setItem(
-        `liveMatchData_petanque_${petanqueMatchData.matchId}`,
-        JSON.stringify(petanqueMatchData)
-    );
+    // Mise à jour de la clé générique seulement si elle correspond à ce match
+    const currentLiveData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
+    if (!currentLiveData.matchId || currentLiveData.matchId === matchId) {
+        localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+    }
 
     // Notifier la fenêtre parent si nous sommes dans une iframe
     if (window.parent !== window) {
@@ -604,21 +610,61 @@ function ChangeServer() {
     const ballIconB = document.getElementById('ballIconB');
     if (ballIconA && ballIconB) {
         ballIconA.style.visibility = server === 'A' ? 'visible' : 'hidden';
-        ballIconB.style.visibility = server === 'B' ? 'visible' : 'hidden'; // Correction ici
+        ballIconB.style.visibility = server === 'B' ? 'visible' : 'hidden';
     }
 
-    // Mettre à jour les données en direct pour synchroniser avec affichage_score.html
+    // Récupérer l'ID du match actuel
+    const matchId = new URLSearchParams(window.location.search).get('matchId');
+    if (!matchId) return;
+    
+    // Clés spécifiques à utiliser pour ce match
+    const matchSpecificKeys = [
+        `liveMatchData_petanque_match${matchId}`,
+        `petanque_liveMatchData_match${matchId}`,
+        `liveMatchData_match${matchId}`
+    ];
+    
+    // Mettre à jour toutes les clés spécifiques au match
+    matchSpecificKeys.forEach(key => {
+        try {
+            const data = JSON.parse(localStorage.getItem(key) || '{}');
+            data.server = server;
+            data.matchId = matchId; // S'assurer que matchId est bien défini
+            data.sport = 'petanque'; // Expliciter le sport
+            localStorage.setItem(key, JSON.stringify(data));
+            console.log(`Mise à jour du service pour ${key}: ${server}`);
+        } catch (e) {
+            console.warn(`Erreur lors de la mise à jour de ${key}:`, e);
+        }
+    });
+    
+    // NE PAS mettre à jour liveMatchData globale sans vérification stricte du matchId
+    // Cette clé est souvent partagée entre les matchs et cause les interférences
     const liveData = JSON.parse(localStorage.getItem('liveMatchData') || '{}');
-    liveData.server = server;
-    localStorage.setItem('liveMatchData', JSON.stringify(liveData));
-
-    // Mise à jour des icônes dans marquage.html
-    const ballIconAInMarquage = document.getElementById('ballIconA');
-    const ballIconBInMarquage = document.getElementById('ballIconB');
-    if (ballIconAInMarquage && ballIconBInMarquage) {
-        ballIconAInMarquage.style.visibility = server === 'A' ? 'visible' : 'hidden';
-        ballIconBInMarquage.style.visibility = server === 'B' ? 'visible' : 'hidden'; // Correction ici
+    if (liveData.matchId === matchId) {
+        liveData.server = server;
+        localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+        console.log('Mise à jour de liveMatchData global');
+    } else {
+        console.log('liveMatchData ignoré car il concerne un autre match');
     }
+
+    // Diffuser le changement via WebSocket avec ID explicite
+    if (socket && socketConnected) {
+        socket.emit('broadcast_match_update', {
+            room: `match_${matchId}`,
+            matchId: matchId,
+            data: {
+                server: server,
+                sport: 'petanque',
+                matchId: matchId,
+                timestamp: Date.now() // Ajouter un timestamp pour différencier les mises à jour
+            }
+        });
+    }
+
+    // Mise à jour de l'affichage complet
+    updateDisplay();
 }
 
 // Initialisation

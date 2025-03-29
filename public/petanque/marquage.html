@@ -31,7 +31,7 @@
           <option value="IKPO">IKPO</option>
           <option value="ISTC">ISTC</option>
           <option value="JUNIA">JUNIA</option>
-          <option value="LIDD">LiDD</option>
+          <option value="LiDD">LiDD</option>
           <option value="USCHOOL">USCHOOL</option>
           <option value="PIKTURA">PIKTURA</option>
         </select>
@@ -50,7 +50,7 @@
           <option value="IKPO">IKPO</option>
           <option value="ISTC">ISTC</option>
           <option value="JUNIA">JUNIA</option>
-          <option value="LIDD">LiDD</option>
+          <option value="LiDD">LiDD</option>
           <option value="USCHOOL">USCHOOL</option>
           <option value="PIKTURA">PIKTURA</option>
         </select>
@@ -58,6 +58,7 @@
         <select id="matchTypeSelector" onchange="updateMatchType()">
           <option>Type de match</option>
           <option value="barrage">Barrages</option>
+          <option value="Barrage">Barrage</option>
           <option value="Quart de finale">Quart de finale</option>
           <option value="Demi-finale">Demi-finale</option>
           <option value="Petite Finale">Petite Finale</option>
@@ -78,6 +79,8 @@
         </div>
         <div class="button-row2">
           <button onclick="openScoreDisplay()">Spectateurs</button>
+        </div>
+        <div class="button-row2">
           <button onclick="openSplitScreen()">Double Affichage</button>
         </div>
       </div>
@@ -244,38 +247,40 @@ function updateTeams() {
 // Ajouter cette fonction à petanque.js si elle n'existe pas déjà
 
 function updateLiveData() {
-    console.log('Mise à jour des données en direct');
+    const score1El = document.getElementById('teamAScore');
+    const score2El = document.getElementById('teamBScore');
+    const chronoEl = document.getElementById('gameChrono');
+    const matchId = new URLSearchParams(window.location.search).get('matchId');
     
-    const teamAValue = document.getElementById('teamA').value;
-    const teamBValue = document.getElementById('teamB').value;
-    const teamAScore = document.getElementById('teamAScore').textContent;
-    const teamBScore = document.getElementById('teamBScore').textContent;
-    const matchType = document.getElementById('matchType').textContent;
-    const gameChrono = document.getElementById('gameChrono').textContent;
-    const ballIconA = document.getElementById('ballIconA');
-    const ballIconB = document.getElementById('ballIconB');
-    
+    // Amélioration: explicitement ajouter le sport dans les données
     const liveData = {
-        matchId: new URLSearchParams(window.location.search).get('matchId'),
-        team1: teamAValue, // Utilisation de la valeur du select, pas du texte affiché
-        team2: teamBValue, // Utilisation de la valeur du select, pas du texte affiché
-        matchType: matchType,
-        score1: parseInt(teamAScore) || 0,
-        score2: parseInt(teamBScore) || 0,
-        chrono: gameChrono,
+        matchId: matchId,
+        team1: document.getElementById('teamAName').textContent,
+        team2: document.getElementById('teamBName').textContent,
+        matchType: document.getElementById('matchType').textContent,
+        score1: score1El ? score1El.textContent : 0,
+        score2: score2El ? score2El.textContent : 0,
+        chrono: chronoEl ? chronoEl.textContent : '00:00',
         status: 'en_cours',
-        server: ballIconA.style.visibility === 'visible' ? 'A' : 'B'
+        sport: 'petanque', // Identifiant explicite du sport
+        cochonnet: true // Marqueur spécifique à la pétanque pour aider la détection
     };
     
-    console.log('Données mises à jour:', liveData);
+    // Sauvegarder avec différentes clés pour assurer la compatibilité
+    localStorage.setItem('petanque_liveMatchData', JSON.stringify(liveData)); // Clé générique préfixée
     
-    // Sauvegarder les données
-    localStorage.setItem('liveMatchData', JSON.stringify(liveData));
-    
-    // S'il y a un matchId, sauvegarder également avec une clé spécifique
-    if (liveData.matchId) {
-        localStorage.setItem(`liveMatchData_match${liveData.matchId}`, JSON.stringify(liveData));
+    if (matchId) {
+        // Clé avec préfixe sport en début pour filtrage facile
+        localStorage.setItem(`petanque_liveMatchData_match${matchId}`, JSON.stringify(liveData));
+        
+        // Clé spécifique au sport
+        localStorage.setItem(`liveMatchData_petanque_match${matchId}`, JSON.stringify(liveData));
+        
+        // NE PAS utiliser la clé générique sans préfixe sport
+        // Cela peut causer des interférences
     }
+    
+    console.log("Données pétanque mises à jour:", liveData);
 }
 
 // Modification pour le chargement initial 
@@ -299,6 +304,24 @@ function updateLiveData() {
             console.log('Équipe B modifiée');
             updateTeams();
         });
+
+        // Mise à jour initiale
+        updateLiveData();
+        
+        // Observer les changements dans l'interface
+        const scoreboard = document.querySelector('.scoreboard');
+        if (scoreboard) {
+            const observer = new MutationObserver(updateLiveData);
+            observer.observe(scoreboard, { 
+                subtree: true, 
+                childList: true,
+                characterData: true,
+                characterDataOldValue: true
+            });
+        }
+        
+        // Mettre à jour toutes les secondes pour garantir la synchronisation
+        setInterval(updateLiveData, 1000);
     });
 
     

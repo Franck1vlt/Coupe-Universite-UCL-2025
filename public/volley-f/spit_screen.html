@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Affichage Avancé - Volleyball Femmes</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #ffffff;
+            color: #000000;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            height: 100%;
+        }
+
+        .score-section, .info-section {
+            flex: 1;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .score-section {
+            background-color: #f0f0f0;
+            border-right: 2px solid #ccc;
+        }
+
+        .info-section {
+            background-color: #ffffff;
+        }
+
+        .teams {
+            display: flex;
+            justify-content: space-around;
+            font-size: 3rem;
+            margin: 1.25rem 0;
+            font-weight: bold;
+        }
+
+        .score-container {
+            font-size: 6rem;
+            font-weight: bold;
+            margin: 2.5rem 0;
+        }
+
+        .ball-icon {
+            width: 3rem;
+            height: 3rem;
+            vertical-align: middle;
+        }
+
+        .score-divider {
+            margin: 0 2.5rem;
+            color: #000000;
+        }
+
+        .match-info {
+            font-size: 2rem;
+            margin: 1.875rem 0;
+        }
+
+        .remaining-time {
+            background-color: #000000;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.625rem;
+            margin-right: 1.25rem;
+            color: red;
+        }
+
+        .match-type {
+            color: #000000;
+        }
+
+        .team-logo {
+            width: 5rem;
+            height: 5rem;
+            margin: 0 1.25rem;
+            object-fit: contain;
+        }
+
+        .info-section h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #3F51B5;
+        }
+
+        .info-section p {
+            font-size: 1.5rem;
+            margin: 10px 0;
+        }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Section de score (gauche) -->
+        <div class="score-section">
+            <div class="teams">
+                <div class="team">
+                    <img src="" alt="" class="team-logo" id="logoB">
+                    <div id="teamBName">TEAM B</div>
+                </div>
+                <div class="team">
+                    <img src="" alt="" class="team-logo" id="logoA">
+                    <div id="teamAName">TEAM A</div>
+                </div>
+            </div>
+            
+            <div class="score-container">
+                <img src="volley-ball.png" alt="Volleyball Icon" class="ball-icon" id="ballIconB" style="visibility: hidden;">
+                <span id="teamBScore">0</span>
+                <span class="score-divider">-</span>
+                <span id="teamAScore">0</span>
+                <img src="volley-ball.png" alt="Volleyball Icon" class="ball-icon" id="ballIconA" style="visibility: hidden;">
+            </div>
+            
+            <div class="match-info">
+                <span class="remaining-time" id="gameChrono">00:00</span>
+                <span class="match-type" id="matchType"></span>
+            </div>
+        </div>
+
+        <!-- Section d'informations (droite) -->
+        <div class="info-section">
+            <h2>Informations sur le match</h2>
+            <p id="matchDetails">Détails du match en cours...</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let socket;
+            let socketConnected = false;
+
+            function initWebSocket() {
+                try {
+                    socket = io({
+                        reconnectionAttempts: Infinity,
+                        reconnectionDelay: 1000,
+                        timeout: 5000,
+                        transports: ['polling', 'websocket']
+                    });
+
+                    socket.on('connect', () => {
+                        console.log('Connecté au serveur WebSocket avec ID:', socket.id);
+                        socketConnected = true;
+                        socket.emit('join_sport', 'volley-f');
+                        requestCurrentData();
+                    });
+
+                    socket.on('disconnect', (reason) => {
+                        console.log('Déconnecté du serveur WebSocket. Raison:', reason);
+                        socketConnected = false;
+                    });
+
+                    socket.on('connect_error', (error) => {
+                        console.error('Erreur de connexion WebSocket:', error);
+                        socketConnected = false;
+                    });
+
+                    socket.on('volley_score_update', (data) => {
+                        console.log('Réception mise à jour volley:', data);
+                        localStorage.setItem('liveMatchData', JSON.stringify(data));
+                        updateDisplay(data);
+                    });
+                } catch (error) {
+                    console.error('Erreur WebSocket:', error);
+                }
+            }
+
+            function requestCurrentData() {
+                if (socketConnected) {
+                    socket.emit('request_current_data', { sport: 'volley-f' });
+                }
+            }
+
+            function updateDisplay(data = null) {
+                if (!data) {
+                    data = JSON.parse(localStorage.getItem('liveMatchData_volleyF') || '{}');
+                }
+
+                document.getElementById('teamAName').textContent = data.team1 || 'TEAM A';
+                document.getElementById('teamBName').textContent = data.team2 || 'TEAM B';
+                document.getElementById('matchType').textContent = data.matchType || 'Match en cours';
+
+                const logoA = document.getElementById('logoA');
+                const logoB = document.getElementById('logoB');
+
+                if (data.team1) {
+                    logoA.src = `../img/${data.team1}.png`;
+                    logoA.onerror = () => logoA.src = '../img/default.png';
+                }
+
+                if (data.team2) {
+                    logoB.src = `../img/${data.team2}.png`;
+                    logoB.onerror = () => logoB.src = '../img/default.png';
+                }
+
+                document.getElementById('teamAScore').textContent = data.score1 || '0';
+                document.getElementById('teamBScore').textContent = data.score2 || '0';
+                document.getElementById('gameChrono').textContent = data.chrono || '00:00';
+
+                const ballIconA = document.getElementById('ballIconA');
+                const ballIconB = document.getElementById('ballIconB');
+                if (data.server === 'A') {
+                    ballIconA.style.visibility = 'visible';
+                    ballIconB.style.visibility = 'hidden';
+                } else if (data.server === 'B') {
+                    ballIconA.style.visibility = 'hidden';
+                    ballIconB.style.visibility = 'visible';
+                }
+
+                document.getElementById('matchDetails').textContent = `Match entre ${data.team1 || 'TEAM A'} et ${data.team2 || 'TEAM B'} en cours.`;
+            }
+
+            initWebSocket();
+            updateDisplay();
+        });
+    </script>
+</body>
+</html>

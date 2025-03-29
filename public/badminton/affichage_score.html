@@ -34,7 +34,7 @@
         .score-container {
             font-size: 20rem;
             font-weight: bold;
-            margin: 17.5rem 0;
+            margin: 4.5rem 0;
         }
 
         img#ballIconA {}
@@ -52,15 +52,8 @@
             opacity: 1; /* Au lieu de visibility: visible */
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.8; }
-            100% { transform: scale(1); opacity: 1; }
-        }
 
-        .pulsate {
-            animation: pulse 1.5s infinite;
-        }
+
 
         .ball-icon-table {
             width: 1.25rem;
@@ -81,8 +74,8 @@
 
         .remaining-time {
             background-color: #000000;
-            padding: 2.625rem 2.25rem;
-            border-radius: 2.625rem;
+            padding: 1.625rem 1.25rem;
+            border-radius: 1.625rem;
             margin-right: 1.25rem;
             color: red
         }
@@ -316,8 +309,8 @@
                     }
                     
                     // Supprimer toutes les classes
-                    ballIconA.classList.remove('visible', 'pulsate');
-                    ballIconB.classList.remove('visible', 'pulsate');
+                    ballIconA.classList.remove('visible');
+                    ballIconB.classList.remove('visible');
                     
                     // Réinitialiser les styles
                     ballIconA.style.opacity = '0';
@@ -327,11 +320,11 @@
                     if (matchData.server === 'A') {
                         console.log("Serveur: A - Affichage de l'icône A");
                         ballIconA.style.opacity = '1';
-                        ballIconA.classList.add('visible', 'pulsate');
+                        ballIconA.classList.add('visible');
                     } else if (matchData.server === 'B') {
                         console.log("Serveur: B - Affichage de l'icône B");
                         ballIconB.style.opacity = '1';
-                        ballIconB.classList.add('visible', 'pulsate');
+                        ballIconB.classList.add('visible');
                     }
                 } else {
                     console.warn("Impossible de trouver les éléments ballIconA ou ballIconB");

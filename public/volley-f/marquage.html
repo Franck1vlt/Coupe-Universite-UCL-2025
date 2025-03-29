@@ -112,7 +112,10 @@
           <button onclick="location.href='volleyball.html'">Retour</button>
         </div>
         <div class="button-row2">
-          <button onclick="openScoreDisplay()">Spectateurs</button>
+          <button onclick="openScoreDisplay()" title="Affichage simple du score pour écran TV">Affichage Score</button>
+        </div>
+        <div class="button-row3">
+            <button onclick="window.open('split_screen.html', '_blank')" title="Affichage avancé avec statistiques">Écran Avancé</button>
         </div>
       </div>
     </div>
@@ -227,17 +230,18 @@
             team2: document.getElementById('teamB').value,
             matchType: document.getElementById('matchType').textContent,
             matchId: new URLSearchParams(window.location.search).get('matchId'),
-            score1: 0,
-            score2: 0,
+            score1: document.getElementById('teamAScore').textContent || 0,
+            score2: document.getElementById('teamBScore').textContent || 0,
             yellowCards1: 0,
             yellowCards2: 0,
             redCards1: 0,
             redCards2: 0,
-            chrono: '00:00'
+            chrono: document.getElementById('gameChrono').textContent || '00:00',
+            server: server || 'A'
         }));
 
-        // Ouvrir la fenêtre d'affichage
-        const displayWindow = window.open('affichage_score.html', '_blank');
+        // Ouvrir la fenêtre d'affichage (avec identifiant unique pour éviter les doublons)
+        const displayWindow = window.open('affichage_score.html?display=simple', '_blank', 'scoreDisplay');
     }
 
     // Fonction pour mettre à jour les données en direct

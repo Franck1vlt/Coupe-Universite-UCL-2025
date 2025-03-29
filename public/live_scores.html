@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Scores - Coupe Universitaire UCL 2025</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #28a745;
+        }
+
+        .fond_vert {
+            background-color: #28a745;
+            width: 100%;
+            padding: 1rem;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+
+        .header {
+            text-align: center;
+            margin-bottom: 5.5rem;
+        }
+
+        .header img {
+            max-width: 100px;
+            height: auto;
+            margin-bottom: 0.5rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .scores-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 5%;
+        }
+
+        .score-card {
+            margin-bottom: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 5%;
+        }
+
+        .score-card h2 {
+            margin-bottom: 0.5rem;
+            text-align: center;
+            font-size: 1.2rem;
+        }
+
+        /* Styles communs pour tous les scorebars */
+        .scorebar-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto 10px auto;
+        }
+
+        .scorebar-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Styles pour scorebar.png (type 1) - Fléchettes */
+        .scorebar-type1 .team-score-left {
+            position: absolute;
+            top: 28%;
+            right: -34%;
+            font-weight: bold;
+            font-size: 24px;
+            color: black;
+            text-align: center;
+            width: 40px;
+        }
+
+        .scorebar-type1 .team-score-left {
+            left: 7%;
+            transform: translate(-50%, -50%);
+        }
+
+        .scorebar-type1 .team-score-right {
+            position: absolute;
+            right: 7%;
+            top: 27%;
+            font-size: 23px;
+            font-weight: bold;
+            transform: translate(50%, -50%);
+        }
+
+        .scorebar-type1 .team-name-left {
+            position: absolute;
+            top: 28%;
+            transform: translateY(-50%);
+            font-weight: bold;
+            font-size: 17px;
+            color: black;
+            text-align: center;
+            width: 30%;
+            font-weight: bold;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .scorebar-type1 .team-name-left {
+            left: 29%;
+            transform: translate(-50%, -50%);
+        }
+
+        .scorebar-type1 .team-name-right {
+        position: absolute;
+        right: 23%;
+        top: 16%;
+        font-size: 17px;
+        font-weight: bold;
+        }
+
+        .scorebar-type1 .points-1 {
+            position: absolute;
+            bottom: 10%;
+            left: 35%;
+            transform: translateX(-50%);
+            font-weight: bold;
+            font-size: 18px;
+            padding: 0 10px;
+            width: 60px;
+            text-align: center;
+            line-height: 24px;
+            font-size: 23px;
+        }
+
+        .scorebar-type1 .points-2 {
+            position: absolute;
+            bottom: 6px;
+            right: 37%;
+            transform: translateX(50%);
+            font-weight: bold;
+            font-size: 23px;
+            padding: 0 10px;
+            width: 60px;
+            text-align: center;
+            line-height: 24px;
+        }
+
+        /* Styles pour scorebar2.png (type 2) - Pétanque */
+        .scorebar-type2 .team-score-left,
+        .scorebar-type2 .team-score-right {
+            position: absolute;
+            top: 50%;
+            font-weight: bold;
+            font-size: 24px;
+            color: black;
+            text-align: center;
+            width: 40px;
+        }
+
+        .scorebar-type2 .team-score-left {
+            left: 7%;
+            bottom: -11%;
+            font-size: 23px;
+            transform: translate(-50%, -50%);
+        }
+
+        .scorebar-type2 .team-score-right {
+            right: 7%;
+            bottom: -11%;
+            font-size: 23px;
+            transform: translate(50%, -50%);
+        }
+
+        .scorebar-type2 .team-name-left,
+        .scorebar-type2 .team-name-right {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: bold;
+            font-size: 14px;
+            color: black;
+            text-align: center;
+            width: 30%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .scorebar-type2 .team-name-left {
+            left: 14%;
+            top: 56%;
+            font-size: 17px;
+            /* transform: translate(-50%, -50%); */
+        }
+
+        .scorebar-type2 .team-name-right {
+            right: 30%;
+            top: 49%;
+            font-size: 17px;
+            transform: translate(50%, -50%);
+            bottom: 11%;
+        }
+
+        .scorebar-type2 .chrono {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: bold;
+            font-size: 18px;
+            color: white;
+            background-color: #007bff;
+            padding: 0 10px;
+            width: 80px;
+            text-align: center;
+            line-height: 24px;
+        }
+
+        /* Styles pour scorebar3.png (type 3) - Football et Volley/Basket */
+        .scorebar-type3 .team-name-left {
+            position: absolute;
+            top: 27%;
+            transform: translateY(-50%);
+            font-weight: bold;
+            font-size: 17px;
+            color: black;
+            text-align: center;
+            width: 30%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .scorebar-type3 .team-name-left {
+            left: 29%;
+            top: 28%;
+            font-size: 17px;
+            transform: translate(-50%, -50%);
+        }
+
+        .scoresbar3.team-name-right {
+        position: absolute;
+        top: 24%;
+        font-size: 17px;
+        }
+
+        .scorebar-type3 .team-score-left,
+        .scorebar-type3 .team-score-right {
+            position: absolute;
+            bottom: 0;
+            font-weight: bold;
+            font-size: 20px;
+            text-align: center;
+            width: 60px;
+            height: 30px;
+            line-height: 30px;
+        }
+
+        .scorebar-type3 .team-score-left {
+            left: 7%;
+            top: 9%;
+            transform: translateX(-50%);
+            color: black;
+            font-size: 23px;
+        }
+
+        .scorebar-type3 .team-score-right {
+            right: 7%;
+            bottom: 52%;
+            font-size: 23px;
+            transform: translateX(50%);
+        }
+
+        .scorebar-type3 .chrono {
+            position: absolute;
+            bottom: 7%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: bold;
+            font-size: 23px;
+            padding: 0 10px;
+            width: 80px;
+            text-align: center;
+            line-height: 30px;
+        }
+
+        .refresh-button {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .refresh-button button {
+            background-color: white;
+            color: #28a745;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .refresh-button button:hover {
+            background-color: #f8f9fa;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .team-name-left, .team-name-right {
+                font-size: 12px;
+            }
+            
+            .team-score-left, .team-score-right {
+                font-size: 18px;
+            }
+            
+            .chrono {
+                font-size: 16px;
+            }
+        }
+
+        /* Style pour le nom de l'équipe droite dans scorebar3 */
+        .scorebar-type3 .team-name-right {
+            position: absolute;
+            top: 28%;
+            right: 29%;
+            font-weight: bold;
+            font-size: 17px;
+            color: black;
+            text-align: center;
+            width: 30%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            transform: translate(50%, -50%);
+        }
+
+        /* Correction des styles pour les cartes sur mobile */
+        @media (max-width: 768px) {
+            .scores-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+                gap: 20px;
+            }
+            
+            .header {
+                margin-bottom: 2rem;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .score-card {
+                margin-bottom: 1rem;
+            }
+            
+            .team-name-left, 
+            .team-name-right, 
+            .team-score-left, 
+            .team-score-right,
+            .chrono,
+            .points-1,
+            .points-2 {
+                font-size: 14px !important;
+            }
+        }
+
+        /* Animation pour les mises à jour */
+        @keyframes highlight {
+            0% { background-color: transparent; }
+            50% { background-color: rgba(255, 255, 0, 0.5); }
+            100% { background-color: transparent; }
+        }
+
+        .updated {
+            animation: highlight 1.5s ease;
+        }
+
+        /* Style pour la barre de chargement */
+        .loading-bar {
+            width: 100%;
+            height: 4px;
+            background-color: #f3f3f3;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        .loading-progress {
+            height: 100%;
+            background-color: #007bff;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Style pour afficher les statuts de connexion */
+        .connection-status {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            color: white;
+            background-color: #6c757d;
+            z-index: 1000;
+            opacity: 0.8;
+        }
+
+        .status-connected {
+            background-color: #28a745;
+        }
+
+        .status-disconnected {
+            background-color: #dc3545;
+        }
+
+        .status-connecting {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        /* Style pour le bouton de rafraîchissement manuel */
+        .refresh-button {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+
+        .refresh-button button {
+            padding: 8px 16px;
+            background-color: white;
+            color: #28a745;
+            border: 2px solid #28a745;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-button button:hover {
+            background-color: #28a745;
+            color: white;
+        }
+
+        /* Style pour le timestamp de dernière mise à jour */
+        .last-update {
+            text-align: center;
+            margin-top: 20px;
+            color: white;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        /* Styles pour les terrains à deux parties */
+        .terrain-double .partie {
+            margin-bottom: 10px;
+        }
+
+        /* Styles améliorés pour le chronomètre en temps réel */
+        .chrono {
+            font-family: monospace;
+            letter-spacing: 1px;
+            transition: color 0.1s ease;
+        }
+        
+        .time-changed {
+            color: #ff3300;
+        }
+        
+        /* Style spécial pour les chronos qui clignotent à chaque seconde */
+        @keyframes pulse-digit {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .chrono .digit-seconds {
+            animation: pulse-digit 1s infinite;
+        }
+    </style>
+    <!-- Scripts pour les scores en direct -->
+    <script src="/js/live-scores.js"></script>
+    <script src="/flechettes/live-flechettes.js"></script>
+</head>
+<body>
+    <div class="fond_vert">
+        <div class="container">
+            <div class="header">
+                <img src="img/coupe.png" alt="logo coupe">
+                <h1>Matchs en cours</h1>
+            </div>
+
+            <div class="scores-grid" id="scoresContainer">
+                <!-- Les terrains seront générés ici -->
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Récupérer la définition des terrains du JS pour assurer la cohérence
+        let terrains = window.terrains || [
+            { id: 1, name: "Terrain n°1 - Football", type: "football", scorebarType: 3, count: 1 },
+            { id: 2, name: "Terrain n°2 - Cible 1", type: "flechettes", scorebarType: 1, count: 1 },
+            { id: 3, name: "Terrain n°3 - Cible 2", type: "flechettes", scorebarType: 1, count: 1 },
+            { id: 4, name: "Terrain n°4 - Cible 3", type: "flechettes", scorebarType: 1, count: 1 },
+            { id: 5, name: "Terrain n°5 - Cible 4", type: "flechettes", scorebarType: 1, count: 1 },
+            { id: 6, name: "Terrain n°6 - Pétanque 1", type: "petanque", scorebarType: 2, count: 1 },
+            { id: 7, name: "Terrain n°7 - Pétanque 2", type: "petanque", scorebarType: 2, count: 1 },
+            { id: 8, name: "Terrain n°8 - Badminton/Handball", type: "badminton", mixedScorebarTypes: [2, 2, 3], count: 3 },
+            { id: 9, name: "Terrain n°9 - Volley/Basket", type: "volley", scorebarType: 3, count: 2 }
+        ];
+        
+        // Fonction pour générer l'affichage avec des valeurs statiques
+        function generateStaticDisplay() {
+            console.log("Génération de l'affichage statique...");
+            const container = document.getElementById('scoresContainer');
+            container.innerHTML = '';
+            
+            terrains.forEach(terrain => {
+                // Créer la carte pour ce terrain
+                const card = document.createElement('div');
+                card.className = 'score-card';
+                card.id = `terrain-${terrain.id}`;
+                // Ajouter un attribut data-sport pour faciliter la vérification
+                card.setAttribute('data-sport', terrain.type);
+                
+                if (terrain.count > 1) {
+                    card.className += ' terrain-double';
+                }
+                
+                card.innerHTML = `<h2>${terrain.name}</h2>`;
+                
+                // Pour chaque scorebar à afficher
+                for (let i = 0; i < terrain.count; i++) {
+                    const partie = document.createElement('div');
+                    partie.className = 'partie';
+                    partie.id = `terrain-${terrain.id}-partie-${i+1}`;
+                    partie.setAttribute('data-sport', terrain.type);
+                    
+                    // Déterminer le type de scorebar à utiliser
+                    let currentScorebarType;
+                    
+                    // Pour le terrain 8 avec mixed types
+                    if (terrain.mixedScorebarTypes && terrain.id === 8) {
+                        currentScorebarType = terrain.mixedScorebarTypes[i];
+                    } else {
+                        currentScorebarType = terrain.scorebarType;
+                    }
+                    
+                    // Déterminer quel fichier de scorebar utiliser
+                    let scorebarFile;
+                    if (currentScorebarType === 1) {
+                        scorebarFile = 'scorebar.png';
+                    } else if (currentScorebarType === 2) {
+                        scorebarFile = 'scorebar2.png';
+                    } else if (currentScorebarType === 3) {
+                        scorebarFile = 'scorebar3.png';
+                    }
+                    
+                    const scorebarContainer = document.createElement('div');
+                    scorebarContainer.className = `scorebar-container scorebar-type${currentScorebarType}`;
+                    scorebarContainer.id = `scorebar-${terrain.id}-${i+1}`;
+                    
+                    let scorebarHTML = `<img src="img/${scorebarFile}" alt="scorebar" class="scorebar-image">`;
+                    
+                    // Générer des IDs uniques pour chaque élément
+                    const teamLeftId = `team-${terrain.id}-${i+1}-left`;
+                    const teamRightId = `team-${terrain.id}-${i+1}-right`;
+                    const scoreLeftId = `score-${terrain.id}-${i+1}-left`;
+                    const scoreRightId = `score-${terrain.id}-${i+1}-right`;
+                    const chronoId = `chrono-${terrain.id}-${i+1}`;
+                    const points1Id = `points-${terrain.id}-${i+1}-1`;
+                    const points2Id = `points-${terrain.id}-${i+1}-2`;
+                    
+                    // Définir les valeurs statiques par défaut selon le type de terrain
+                    let team1 = 'EQUIPE 1'; 
+                    let team2 = 'EQUIPE 2';
+                    let score1 = '00';
+                    let score2 = '00';
+                    let chrono = '0:00';
+                    let points1 = '301';
+                    let points2 = '301';
+                    
+                    if (terrain.id === 6 || terrain.id === 7) { // Pétanque
+                        team1 = 'EQUIPE 1'; 
+                        team2 = 'EQUIPE 2';
+                        score1 = '03';
+                        score2 = '03';
+                    }
+                    
+                    // Ajouter les éléments spécifiques selon le type de scorebar
+                    if (currentScorebarType === 1) {
+                        // Type 1 (scorebar.png): Fléchettes - équipes, sets et points en bas
+                        scorebarHTML += `
+                            <span class="team-score-left" id="${scoreLeftId}">${score1}</span>
+                            <span class="team-name-left" id="${teamLeftId}">${team1}</span>
+                            <span class="team-name-right" id="${teamRightId}">${team2}</span>
+                            <span class="team-score-right" id="${scoreRightId}">${score2}</span>
+                            <span class="points-1" id="${points1Id}">${points1}</span>
+                            <span class="points-2" id="${points2Id}">${points2}</span>
+                        `;
+                    } else if (currentScorebarType === 2) {
+                        // Type 2 (scorebar2.png): Pétanque - équipes et points
+                        scorebarHTML += `
+                            <span class="team-score-left" id="${scoreLeftId}">${score1}</span>
+                            <span class="team-name-left" id="${teamLeftId}">${team1}</span>
+                            <span class="team-name-right" id="${teamRightId}">${team2}</span>
+                            <span class="team-score-right" id="${scoreRightId}">${score2}</span>
+                        `;
+                    } else if (currentScorebarType === 3) {
+                        // Type 3 (scorebar3.png): Football/Volley/Handball - équipes, buts, et chrono
+                        scorebarHTML += `
+                            <span class="team-name-left" id="${teamLeftId}">${team1}</span>
+                            <span class="team-name-right" id="${teamRightId}">${team2}</span>
+                            <span class="team-score-left" id="${scoreLeftId}">${score1}</span>
+                            <span class="team-score-right" id="${scoreRightId}">${score2}</span>
+                            <span class="chrono" id="${chronoId}">${chrono}</span>
+                        `;
+                    }
+                    
+                    scorebarContainer.innerHTML = scorebarHTML;
+                    
+                    // Si nous sommes sur un terrain de fléchettes, ajouter une classe spéciale
+                    if (terrain.type === 'flechettes') {
+                        scorebarContainer.classList.add('flechettes-scorebar');
+                    }
+                    
+                    partie.appendChild(scorebarContainer);
+                    card.appendChild(partie);
+                }
+                
+                container.appendChild(card);
+            });
+            
+            console.log("Affichage statique généré avec succès");
+            return terrains.map(t => `terrain-${t.id}`);
+        }
+        
+        // Fonction pour mettre à jour un élément spécifique par son ID
+        window.updateElement = function(elementId, newValue) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = newValue;
+                console.log(`Élément ${elementId} mis à jour avec la valeur: ${newValue}`);
+                return true;
+            } else {
+                console.error(`Élément avec l'ID ${elementId} non trouvé`);
+                return false;
+            }
+        };
+        
+        // Fonction pour vérifier les données de fléchettes - AMÉLIORÉE
+        function validateFlechettesData(data, terrainId) {
+            // Vérifier d'abord si le terrain est bien un terrain de fléchettes
+            const terrainConfig = terrains.find(t => t.id === terrainId);
+            if (!terrainConfig || terrainConfig.type !== 'flechettes') {
+                console.warn(`Terrain ${terrainId} n'est pas configuré pour les fléchettes`);
+                return false;
+            }
+            
+            // Vérifier si le terrain a été réservé par le gestionnaire spécifique
+            const container = document.getElementById(`terrain-${terrainId}`);
+            if (container && container.getAttribute('data-reserved') === 'true') {
+                // Si le terrain est déjà réservé, bloquer les mises à jour venant du système général
+                return false;
+            }
+            
+            // Vérification stricte des données
+            if (!data) return false;
+            
+            // Caractéristiques obligatoires d'un match de fléchettes
+            return (
+                (data.points1 !== undefined || data.points2 !== undefined) ||
+                (data.currentScore && (data.currentScore.teamA !== undefined || data.currentScore.teamB !== undefined)) ||
+                (data.sport === 'flechettes' || data.sport === 'darts')
+            );
+        }
+        
+        // Fonction spécifique aux fléchettes pour mettre à jour uniquement les terrains de fléchettes - AMÉLIORÉE
+        window.updateFlechettesDisplay = function(terrainId, data) {
+            // Vérification stricte
+            if (!validateFlechettesData(data, terrainId)) {
+                console.warn(`Données invalides pour terrain ${terrainId}`, data);
+                return;
+            }
+            
+            const container = document.getElementById(`terrain-${terrainId}`);
+            if (!container) {
+                console.warn(`Conteneur pour terrain ${terrainId} non trouvé`);
+                return;
+            }
+            
+            // Extraire un identifiant de match pour le traçage
+            const matchId = data.matchId || `${data.team1}_vs_${data.team2}`.replace(/\s+/g, '_');
+            container.setAttribute('data-match-id', matchId);
+            
+            // Mise à jour des données spécifiques aux fléchettes
+            const teamLeft = container.querySelector('.team-name-left');
+            const teamRight = container.querySelector('.team-name-right');
+            const scoreLeft = container.querySelector('.team-score-left');
+            const scoreRight = container.querySelector('.team-score-right');
+            const points1 = container.querySelector('.points-1');
+            const points2 = container.querySelector('.points-2');
+            
+            // Mise à jour avec vérification pour chaque élément
+            if (teamLeft && data.team1) {
+                teamLeft.textContent = data.team1;
+            }
+            
+            if (teamRight && data.team2) {
+                teamRight.textContent = data.team2;
+            }
+            
+            if (scoreLeft) {
+                const score = data.score1 !== undefined ? data.score1 : 
+                            (data.sets?.teamA !== undefined ? data.sets.teamA : '0');
+                scoreLeft.textContent = score;
+            }
+            
+            if (scoreRight) {
+                const score = data.score2 !== undefined ? data.score2 : 
+                            (data.sets?.teamB !== undefined ? data.sets.teamB : '0');
+                scoreRight.textContent = score;
+            }
+            
+            if (points1) {
+                const points = data.points1 !== undefined ? data.points1 : 
+                            (data.currentScore?.teamA !== undefined ? data.currentScore.teamA : '301');
+                points1.textContent = points;
+            }
+            
+            if (points2) {
+                const points = data.points2 !== undefined ? data.points2 : 
+                            (data.currentScore?.teamB !== undefined ? data.currentScore.teamB : '301');
+                points2.textContent = points;
+            }
+            
+            // Ajouter une animation pour montrer la mise à jour
+            container.classList.add('updated');
+            setTimeout(() => container.classList.remove('updated'), 1500);
+            
+            console.log(`Terrain de fléchettes ${terrainId} mis à jour: ${data.team1} vs ${data.team2}`);
+        };
+        
+        // Ajouter une fonction de rafraîchissement manuel
+        function refreshScores() {
+            console.log("Rafraîchissement manuel des scores...");
+            // S'assurer que la fonction existe avant de l'appeler
+            if (typeof loadInitialStates === 'function') {
+                loadInitialStates();
+            } else {
+                console.error("Fonction loadInitialStates non disponible");
+            }
+        }
+        
+        // Exposer globalement la fonction generateStaticDisplay pour qu'elle soit accessible
+        window.generateStaticDisplay = generateStaticDisplay;
+        
+        // Générer l'affichage au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            generateStaticDisplay();
+            
+            // Déverrouiller tous les terrains temporairement pour permettre un affichage propre
+            setTimeout(() => {
+                // Marquer tous les terrains de fléchettes avec une couleur distincte
+                const sportColors = {
+                    'football': 'rgba(0, 128, 0, 0.1)',
+                    'flechettes': 'rgba(255, 165, 0, 0.1)',
+                    'petanque': 'rgba(165, 42, 42, 0.1)',
+                    'badminton': 'rgba(0, 0, 255, 0.1)',
+                    'volley': 'rgba(128, 0, 128, 0.1)'
+                };
+                
+                // Appliquer une couleur à chaque type de terrain
+                terrains.forEach(terrain => {
+                    const container = document.getElementById(`terrain-${terrain.id}`);
+                    if (container && sportColors[terrain.type]) {
+                        container.style.backgroundColor = sportColors[terrain.type];
+                        
+                        // S'assurer que chaque terrain a son type correctement défini
+                        container.setAttribute('data-sport', terrain.type);
+                    }
+                });
+                
+                // Pour les terrains de fléchettes, vider les affichages existants
+                // pour permettre au gestionnaire spécifique de les remplir
+                for (let i = 2; i <= 5; i++) {
+                    const container = document.getElementById(`terrain-${i}`);
+                    if (container) {
+                        const teamLeft = container.querySelector('.team-name-left');
+                        const teamRight = container.querySelector('.team-name-right');
+                        const scoreLeft = container.querySelector('.team-score-left');
+                        const scoreRight = container.querySelector('.team-score-right');
+                        const points1 = container.querySelector('.points-1');
+                        const points2 = container.querySelector('.points-2');
+                        
+                        // Nettoyer l'affichage existant
+                        if (teamLeft) teamLeft.textContent = "INITIALISATION...";
+                        if (teamRight) teamRight.textContent = "INITIALISATION...";
+                        if (scoreLeft) scoreLeft.textContent = "0";
+                        if (scoreRight) scoreRight.textContent = "0";
+                        if (points1) points1.textContent = "301";
+                        if (points2) points2.textContent = "301";
+                    }
+                }
+            }, 100);
+        });
+        
+        // Écouter les événements personnalisés pour les mises à jour en temps réel
+        document.addEventListener('basketball-update', function(event) {
+            console.log('Événement basketball-update reçu:', event.detail);
+            const data = event.detail;
+            
+            // Mise à jour spécifique pour le basket
+            if (data && data.terrainId) {
+                const terrainId = data.terrainId;
+                const position = data.position || 2;
+                
+                // Trouver le conteneur correspondant
+                const container = document.getElementById(`terrain-${terrainId}-partie-${position}`);
+                if (container) {
+                    // Mise à jour des éléments spécifiques
+                    if (data.gameTimer) {
+                        const chrono = container.querySelector('.chrono');
+                        if (chrono) chrono.textContent = data.gameTimer;
+                    }
+                    
+                    if (data.score1) {
+                        const scoreLeft = container.querySelector('.team-score-left');
+                        if (scoreLeft) scoreLeft.textContent = data.score1;
+                    }
+                    
+                    if (data.score2) {
+                        const scoreRight = container.querySelector('.team-score-right');
+                        if (scoreRight) scoreRight.textContent = data.score2;
+                    }
+                }
+            }
+        });
+        
+        // Écouter spécifiquement les mises à jour du chronomètre
+        document.addEventListener('basketball-timer-update', function(event) {
+            const data = event.detail;
+            
+            // Mise à jour spécifique pour le chronomètre du basket
+            const container = document.getElementById('terrain-9-partie-2');
+            if (container && data.gameTimer) {
+                const chrono = container.querySelector('.chrono');
+                if (chrono) {
+                    chrono.textContent = data.gameTimer;
+                }
+            }
+        });
+
+        // Attribuer une couleur de fond légèrement différente à chaque type de terrain
+        // pour mieux visualiser les différents sports
+        setTimeout(() => {
+            const sportColors = {
+                'football': 'rgba(0, 128, 0, 0.1)',
+                'flechettes': 'rgba(255, 165, 0, 0.1)',
+                'petanque': 'rgba(165, 42, 42, 0.1)',
+                'badminton': 'rgba(0, 0, 255, 0.1)',
+                'volley': 'rgba(128, 0, 128, 0.1)'
+            };
+            
+            terrains.forEach(terrain => {
+                const container = document.getElementById(`terrain-${terrain.id}`);
+                if (container && sportColors[terrain.type]) {
+                    container.style.backgroundColor = sportColors[terrain.type];
+                }
+            });
+        }, 1000);
+    </script>
+</body>
+</html>

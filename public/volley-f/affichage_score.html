@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Affichage Score Volleyball</title>
+    <title>Affichage Simple Score Volleyball</title>
     <style>
         body {
             margin: 0;
@@ -156,6 +156,11 @@
 </head>
 <body>
     <div class="score-board">
+        <!-- Ajout d'un titre distinctif -->
+        <div style="position: absolute; top: 10px; left: 10px; font-size: 1rem; color: #666;">
+            AFFICHAGE SIMPLE SCORE
+        </div>
+        
         <div class="teams">
             <div class="team">
                 <img src="" alt="" class="team-logo" id="logoB">
@@ -194,6 +199,9 @@
             let socket;
             let socketConnected = false;
             let reconnectInterval;
+
+            // Variable pour identifier explicitement quel écran est ouvert
+            const displayType = 'simple';
 
             // Initialisation WebSocket avec polling en priorité
             function initWebSocket() {
@@ -326,6 +334,7 @@
 
             function updateDisplay() {
                 const matchData = JSON.parse(localStorage.getItem('liveMatchData_volleyF') || '{}');
+                console.log('Mise à jour écran simple avec données:', matchData);
                 
                 // Mise à jour des équipes et du type de match
                 document.getElementById('teamAName').textContent = matchData.team1 || 'TEAM A';

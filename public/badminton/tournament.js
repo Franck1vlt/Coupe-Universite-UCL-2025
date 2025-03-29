@@ -288,7 +288,6 @@ function loadTournamentState() {
             // Remplacer l'état complet
             tournamentState = newState;
             
-            // ...existing code...
             return true;
         } catch (error) {
             console.error('Erreur lors du chargement de l\'état du tournoi:', error);
@@ -1737,6 +1736,9 @@ function navigateToScoring(matchId) {
     
     const matchData = tournamentState.matches[matchId];
     
+    // Ajouter des logs de débogage
+    console.log(`Tentative de navigation vers le match ${matchId}:`, matchData);
+    
     // Construire les paramètres URL
     const params = new URLSearchParams();
     params.append('matchId', matchId);
@@ -1753,11 +1755,15 @@ function navigateToScoring(matchId) {
     params.append('score2', matchData.score2 !== null ? matchData.score2 : '');
     params.append('correction', correctionModeActive ? 'true' : 'false');
     
+    // Imprimer l'URL pour débogage
+    const fullURL = `marquage.html?${params.toString()}`;
+    console.log("URL de navigation:", fullURL);
+    
     // Rediriger vers la page de marquage
-    window.location.href = `marquage.html?${params.toString()}`;
+    window.location.href = fullURL;
   } catch (error) {
     console.error('Erreur lors de la navigation:', error);
-    alert('Une erreur est survenue lors de la navigation vers la page de marquage.');
+    alert('Une erreur est survenue lors de la navigation vers la page de marquage: ' + error.message);
   }
 }
 

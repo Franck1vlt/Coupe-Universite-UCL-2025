@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Affichage Double Match - Badminton</title>
+    <title>Affichage Double Match - Volley F</title>
     <style>
         body {
             margin: 0;
@@ -252,7 +252,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Badminton - Matchs en cours</h1>
+            <h1>Volley Femmes - Matchs en cours</h1>
         </header>
         
         <div class="split-container">
@@ -305,28 +305,24 @@
         
         // Générer des identifiants uniques pour chaque côté de l'écran
         const uniqueIds = {
-            match1: `badminton_match1_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-            match2: `badminton_match2_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+            match1: `volley-f_match1_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            match2: `volley-f_match2_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
         };
         
         // Préfixe pour stocker les données dans le localStorage
-        const STORAGE_PREFIX = 'badminton_';
+        const STORAGE_PREFIX = 'volley-f_';
         
-        // Paires de matchs simultanés dans le tournoi de badminton
+        // Paires de matchs simultanés dans le tournoi de volley-f
         const simultaneousMatches = [
-            // Matchs de barrage
-            ['1', '2'],
             // Quarts de finale
-            ['3', '4'],
-            ['5', '6'],
+            ['2', '3'],
+            ['4', '5'],
             // Demi-finales principales
-            ['9', '10'],
-            // Demi-finales de classement
-            ['7', '8'],
+            ['6', '7'],
             // Matchs de classement
-            ['11', '12'],
+            ['8', '9'],
             // Finale et petite finale
-            ['13', '14']
+            ['10', '11']
         ];
         
         // Conversion des types de match en libellés plus lisibles
@@ -351,8 +347,8 @@
             
             // Si pas trouvé, essayer avec l'ancien format (non préfixé) pour compatibilité
             if (!savedState) {
-                savedState = localStorage.getItem('badmintonTournamentState');
-                console.log('Chargement depuis l\'ancienne clé badmintonTournamentState');
+                savedState = localStorage.getItem('volleyFTournamentState');
+                console.log('Chargement depuis l\'ancienne clé volleyFTournamentState');
             }
             
             if (savedState) {
@@ -522,7 +518,7 @@
                 chrono: '00:00',
                 status: matchData.status || 'en_cours',
                 server: 'A',  // Valeur par défaut
-                sport: 'badminton'  // Identifiant de sport
+                sport: 'volley-f'  // Identifiant de sport
             };
             
             localStorage.setItem(storageKey, JSON.stringify(matchLiveData));
@@ -621,7 +617,7 @@
             // Écouter les mises à jour de matchs depuis les pages de marquage
             window.addEventListener('storage', function(event) {
                 try {
-                    console.log("Badminton split-screen: événement storage détecté:", event.key);
+                    console.log("Volley F split-screen: événement storage détecté:", event.key);
                     
                     // IMPORTANT: Ignorer TOUS les événements liés à la pétanque
                     if (event.key && (
@@ -629,19 +625,19 @@
                         event.key.includes('petanque_') ||
                         event.key.includes('cochonnet')
                     )) {
-                        console.log('Badminton: Ignoré événement pétanque', event.key);
+                        console.log('Volley F: Ignoré événement pétanque', event.key);
                         return;
                     }
                     
                     // Ignorer les événements provenant de nos propres clés
                     if (event.key && event.key.startsWith(`${STORAGE_PREFIX}splitScreen_`)) {
-                        console.log('Badminton: Ignoré événement de notre propre split-screen');
+                        console.log('Volley F: Ignoré événement de notre propre split-screen');
                         return;
                     }
                     
                     // Vérification: l'événement doit avoir une valeur
                     if (!event.newValue) {
-                        console.log('Badminton: Ignoré événement sans données');
+                        console.log('Volley F: Ignoré événement sans données');
                         return;
                     }
                     
@@ -649,9 +645,9 @@
                     try {
                         const data = JSON.parse(event.newValue);
                         
-                        // Vérifier explicitement si c'est du badminton (filtre par propriété sport)
-                        if (data.sport && data.sport !== 'badminton') {
-                            console.log(`Badminton: Ignoré données du sport ${data.sport}`);
+                        // Vérifier explicitement si c'est du volley f (filtre par propriété sport)
+                        if (data.sport && data.sport !== 'volley-f') {
+                            console.log(`Volley F: Ignoré données du sport ${data.sport}`);
                             return;
                         }
                         
@@ -659,16 +655,16 @@
                         if (!data.sport) {
                             // Vérifier des propriétés spécifiques à la pétanque
                             if (data.cochonnet || event.key.includes('cochonnet')) {
-                                console.log('Badminton: Ignoré données pétanque (détection par propriétés)');
+                                console.log('Volley F: Ignoré données pétanque (détection par propriétés)');
                                 return;
                             }
                         }
                     } catch (error) {
-                        console.log('Badminton: Erreur lors du parsing des données', error);
+                        console.log('Volley F: Erreur lors du parsing des données', error);
                         return; // Ignorer en cas d'erreur de parsing
                     }
                     
-                    // Maintenant, traiter spécifiquement les événements badminton
+                    // Maintenant, traiter spécifiquement les événements volley F
                     // Préfixé ou générique (sans préfixe de sport)
                     if (event.key.startsWith(`${STORAGE_PREFIX}liveMatchData_match`) || 
                         event.key.startsWith('liveMatchData_match')) {
@@ -682,7 +678,7 @@
                         }
                         
                         const newData = JSON.parse(event.newValue);
-                        console.log(`Mise à jour badminton pour match ${matchId}:`, newData);
+                        console.log(`Mise à jour volley F pour match ${matchId}:`, newData);
                         
                         // Mettre à jour l'iframe correspondante si le match est affiché
                         if (displayedMatches.left && displayedMatches.left.id === matchId) {
@@ -728,7 +724,7 @@
                         }
                     }
                 } catch (error) {
-                    console.error('Badminton: Erreur lors de la mise à jour des données:', error);
+                    console.error('Volley F: Erreur lors de la mise à jour des données:', error);
                 }
             });
         });

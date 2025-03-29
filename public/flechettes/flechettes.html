@@ -5,10 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fléchettes</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- Dans styles.css, pensez à définir par exemple : 
-       .phase-content { display: flex; } 
-       .hidden { display: none !important; }
-  -->
   <style>
     .correction-button {
       position: fixed;
@@ -35,20 +31,177 @@
       background-color: #d32f2f;
     }
 
-    .match.terminé {
+    .match {
+      padding: -1px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f9f9f9;
       cursor: pointer;
     }
 
+    .match.terminé {
+      background-color: #e8f5e9;
+    }
+
+    .match.en_cours {
+      background-color: #fff9c4;
+    }
+
+    .match.à_venir {
+      background-color: #f5f5f5;
+    }
+
+    .match:hover {
+      border: 2px solid #2196F3;
+      transform: translateY(-2px);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      transition: all 0.2s ease;
+    }
+    
     .match.terminé:hover {
       border: 2px solid #f44336;
     }
+    
+    .clickable {
+      position: relative;
+    }
+    
+    .clickable:after {
+      content: "👆";
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      font-size: 12px;
+    }
+
+    .match-time {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .match-teams {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    .team {
+      flex: 1;
+      font-weight: 500;
+    }
+
+    .team.winner {
+      font-weight: bold;
+      color: #388e3c;
+    }
+
+    .score {
+      margin: 0 10px;
+      font-weight: bold;
+    }
+
+    .match-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9em;
+      color: #666;
+    }
+
+    .phase-content {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+    
+    .ranking-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    
+    .ranking-row {
+      display: flex;
+      border-bottom: 1px solid #ddd;
+      padding: 8px 0;
+    }
+    
+    .ranking-row.header {
+      font-weight: bold;
+      background-color: #000000;
+    }
+    
+    .rank {
+      width: 40px;
+      text-align: center;
+    }
+    
+    .teamname {
+      flex: 1;
+    }
+    
+    .stats {
+      width: 40px;
+      text-align: center;
+    }
+    
+    .points {
+      width: 60px;
+      text-align: center;
+    }
+    
+    .matches-container {
+      margin-top: 20px;
+    }
+    
+    .poule-section {
+      width: 100%;
+    }
+    
+    .bracket {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+    
+    /* Styles pour les phases finales */
+    .round {
+      display: flex;
+      flex-direction: column;
+      margin: 10px 0;
+    }
+    
+    .round-title {
+      font-weight: bold;
+      margin: 10px 0;
+      text-align: center;
+    }
+    
+    .match-wrapper {
+      margin: 5px 0;
+    }
+    
+    .reset-button, .back-button {
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 5px;
+      background-color: #f44336;
+      color: white;
+      cursor: pointer;
+    }
+    
+    .back-button {
+      background-color: #2196F3;
+    }
   </style>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="tournament.js"></script> <!-- Assurez-vous que tournament.js est chargé avant les scripts intégrés -->
+  <script src="tournament.js"></script>
 </head>
 <body>
   <button id="correctionMode" class="correction-button" onclick="toggleCorrectionMode()">✏️</button>
-  <div class="background-lines"></div>
   <div class="container">
     <header>
       <div class="phase-selector">
@@ -60,22 +213,16 @@
         </select>
       </div>
       <h1>Fléchettes</h1>
-      <div class="subtitle">Phase à élimination directe</div>
+      <div class="subtitle">Poule unique de 8 équipes</div>
     </header>
     
     <div class="tournament-container">
       <!-- SECTION Matchs de Poules -->
       <div class="bracket phase-content" id="poule-phase">
         <div class="poule-container">
-          <!-- Sélecteur de poule -->
-          <div class="poule-selector">
-            <button class="poule-button active" data-poule="A">Poule A</button>
-            <button class="poule-button" data-poule="B">Poule B</button>
-          </div>
-          
-          <!-- Tableau unique pour les poules -->
+          <!-- Tableau unique pour la poule -->
           <div class="poule-section">
-            <h2 id="currentPouleTitle">Poule A</h2>
+            <h2>Classement de la poule</h2>
             
             <!-- Classement de la poule -->
             <div class="ranking-table">
@@ -109,55 +256,73 @@
       </div>
 
       <!-- SECTION PHASE FINALE -->
-      <div class="bracket phase-content" id="final-phase">
+      <div class="bracket phase-content hidden" id="final-phase">
+        <h2 style="text-align: center;">Phase Finale</h2>
         <!-- Demi-finales -->
         <div class="round">
           <div class="round-title">Demi-finales</div>
           <div class="match-wrapper">
-            <div class="match" data-match-id="21" data-match-type="semifinal">
-              <div class="team">-</div>
-              <div class="team">-</div>
-              <div class="match-info-container">
-                <div class="match-time">14:45</div>
+            <div class="match" data-match-id="33" data-match-type="semifinal">
+              <div class="match-time">13:30</div>
+              <div class="match-teams">
+                <div class="team">-</div>
+                <div class="score">- - -</div>
+                <div class="team">-</div>
+              </div>
+              <div class="match-info">
                 <div class="match-status">à venir</div>
+                <div class="match-terrain">Cible 3</div>
               </div>
             </div>
-            <div class="connector top"></div>
           </div>
           <div class="match-wrapper">
-            <div class="match" data-match-id="22" data-match-type="semifinal">
-              <div class="team">-</div>
-              <div class="team">-</div>
-              <div class="match-info-container">
-                <div class="match-time">14:45</div>
+            <div class="match" data-match-id="34" data-match-type="semifinal">
+              <div class="match-time">13:30</div>
+              <div class="match-teams">
+                <div class="team">-</div>
+                <div class="score">- - -</div>
+                <div class="team">-</div>
+              </div>
+              <div class="match-info">
                 <div class="match-status">à venir</div>
+                <div class="match-terrain">Cible 4</div>
               </div>
             </div>
-            <div class="connector bottom"></div>
           </div>
         </div>
 
         <!-- Finale et petite finale -->
         <div class="round">
-          <div class="round-title">Finale</div>
+          <div class="round-title">Match pour la 3ème place</div>
           <div class="match-wrapper">
-            <div class="match" data-match-id="24" data-match-type="final">
-              <div class="team">-</div>
-              <div class="team">-</div>
-              <div class="match-info-container">
-                <div class="match-time">15:30</div>
+            <div class="match" data-match-id="35" data-match-type="bronze_final">
+              <div class="match-time">15:00</div>
+              <div class="match-teams">
+                <div class="team">-</div>
+                <div class="score">- - -</div>
+                <div class="team">-</div>
+              </div>
+              <div class="match-info">
                 <div class="match-status">à venir</div>
+                <div class="match-terrain">Cible 2</div>
               </div>
             </div>
           </div>
-          <div class="round-title">Place de 3ème</div>
+        </div>
+        
+        <div class="round">
+          <div class="round-title">Finale</div>
           <div class="match-wrapper">
-            <div class="match" data-match-id="23" data-match-type="bronze_final">
-              <div class="team">-</div>
-              <div class="team">-</div>
-              <div class="match-info-container">
-                <div class="match-time">15:30</div>
+            <div class="match" data-match-id="36" data-match-type="final">
+              <div class="match-time">15:30</div>
+              <div class="match-teams">
+                <div class="team">-</div>
+                <div class="score">- - -</div>
+                <div class="team">-</div>
+              </div>
+              <div class="match-info">
                 <div class="match-status">à venir</div>
+                <div class="match-terrain">Cible 1</div>
               </div>
             </div>
           </div>
@@ -165,53 +330,73 @@
       </div>
 
       <!-- SECTION MATCHS DE CLASSEMENT -->
-      <div class="bracket phase-content" id="classification-phase">
-        <div class="round-title">Matchs de classement</div>
+      <div class="bracket phase-content hidden" id="classification-phase">
+        <h2 style="text-align: center;">Matchs de Classement</h2>
         <!-- Demi-finales de classement -->
         <div class="round">
+          <div class="round-title">Demi-finales de classement (5-8)</div>
           <div class="match-wrapper">
-            <div class="match" data-match-id="17" data-match-type="classif_semifinal">
-              <div class="team">-</div>
-              <div class="team">-</div>
-              <div class="match-info-container">
-                <div class="match-time">13:15</div>
+            <div class="match" data-match-id="29" data-match-type="classif_semifinal">
+              <div class="match-time">13:30</div>
+              <div class="match-teams">
+                <div class="team">-</div>
+                <div class="score">- - -</div>
+                <div class="team">-</div>
+              </div>
+              <div class="match-info">
                 <div class="match-status">à venir</div>
+                <div class="match-terrain">Cible 1</div>
               </div>
             </div>
           </div>
           <div class="match-wrapper">
-            <div class="match" data-match-id="18" data-match-type="classif_semifinal">
-              <div class="team">-</div>
-              <div class="team">-</div>
-              <div class="match-info-container">
-                <div class="match-time">13:15</div>
+            <div class="match" data-match-id="30" data-match-type="classif_semifinal">
+              <div class="match-time">13:30</div>
+              <div class="match-teams">
+                <div class="team">-</div>
+                <div class="score">- - -</div>
+                <div class="team">-</div>
+              </div>
+              <div class="match-info">
                 <div class="match-status">à venir</div>
+                <div class="match-terrain">Cible 2</div>
               </div>
             </div>
-            
           </div>
         </div>
+        
         <!-- Finales de classement -->
-        <div class="round-title">Place de 7ème</div>
         <div class="round">
+          <div class="round-title">Match pour la 7ème place</div>
           <div class="match-wrapper">
-            <div class="match" data-match-id="19" data-match-type="final_5th">
-              <div class="team">-</div>
-              <div class="team">-</div>
-              <div class="match-info-container">
-                <div class="match-time">14:00</div>
+            <div class="match" data-match-id="32" data-match-type="final_7th">
+              <div class="match-time">14:30</div>
+              <div class="match-teams">
+                <div class="team">-</div>
+                <div class="score">- - -</div>
+                <div class="team">-</div>
+              </div>
+              <div class="match-info">
                 <div class="match-status">à venir</div>
+                <div class="match-terrain">Cible 3</div>
               </div>
             </div>
           </div>
-          <div class="round-title">Place de 5ème</div>
+        </div>
+        
+        <div class="round">
+          <div class="round-title">Match pour la 5ème place</div>
           <div class="match-wrapper">
-            <div class="match" data-match-id="20" data-match-type="final_7th">
-              <div class="team">-</div>
-              <div class="team">-</div>
-              <div class="match-info-container">
-                <div class="match-time">14:00</div>
+            <div class="match" data-match-id="31" data-match-type="final_5th">
+              <div class="match-time">14:30</div>
+              <div class="match-teams">
+                <div class="team">-</div>
+                <div class="score">- - -</div>
+                <div class="team">-</div>
+              </div>
+              <div class="match-info">
                 <div class="match-status">à venir</div>
+                <div class="match-terrain">Cible 2</div>
               </div>
             </div>
           </div>
@@ -219,7 +404,7 @@
       </div>
 
       <!-- SECTION CLASSEMENT FINAL -->
-      <div class="bracket phase-content" id="ranking-phase">
+      <div class="bracket phase-content hidden" id="ranking-phase">
         <div class="ranking-container">
           <div class="round-title">Classement Final</div>
           <div class="ranking-table">
@@ -238,7 +423,6 @@
     
     <div style="text-align: center;">
       <button class="reset-button" id="resetTournament" onclick="resetTournament()">Réinitialiser le tournoi</button>
-      <button onclick="simulateTournament()">Simuler la compétition</button>
       <button class="back-button" onclick="window.location.href='../index.html'">Retour</button>
     </div>
   </div>
@@ -251,141 +435,26 @@
       phaseSelect.addEventListener('change', function() {
         const selectedPhase = phaseSelect.value;
         phaseContents.forEach(function(content) {
-          // Utilisation de la classe CSS 'hidden' pour masquer/afficher
           if (content.id === selectedPhase) {
             content.classList.remove('hidden');
           } else {
             content.classList.add('hidden');
           }
         });
+        
         if (selectedPhase === 'ranking-phase') {
           updateRankingDisplay();
+        } else if (selectedPhase === 'poule-phase') {
+          updateGroupStandings();
+          updatePouleMatches();
+        } else {
+          updateUI();
         }
       });
       
-      // Affichage initial (la phase sélectionnée dans le menu est affichée)
+      // Affichage initial
       phaseSelect.dispatchEvent(new Event('change'));
     });
-  </script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const pouleButtons = document.querySelectorAll('.poule-button');
-      let currentPoule = 'A';
-
-      pouleButtons.forEach(button => {
-        button.addEventListener('click', function() {
-          const poule = this.dataset.poule;
-          currentPoule = poule;
-          
-          // Mise à jour visuelle des boutons
-          pouleButtons.forEach(btn => btn.classList.remove('active'));
-          this.classList.add('active');
-          
-          // Mise à jour du titre
-          document.getElementById('currentPouleTitle').textContent = `Poule ${poule}`;
-          
-          // Mise à jour du classement et des matchs
-          updateGroupStandings(poule);
-        });
-      });
-    });
-  </script>
-  <script>
-  // Mise à jour du script de navigation pour s'assurer que les poules sont bien affichées
-  document.addEventListener('DOMContentLoaded', function() {
-    const phaseSelect = document.getElementById('phaseSelect');
-    const phaseContents = document.querySelectorAll('.phase-content');
-    
-    // Fonction de changement d'affichage entre les phases
-    function changePhase(selectedPhase) {
-      console.log(`Changement de phase vers: ${selectedPhase}`);
-      
-      // Masquer/afficher les contenus appropriés
-      phaseContents.forEach(function(content) {
-        if (content.id === selectedPhase) {
-          content.classList.remove('hidden');
-        } else {
-          content.classList.add('hidden');
-        }
-      });
-      
-      // Actions spécifiques selon la phase
-      if (selectedPhase === 'ranking-phase') {
-        updateRankingDisplay();
-      } else if (selectedPhase === 'poule-phase') {
-        // Si on affiche les poules, s'assurer que les données sont bien chargées
-        const activePouleButton = document.querySelector('.poule-button.active');
-        const poule = activePouleButton ? activePouleButton.getAttribute('data-poule') : 'A';
-        updateGroupStandings(poule);
-      }
-    }
-    
-    // Gestionnaire d'événement pour le changement de sélecteur de phase
-    phaseSelect.addEventListener('change', function() {
-      const selectedPhase = phaseSelect.value;
-      changePhase(selectedPhase);
-    });
-    
-    // Assurer que toutes les phases commencent cachées sauf la première
-    phaseContents.forEach(content => {
-      if (content.id !== phaseSelect.value) {
-        content.classList.add('hidden');
-      }
-    });
-    
-    // Déclencher l'événement change initial
-    setTimeout(() => {
-      // S'assurer que la première option est sélectionnée
-      if (phaseSelect.value === '') {
-        phaseSelect.value = 'poule-phase';
-      }
-      changePhase(phaseSelect.value);
-    }, 100);
-  });
-  </script>
-  <script>
-  // Script de débogage à exécuter après le chargement de la page
-  document.addEventListener('DOMContentLoaded', function() {
-    // Fonction pour vérifier les éléments critiques du DOM
-    function checkCriticalElements() {
-      console.log("=== VÉRIFICATION DES ÉLÉMENTS CRITIQUES ===");
-      
-      // Vérifier l'élément de liste des matchs
-      const matchesContainer = document.getElementById('currentPouleMatches');
-      console.log("Container des matchs:", matchesContainer ? "TROUVÉ" : "NON TROUVÉ");
-      
-      // Vérifier l'élément de liste des classements
-      const groupList = document.getElementById('groupList');
-      console.log("Container des classements:", groupList ? "TROUVÉ" : "NON TROUVÉ");
-      
-      // Vérifier les boutons de poule
-      const pouleButtons = document.querySelectorAll('.poule-button');
-      console.log(`Boutons de poule: ${pouleButtons.length} trouvés`);
-      
-      // Vérifier l'état du tournoi
-      console.log("État du tournoi chargé:", tournamentState ? "OUI" : "NON");
-      
-      if (tournamentState && tournamentState.matches) {
-        const matchCount = Object.keys(tournamentState.matches).length;
-        console.log(`Nombre de matchs dans l'état: ${matchCount}`);
-        
-        // Afficher quelques exemples de matchs
-        console.log("Exemple match 1:", tournamentState.matches[1]);
-        console.log("Exemple match 7:", tournamentState.matches[7]);
-      }
-      
-      // Force l'initialisation
-      setTimeout(() => {
-        console.log("Force une mise à jour des poules...");
-        // Appeler explicitement pour la poule active
-        const activePoule = document.querySelector('.poule-button.active')?.getAttribute('data-poule') || 'A';
-        updateGroupStandings(activePoule);
-      }, 1000);
-    }
-    
-    // Exécuter la vérification après un court délai
-    setTimeout(checkCriticalElements, 500);
-  });
   </script>
 </body>
 </html>

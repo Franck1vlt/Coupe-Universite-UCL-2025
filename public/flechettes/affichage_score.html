@@ -33,7 +33,7 @@
         }
 
         .score-container {
-            font-size: 12vw;
+            font-size: 10vw;
             font-weight: bold;
             margin: 4vh 0;
             display: flex;
@@ -159,7 +159,22 @@
             min-width: 3vw;
             text-align: center;
         }
-
+        
+        /* Style pour distinguer les joueurs des équipes A et B */
+        .team-a-player {
+            color: #d32f2f; /* Rouge pour l'équipe A */
+        }
+        
+        .team-b-player {
+            color: #1976d2; /* Bleu pour l'équipe B */
+        }
+        
+        /* Ajouter aussi des informations sur le mode de jeu */
+        .match-mode {
+            font-size: 2vw;
+            color: #555;
+            margin-top: 1vh;
+        }
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
@@ -253,6 +268,16 @@
                     status.style.fontSize = '12px';
                     document.body.appendChild(status);
                 }
+                
+                if (isConnected) {
+                    status.textContent = '🟢 En ligne';
+                    status.style.backgroundColor = '#4CAF50';
+                    status.style.color = 'white';
+                } else {
+                    status.textContent = '🔴 Hors ligne';
+                    status.style.backgroundColor = '#F44336';
+                    status.style.color = 'white';
+                }
             }
 
             function updateDisplay() {
@@ -262,23 +287,30 @@
                     
                     const matchData = JSON.parse(rawData);
                     console.log("Données récupérées:", matchData);
-                    console.log("Type de donnée currentPlayer:", typeof matchData.currentPlayer, "Valeur:", matchData.currentPlayer);
                     
                     // Mise à jour des équipes et scores
                     document.getElementById('teamAName').textContent = matchData.team1 || 'TEAM A';
                     document.getElementById('teamBName').textContent = matchData.team2 || 'TEAM B';
-                    document.getElementById('teamAScore').textContent = matchData.score1 || '301';
-                    document.getElementById('teamBScore').textContent = matchData.score2 || '301';
+                    document.getElementById('teamAScore').textContent = matchData.currentData?.teamA?.score || matchData.score1 || '301';
+                    document.getElementById('teamBScore').textContent = matchData.currentData?.teamB?.score || matchData.score2 || '301';
                     
                     // Mise à jour du joueur actuel
                     const currentPlayerElement = document.getElementById('currentPlayer');
                     if (currentPlayerElement) {
-                        // Essayer d'abord de récupérer depuis une propriété directe (si disponible)
-                        if (matchData.currentPlayerId && /^[12][AB]$/.test(matchData.currentPlayerId)) {
-                            currentPlayerElement.textContent = matchData.currentPlayerId;
-                            console.log("ID joueur récupéré depuis currentPlayerId:", matchData.currentPlayerId);
-                        } else {
-                            // Sinon, extraire depuis le texte currentPlayer
+                        let playerID = "1A"; // Valeur par défaut
+                        
+                        // Essayer d'abord de récupérer directement depuis currentData
+                        if (matchData.currentData && matchData.currentData.currentPlayer && /^[12][AB]$/.test(matchData.currentData.currentPlayer)) {
+                            playerID = matchData.currentData.currentPlayer;
+                            console.log("ID joueur récupéré depuis currentData:", playerID);
+                        }
+                        // Ensuite essayer depuis currentPlayerId
+                        else if (matchData.currentPlayerId && /^[12][AB]$/.test(matchData.currentPlayerId)) {
+                            playerID = matchData.currentPlayerId;
+                            console.log("ID joueur récupéré depuis currentPlayerId:", playerID);
+                        }
+                        // Enfin, essayer d'extraire depuis le texte
+                        else {
                             const currentPlayerText = matchData.currentPlayer || '';
                             console.log("Données du joueur reçues:", currentPlayerText);
                             
@@ -306,22 +338,30 @@
                                 return "1A"; // Valeur par défaut si aucun format n'est reconnu
                             }
                             
-                            const playerID = extractPlayerID(currentPlayerText);
+                            playerID = extractPlayerID(currentPlayerText);
                             console.log("ID du joueur extrait:", playerID);
-                            
-                            // Mettre à jour l'élément avec l'ID du joueur
-                            currentPlayerElement.textContent = playerID;
                         }
+                        
+                        // Mettre à jour l'élément avec l'ID du joueur
+                        currentPlayerElement.textContent = playerID;
+                        
+                        // Ajouter une indication visuelle pour montrer de quelle équipe est le joueur
+                        currentPlayerElement.className = "current-player-id " + 
+                            (playerID.endsWith("A") ? "team-a-player" : "team-b-player");
                     }
                     
                     // Extraire le nombre de lancers restants du texte pour mettre à jour les indicateurs
                     let throwsLeft = 3; // Valeur par défaut
-                    const match = matchData.currentPlayer ? matchData.currentPlayer.match(/\((\d+) lancers? restants?\)/) : null;
-                    if (match && match[1]) {
-                        throwsLeft = parseInt(match[1]);
-                    } else if (matchData.throwsLeft) {
-                        // Si disponible dans l'objet directement
+                    
+                    if (matchData.currentData && matchData.currentData.throwsLeft !== undefined) {
+                        throwsLeft = parseInt(matchData.currentData.throwsLeft);
+                    } else if (matchData.throwsLeft !== undefined) {
                         throwsLeft = parseInt(matchData.throwsLeft);
+                    } else {
+                        const match = matchData.currentPlayer ? matchData.currentPlayer.match(/\((\d+) lancers? restants?\)/) : null;
+                        if (match && match[1]) {
+                            throwsLeft = parseInt(match[1]);
+                        }
                     }
                     
                     // Mise à jour des indicateurs de lancers
@@ -336,6 +376,8 @@
                     const matchTypeElement = document.getElementById('matchType');
                     if (matchTypeElement && matchData.matchType) {
                         matchTypeElement.textContent = matchData.matchType;
+                    } else if (matchTypeElement && matchData.currentData && matchData.currentData.matchType) {
+                        matchTypeElement.textContent = matchData.currentData.matchType;
                     }
                     
                     // Mise à jour des sets
@@ -345,11 +387,39 @@
                         
                         if (teamASets) teamASets.textContent = matchData.sets.teamA;
                         if (teamBSets) teamBSets.textContent = matchData.sets.teamB;
+                    } else if (matchData.currentData && matchData.currentData.teamA && matchData.currentData.teamA.sets !== undefined) {
+                        const teamASets = document.getElementById('teamASets');
+                        const teamBSets = document.getElementById('teamBSets');
+                        
+                        if (teamASets) teamASets.textContent = matchData.currentData.teamA.sets;
+                        if (teamBSets) teamBSets.textContent = matchData.currentData.teamB.sets;
                     }
                     
                     // Mise à jour des logos
                     updateLogo('logoA', matchData.team1);
                     updateLogo('logoB', matchData.team2);
+                    
+                    // Mise à jour du mode de jeu
+                    if (matchData.currentData && matchData.currentData.matchMode) {
+                        // Créer l'élément s'il n'existe pas
+                        let matchModeElement = document.getElementById('matchMode');
+                        if (!matchModeElement) {
+                            matchModeElement = document.createElement('div');
+                            matchModeElement.id = 'matchMode';
+                            matchModeElement.className = 'match-mode';
+                            
+                            // Insérer après match-info
+                            const matchInfoElement = document.querySelector('.match-info');
+                            if (matchInfoElement) {
+                                matchInfoElement.parentNode.insertBefore(matchModeElement, matchInfoElement.nextSibling);
+                            }
+                        }
+                        
+                        // Formatage du message
+                        const setsToWin = matchData.currentData.setsToWin || 2;
+                        const totalSets = setsToWin * 2 - 1;
+                        matchModeElement.textContent = `Mode: ${matchData.currentData.matchMode} (${setsToWin} sets pour gagner sur ${totalSets})`;
+                    }
                 } catch (error) {
                     console.error("Erreur lors de la mise à jour de l'affichage:", error);
                 }

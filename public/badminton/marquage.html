@@ -248,7 +248,10 @@
         const teamBScore = document.getElementById('teamBScore');
         const gameChrono = document.getElementById('gameChrono');
         const matchId = new URLSearchParams(window.location.search).get('matchId');
-
+        
+        // Récupérer l'état du serveur
+        let currentServer = window.server || 'A';
+        
         const liveData = {
             matchId: matchId,
             score1: teamAScore ? teamAScore.textContent : 0,
@@ -257,15 +260,33 @@
             status: 'en_cours',
             team1: document.getElementById('teamAName').textContent,
             team2: document.getElementById('teamBName').textContent,
-            matchType: document.getElementById('matchType').textContent
+            matchType: document.getElementById('matchType').textContent,
+            server: currentServer,
+            sport: 'badminton' // Identifiant explicite du sport
         };
-
-        // Sauvegarder avec les deux clés
-        localStorage.setItem('liveMatchData', JSON.stringify(liveData));
+        
+        // Sauvegarder avec différentes clés pour assurer la compatibilité
+        localStorage.setItem('liveMatchData', JSON.stringify(liveData)); // Clé générique
+        
         if (matchId) {
+            // Format standard 
             localStorage.setItem(`liveMatchData_match${matchId}`, JSON.stringify(liveData));
+            
+            // Nouveau format préfixé
+            localStorage.setItem(`badminton_liveMatchData_match${matchId}`, JSON.stringify(liveData));
         }
+        
+        console.log("Données mises à jour:", liveData);
     }
+    
+    // Mise à jour périodique pour garantir la synchronisation
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mise à jour initiale
+        updateLiveData();
+        
+        // Mettre à jour toutes les secondes
+        setInterval(updateLiveData, 1000);
+    });
 
     // Ajouter l'observateur pour mettre à jour les données en direct
     const observer = new MutationObserver(updateLiveData);

@@ -18,8 +18,8 @@ let startingTurnScores = {
     teamB: 301
 };
 
-// Nombres de sets à atteindre pour gagner
-const SETS_TO_WIN = 3;
+// Nombres de sets à atteindre pour gagner - rendu global pour pouvoir être modifié
+window.SETS_TO_WIN = 2; // Par défaut, on joue en BO3
 
 // Compatibilité avec les variables existantes
 window.currentPlayer = window.currentPlayer || "1A";
@@ -170,10 +170,11 @@ function supScore(points) {
             setsElement.textContent = sets[team];
         }
         
-        // Vérifier si l'équipe a gagné le match (3 sets)
-        if (sets[team] >= SETS_TO_WIN) {
+        // Vérifier si l'équipe a gagné le match (selon le nombre de sets requis)
+        if (sets[team] >= window.SETS_TO_WIN) {
             const winningTeam = team === 'teamA' ? document.getElementById('teamAName').textContent : document.getElementById('teamBName').textContent;
-            alert(`${winningTeam} a gagné le match avec ${sets[team]} sets!`);
+            const totalSets = window.SETS_TO_WIN * 2 - 1;
+            alert(`${winningTeam} a gagné le match avec ${sets[team]} sets sur ${totalSets} possibles!`);
             // Envoyer les données de fin de match
             finishGame(team === 'teamA');
         } else {
@@ -495,124 +496,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-// Fonction pour mettre à jour l'affichage des scores dans flechettes.html
-function updateUI() {
-    Object.entries(tournamentState.matches).forEach(([matchId, matchData]) => {
-        const matchElement = document.querySelector(`.match[data-match-id='${matchId}']`);
-        if (!matchElement) return;
-        
-        matchElement.setAttribute('data-status', matchData.status);
-        
-        const teamDivs = matchElement.querySelectorAll('.team');
-        if (teamDivs.length < 2) return;
-        
-        // Passer l'objet match complet au lieu de juste le winner
-        fillTeamDiv(teamDivs[0], matchData.team1, matchData.score1, matchData);
-        fillTeamDiv(teamDivs[1], matchData.team2, matchData.score2, matchData);
-        
-        // Mettre à jour l'heure et le statut
-        const infoContainer = matchElement.querySelector('.match-info-container');
-        if (infoContainer) {
-            const timeDiv = infoContainer.querySelector('.match-time');
-            const statusDiv = infoContainer.querySelector('.match-status');
-            const matchTypeDiv = infoContainer.querySelector('.match-type');
-
-            if (timeDiv) timeDiv.textContent = matchData.time || '';
-            if (statusDiv) statusDiv.textContent = matchData.status.replace('_', ' ');
-
-            // Correction : Afficher le type de match correctement
-            if (matchTypeDiv) {
-                matchTypeDiv.textContent = matchData.matchType.includes('poule') 
-                    ? 'Match de Poule' 
-                    : matchData.matchType.replace('_', ' ');
-            }
-        }
-    });
-    
-    // Mise à jour automatique du classement après chaque changement
-    updateRankingDisplay();
-    
-    // Mise à jour du champion
-    const finalMatch = tournamentState.matches[13];
-    const championDiv = document.getElementById('champion');
-    if (championDiv) {
-        if (finalMatch && finalMatch.winner) {
-            championDiv.textContent = finalMatch.winner;
-            championDiv.style.display = 'block';
-            // Ajouter une animation pour le champion
-        } else {
-            championDiv.textContent = 'À déterminer';
-            championDiv.style.display = 'block';
-            championDiv.classList.remove('champion-crowned');
-        }
-    }
-
-    // Sauvegarde automatique de l'état
-    localStorage.setItem('flechettesTournamentState', JSON.stringify(tournamentState));
-
-    // Ajouter cette ligne après la mise à jour des matchs
-    updateGroupStandings();
-
-    // Vérifier si tous les matchs de poule sont terminés
-    const pouleAMatchesFinished = checkPouleMatchesFinished('A'); // Matchs 1-6
-    const pouleBMatchesFinished = checkPouleMatchesFinished('B'); // Matchs 7-16
-
-    if (pouleAMatchesFinished && pouleBMatchesFinished) {
-        console.log("Tous les matchs de poule sont terminés, configuration des demi-finales et matchs de classement...");
-        setupSemiFinals();
-        setupClassificationMatches();
-    }
-}
-
-// Fonction modifiée pour afficher le score avec les sets
-function fillTeamDiv(teamDiv, teamName, score, matchData) {
-    const nameDiv = teamDiv.querySelector('.team-name');
-    const scoreDiv = teamDiv.querySelector('.score');
-    if (!nameDiv || !scoreDiv) return;
-
-    if (!teamName) {
-        nameDiv.innerHTML = `<div class='team-logo'></div>-`;
-        scoreDiv.textContent = '-';
-        teamDiv.classList.remove('winner', 'loser', 'draw');
-        return;
-    }
-
-    const teamObj = teams[teamName];
-    const logoUrl = teamObj ? teamObj.logo : `/img/default.png`;
-    nameDiv.innerHTML = `<div class='team-logo' style="background-image:url('${logoUrl}')"></div>${teamName}`;
-
-    if (score === null || score === undefined) {
-        scoreDiv.textContent = '-';
-        teamDiv.classList.remove('winner', 'loser', 'draw');
-    } else {
-        // Utiliser le nombre de sets comme score
-        scoreDiv.textContent = score;
-        
-        // Si les scores sont égaux, appliquer le style de match nul
-        if (matchData.winner === null && matchData.score1 === matchData.score2) {
-            teamDiv.classList.add('draw');
-            teamDiv.classList.remove('winner', 'loser');
-            scoreDiv.classList.add('draw');
-        } else if (matchData.winner) {
-            teamDiv.classList.remove('draw');
-            scoreDiv.classList.remove('draw');
-            if (teamName === matchData.winner) {
-                teamDiv.classList.add('winner');
-                teamDiv.classList.remove('loser');
-            } else {
-                teamDiv.classList.add('loser');
-                teamDiv.classList.remove('winner');
-            }
-        } else {
-            teamDiv.classList.remove('winner', 'loser', 'draw');
-            scoreDiv.classList.remove('draw');
-        }
-    }
-}
-
-
-
-
 // Exposer les fonctions et variables globalement pour que marquage.html puisse y accéder
 window.selectPlayer = selectPlayer;
 window.updateScoreDisplay = updateScoreDisplay;
@@ -627,3 +510,4 @@ window.currentTurnPoints = currentTurnPoints;
 window.startingTurnScores = startingTurnScores;
 window.generatePointButtons = generatePointButtons;
 window.updateButtonValues = updateButtonValues;
+window.SETS_TO_WIN = window.SETS_TO_WIN || 2;
